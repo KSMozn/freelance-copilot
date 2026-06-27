@@ -86,11 +86,24 @@ Two implementations live in `infrastructure/ai/`: `OpenAIProvider`, `ClaudeProvi
 Selection is configuration-driven (`AI_PROVIDER=openai|claude`). All prompts
 return strict JSON validated against a Pydantic schema — no free-text parsing.
 
-## Embeddings & semantic search (Phase 3+)
+## Embeddings & semantic search (Phase 3)
 
 `pgvector` is enabled in the database. The `embeddings` table stores
-`(owner_type, owner_id, model, vector)` rows so the same infra can embed jobs,
-portfolio projects, resumes, and proposals.
+`(owner_type, owner_id, model, vector)` rows so the same infra embeds jobs,
+portfolio projects, and — in later phases — resumes and proposals. The `model`
+column carries a provider-qualified id (e.g. `mock:mock-hash-1536`,
+`openai:text-embedding-3-small`) so two providers never trample each other.
+
+An `EmbeddingProvider` protocol (`domain/providers/embedding_provider.py`) is
+the outbound port; `MockEmbeddingProvider` (feature-hashing, unit length) and
+`OpenAIEmbeddingProvider` (text-embedding-3-small, normalized on the way out)
+are the implementations.
+
+`PortfolioMatchingService` (application layer) ranks portfolios by the hybrid
+score `0.60·semantic + 0.25·skill_overlap + 0.10·domain_overlap + 0.05·strategic`.
+Per-user portfolio sets are small, so cosine is computed in Python over a
+single `embeddings` query; swap in a pgvector ANN query when that changes
+without touching the scoring rules.
 
 ## Testing strategy
 

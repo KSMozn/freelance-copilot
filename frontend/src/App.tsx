@@ -11,6 +11,8 @@ import { JobDetailPage } from "@/pages/JobDetail";
 import { JobsPage } from "@/pages/Jobs";
 import { LoginPage } from "@/pages/Login";
 import { PlaceholderPage } from "@/pages/Placeholder";
+import { PortfolioPage } from "@/pages/Portfolio";
+import { PortfolioFormPage } from "@/pages/PortfolioForm";
 import { RegisterPage } from "@/pages/Register";
 
 export default function App() {
@@ -31,7 +33,9 @@ export default function App() {
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/new" element={<JobCreatePage />} />
             <Route path="/jobs/:id" element={<JobDetailPage />} />
-            <Route path="/portfolio" element={<PlaceholderPage title="Portfolio" phase="Phase 3" />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/portfolio/new" element={<PortfolioFormPage />} />
+            <Route path="/portfolio/:id" element={<PortfolioFormPage />} />
             <Route path="/resumes" element={<PlaceholderPage title="Resumes" phase="Phase 5" />} />
             <Route
               path="/applications"

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     claude_model: str = "claude-sonnet-4-6"
 
+    embedding_provider: Literal["openai", "mock"] = "mock"
+    openai_embedding_model: str = "text-embedding-3-small"
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:

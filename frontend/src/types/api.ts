@@ -141,3 +141,70 @@ export const SCORE_DIMENSION_MAX: Record<keyof ScoreBreakdown, number> = {
   risk_level: 10,
   strategic_value: 5,
 };
+
+// --- Phase 3: Portfolio + matching ---
+
+export interface Portfolio {
+  id: string;
+  user_id: string;
+  title: string;
+  short_description: string | null;
+  long_description: string;
+  role: string | null;
+  business_domain: string | null;
+  github_url: string | null;
+  live_url: string | null;
+  technologies: string[];
+  skills: string[];
+  features: string[];
+  outcomes: string[];
+  highlight: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface PortfolioListResponse {
+  items: Portfolio[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface PortfolioCreate {
+  title: string;
+  long_description: string;
+  short_description?: string | null;
+  role?: string | null;
+  business_domain?: string | null;
+  github_url?: string | null;
+  live_url?: string | null;
+  technologies?: string[];
+  skills?: string[];
+  features?: string[];
+  outcomes?: string[];
+  highlight?: boolean;
+}
+
+export type PortfolioUpdate = Partial<PortfolioCreate>;
+
+export interface PortfolioMatch {
+  portfolio_id: string;
+  title: string;
+  match_score: number;
+  semantic_score: number;
+  skill_overlap_score: number;
+  domain_overlap_score: number;
+  strategic_score: number;
+  match_reasons: string[];
+  relevant_skills: string[];
+  relevant_domains: string[];
+  suggested_talking_points: string[];
+}
+
+export interface PortfolioMatchesResponse {
+  job_id: string;
+  matches: PortfolioMatch[];
+  embedding_provider: string;
+  embedding_model: string;
+  portfolio_count: number;
+}

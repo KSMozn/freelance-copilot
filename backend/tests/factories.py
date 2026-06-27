@@ -17,6 +17,7 @@ from app.domain.entities.analysis import (
     RiskItem,
 )
 from app.domain.entities.job import BudgetType, Job, JobStatus
+from app.domain.entities.portfolio import Portfolio
 
 
 def make_job(
@@ -81,6 +82,148 @@ class FakeJobRepository:
 
     async def delete(self, *args: Any, **kwargs: Any) -> bool:
         raise NotImplementedError
+
+
+def make_portfolio(
+    *,
+    user_id: UUID | None = None,
+    title: str = "Customer 360 Analytics Platform",
+    business_domain: str | None = "Enterprise SaaS",
+    technologies: list[str] | None = None,
+    skills: list[str] | None = None,
+    long_description: str = "Built a customer 360 platform on PostgreSQL with FastAPI.",
+) -> Portfolio:
+    now = datetime.now(UTC)
+    return Portfolio(
+        id=uuid4(),
+        user_id=user_id or uuid4(),
+        title=title,
+        long_description=long_description,
+        short_description="A short blurb.",
+        role="Lead Engineer",
+        business_domain=business_domain,
+        github_url=None,
+        live_url=None,
+        technologies=technologies or ["PostgreSQL", "Python", "FastAPI"],
+        skills=skills or ["PostgreSQL", "Analytics", "Data modeling"],
+        features=["Wide customer table", "Materialized views"],
+        outcomes=["Cut query times to sub-second"],
+        highlight=False,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+class FakePortfolioRepository:
+    def __init__(self, portfolios: list[Portfolio] | None = None) -> None:
+        self._items: dict[UUID, Portfolio] = {p.id: p for p in (portfolios or [])}
+
+    def add(self, p: Portfolio) -> None:
+        self._items[p.id] = p
+
+    async def create(self, **kw: Any) -> Portfolio:
+        portfolio = make_portfolio(
+            user_id=kw["user_id"],
+            title=kw["title"],
+            business_domain=kw.get("business_domain"),
+            technologies=list(kw.get("technologies", [])),
+            skills=list(kw.get("skills", [])),
+            long_description=kw["long_description"],
+        )
+        portfolio.short_description = kw.get("short_description")
+        portfolio.role = kw.get("role")
+        portfolio.github_url = kw.get("github_url")
+        portfolio.live_url = kw.get("live_url")
+        portfolio.features = list(kw.get("features", []))
+        portfolio.outcomes = list(kw.get("outcomes", []))
+        portfolio.highlight = kw.get("highlight", False)
+        self._items[portfolio.id] = portfolio
+        return portfolio
+
+    async def get_by_id(self, portfolio_id: UUID, *, user_id: UUID) -> Portfolio | None:
+        p = self._items.get(portfolio_id)
+        if p is None or p.user_id != user_id:
+            return None
+        return p
+
+    async def list_for_user(
+        self,
+        user_id: UUID,
+        *,
+        search: str | None,
+        domain: str | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Portfolio], int]:
+        results = [p for p in self._items.values() if p.user_id == user_id]
+        if search:
+            s = search.lower()
+            results = [
+                p
+                for p in results
+                if s in p.title.lower() or s in p.long_description.lower()
+            ]
+        if domain:
+            d = domain.lower()
+            results = [
+                p for p in results if p.business_domain and d in p.business_domain.lower()
+            ]
+        total = len(results)
+        return results[offset : offset + limit], total
+
+    async def list_all_for_user(self, user_id: UUID) -> list[Portfolio]:
+        return [p for p in self._items.values() if p.user_id == user_id]
+
+    async def update(
+        self,
+        portfolio_id: UUID,
+        *,
+        user_id: UUID,
+        fields: dict[str, object],
+    ) -> Portfolio | None:
+        p = self._items.get(portfolio_id)
+        if p is None or p.user_id != user_id:
+            return None
+        for k, v in fields.items():
+            setattr(p, k, v)
+        return p
+
+    async def delete(self, portfolio_id: UUID, *, user_id: UUID) -> bool:
+        p = self._items.get(portfolio_id)
+        if p is None or p.user_id != user_id:
+            return False
+        del self._items[portfolio_id]
+        return True
+
+
+class FakeEmbeddingRepository:
+    def __init__(self) -> None:
+        self._store: dict[tuple[str, UUID, str], list[float]] = {}
+
+    async def get(
+        self, *, owner_type: str, owner_id: UUID, model: str
+    ) -> list[float] | None:
+        return self._store.get((owner_type, owner_id, model))
+
+    async def upsert(
+        self, *, owner_type: str, owner_id: UUID, model: str, vector: list[float]
+    ) -> None:
+        self._store[(owner_type, owner_id, model)] = list(vector)
+
+    async def get_many(
+        self, *, owner_type: str, owner_ids: list[UUID], model: str
+    ) -> dict[UUID, list[float]]:
+        out: dict[UUID, list[float]] = {}
+        for oid in owner_ids:
+            v = self._store.get((owner_type, oid, model))
+            if v is not None:
+                out[oid] = v
+        return out
+
+    async def delete(self, *, owner_type: str, owner_id: UUID) -> None:
+        for k in list(self._store.keys()):
+            if k[0] == owner_type and k[1] == owner_id:
+                del self._store[k]
 
 
 class FakeAnalysisRepository:
@@ -158,9 +301,12 @@ class FakeScoreRepository:
 # `field` is re-exported so test modules can `from .factories import ...`
 __all__ = [
     "FakeAnalysisRepository",
+    "FakeEmbeddingRepository",
     "FakeJobRepository",
+    "FakePortfolioRepository",
     "FakeScoreRepository",
     "field",
     "make_job",
+    "make_portfolio",
     "replace",
 ]

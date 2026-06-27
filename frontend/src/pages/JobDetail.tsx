@@ -12,12 +12,14 @@ import {
 } from "@/components/analysis/AnalysisSections";
 import { ScoreBreakdown } from "@/components/analysis/ScoreBreakdown";
 import { ScoreCard } from "@/components/analysis/ScoreCard";
+import { PortfolioMatchesCard } from "@/components/portfolio/PortfolioMatchesCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { useAnalyzeJob, useJobAnalysis } from "@/lib/analysis";
-import type { Job, JobStatus } from "@/types/api";
+import { useMatchPortfolio } from "@/lib/portfolio-matches";
+import type { Job, JobStatus, PortfolioMatchesResponse } from "@/types/api";
 
 const NEXT_STATUSES: JobStatus[] = ["new", "shortlisted", "applied", "ignored", "archived"];
 
@@ -37,6 +39,8 @@ export function JobDetailPage() {
 
   const { data: analysisData, isLoading: analysisLoading } = useJobAnalysis(id);
   const analyze = useAnalyzeJob(id);
+  const matchPortfolio = useMatchPortfolio(id);
+  const matchesData: PortfolioMatchesResponse | undefined = matchPortfolio.data;
 
   const statusMutation = useMutation({
     mutationFn: async (status: JobStatus) => {
@@ -142,6 +146,27 @@ export function JobDetailPage() {
               <RisksCard analysis={analysis} />
               <FlagsCard analysis={analysis} />
               <QuestionsCard analysis={analysis} />
+              <PortfolioMatchesCard
+                data={matchesData}
+                isPending={matchPortfolio.isPending}
+                hasAnalysis={hasAnalysis}
+                onRun={() =>
+                  matchPortfolio.mutate(undefined, {
+                    onSuccess: (d) =>
+                      toast.success(
+                        d.matches.length
+                          ? `Matched ${d.matches.length} of ${d.portfolio_count} portfolios`
+                          : "No portfolio projects yet",
+                      ),
+                    onError: (err: unknown) => {
+                      const detail =
+                        (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+                          ?.data?.detail ?? "Match failed";
+                      toast.error(detail);
+                    },
+                  })
+                }
+              />
             </div>
             <div className="space-y-4">
               <ScoreBreakdown breakdown={score.score_breakdown} />

@@ -106,18 +106,27 @@ Structured AI extraction.
 | rating         | numeric NULL |                                 |
 | notes          | text    |                                      |
 
-### portfolios
-| column            | type      |
-|-------------------|-----------|
-| id                | uuid PK   |
-| user_id           | uuid FK   |
-| name              | text      |
-| description       | text      |
-| github_url        | text NULL |
-| live_url          | text NULL |
-| business_domains  | text[]    |
-| features          | jsonb     |
-| highlight         | bool      |
+### portfolios *(Phase 3 shape)*
+| column             | type      | notes                                    |
+|--------------------|-----------|------------------------------------------|
+| id                 | uuid PK   |                                          |
+| user_id            | uuid FK   |                                          |
+| title              | text      | renamed from `name`                      |
+| short_description  | text NULL | one-liner for cards                      |
+| long_description   | text      | renamed from `description`               |
+| role               | text NULL | freelancer's role on the project         |
+| business_domain    | text NULL | replaces the Phase-1 `business_domains[]`|
+| github_url         | text NULL |                                          |
+| live_url           | text NULL |                                          |
+| technologies       | jsonb     | list[string]                             |
+| skills             | jsonb     | list[string]                             |
+| features           | jsonb     | list[string]                             |
+| outcomes           | jsonb     | list[string]                             |
+| highlight          | bool      |                                          |
+
+### opportunity_scores *(Phase 2)*
+See [`docs/ROADMAP.md`](ROADMAP.md) Phase 2; one row per job, upserted by
+`/jobs/{id}/analyze`.
 
 ### resumes
 | column        | type    | notes                                  |
@@ -200,7 +209,10 @@ Index: `ivfflat (vector vector_cosine_ops)`. Unique `(owner_type, owner_id, mode
 
 ## Phase ownership
 
-- Phase 1 creates **every** table in the baseline migration. Columns related to
-  AI-derived data are populated starting in Phase 2.
-- Phase 2 fills `job_analyses`, `embeddings` (job + portfolio).
-- Phase 3 wires `application_portfolios`, scoring runs, analytics views.
+- Phase 1 creates every table in the baseline migration.
+- Phase 2 (migration `0002_phase2_analysis_scoring`) extends `job_analyses` with
+  structured fields and creates `opportunity_scores`.
+- Phase 3 (migration `0003_phase3_portfolio`) reshapes `portfolios` and
+  populates `embeddings` with `owner_type ∈ {'portfolio','job'}` rows.
+- Future phases will populate `application_portfolios`, build analytics views,
+  and add a per-user `scoring_configs` table for Scoring v2.

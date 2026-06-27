@@ -52,14 +52,36 @@ and local dev free of network/cost; `score_breakdown` sums to the headline
 
 ---
 
-## Phase 3 — Portfolio & Embeddings
+## Phase 3 — Portfolio Knowledge Base + Semantic Matching ✅
 
-- Portfolio CRUD (UI + API).
-- Embedding service: enqueue embed jobs on portfolio create/update and on
-  job analysis completion; writes to the `embeddings` table.
-- Semantic match endpoint: `GET /portfolio/match?job_id=...` returns top-K
-  portfolios with cosine similarity scores.
-- UI: portfolio library page + match panel on job detail.
+- Migration `0003_phase3_portfolio` reshapes the Phase-1 placeholder
+  `portfolios` table to the Phase-3 contract (title, short/long descriptions,
+  role, business_domain, technologies, skills, features, outcomes).
+- `EmbeddingProvider` protocol + `MockEmbeddingProvider` (deterministic
+  feature-hashing, 1536-d unit vectors) + `OpenAIEmbeddingProvider`
+  (text-embedding-3-small). Selected via `EMBEDDING_PROVIDER=mock|openai`.
+- `PortfolioService` issues an embedding on every create/update and stores it
+  in the polymorphic `embeddings` table keyed by `(owner_type, owner_id,
+  model_id)`. Lazy `ensure_embedding` re-embeds portfolios when the provider
+  changes.
+- `PortfolioMatchingService` hybrid score:
+  `0.60·semantic + 0.25·skill_overlap + 0.10·domain_overlap + 0.05·strategic`.
+  Cosine is computed in Python over the small per-user portfolio set; ANN
+  upgrade is a no-op when scale changes.
+- Endpoints:
+  - `POST /api/v1/portfolio`, `GET /api/v1/portfolio`,
+    `GET /api/v1/portfolio/{id}`, `PUT /api/v1/portfolio/{id}`,
+    `DELETE /api/v1/portfolio/{id}`
+  - `POST /api/v1/jobs/{id}/match-portfolio`,
+    `GET /api/v1/jobs/{id}/portfolio-matches`
+- UI: full Portfolio list + form pages, **Match portfolio** card on Job Detail
+  showing per-component scores, reasons, relevant skills/domains, and
+  suggested talking points.
+
+**Exit:** with the demo seed (FastAPI/RAG job + 4 portfolios), the AI
+Document Q&A portfolio scores ~71% match vs ~31% for an unrelated WordPress
+project. Score components are unit-tested; provider switching is one env
+flip.
 
 ---
 
