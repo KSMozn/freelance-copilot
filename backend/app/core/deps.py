@@ -8,8 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.services.analytics_service import AnalyticsService
 from app.application.services.application_service import ApplicationService
 from app.application.services.auth_service import AuthService
+from app.application.services.cv_ingest_service import CvIngestService
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.knowledge_graph_service import KnowledgeGraphService
+from app.application.services.linkedin_ingest_service import LinkedInIngestService
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
 from app.application.services.persona_service import PersonaService
 from app.application.services.skill_catalog_service import SkillCatalogService
@@ -55,6 +57,16 @@ from app.infrastructure.ai.factory import build_ai_provider
 from app.infrastructure.email.factory import build_email_provider
 from app.infrastructure.db.repositories.sqlalchemy_email_otp_repository import (
     SQLAlchemyEmailOtpRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_experience_repository import (
+    SQLAlchemyExperienceRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_ingestion_repositories import (
+    SQLAlchemyCertificateRepository,
+    SQLAlchemyContentItemRepository,
+    SQLAlchemyCvUploadRepository,
+    SQLAlchemyLinkedInSnapshotRepository,
+    SQLAlchemyUploadedFileRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
     SQLAlchemyPersonaArchetypeRepository,
@@ -113,6 +125,14 @@ def get_email_provider(settings: SettingsDep) -> EmailProvider:
     return build_email_provider(settings)
 
 
+def get_ai_provider(settings: SettingsDep) -> AIProvider:
+    return build_ai_provider(settings)
+
+
+def get_embedding_provider(settings: SettingsDep) -> EmbeddingProvider:
+    return build_embedding_provider(settings)
+
+
 # --- Phase B: knowledge graph services ------------------------------------
 
 
@@ -127,6 +147,32 @@ def get_knowledge_graph_service(
     return KnowledgeGraphService(
         skill_catalog=skill_catalog,
         user_skills=SQLAlchemyUserSkillRepository(session),
+        experiences=SQLAlchemyExperienceRepository(session),
+    )
+
+
+def get_cv_ingest_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    kg: Annotated[KnowledgeGraphService, Depends(get_knowledge_graph_service)],
+) -> CvIngestService:
+    return CvIngestService(
+        cv_uploads=SQLAlchemyCvUploadRepository(session),
+        ai_provider=ai_provider,
+        knowledge_graph=kg,
+    )
+
+
+def get_linkedin_ingest_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    kg: Annotated[KnowledgeGraphService, Depends(get_knowledge_graph_service)],
+) -> LinkedInIngestService:
+    return LinkedInIngestService(
+        snapshots=SQLAlchemyLinkedInSnapshotRepository(session),
+        files=SQLAlchemyUploadedFileRepository(session),
+        ai_provider=ai_provider,
+        knowledge_graph=kg,
     )
 
 
@@ -174,14 +220,6 @@ def get_auth_service(
 
 def get_job_service(session: SessionDep) -> JobService:
     return JobService(SQLAlchemyJobRepository(session))
-
-
-def get_ai_provider(settings: SettingsDep) -> AIProvider:
-    return build_ai_provider(settings)
-
-
-def get_embedding_provider(settings: SettingsDep) -> EmbeddingProvider:
-    return build_embedding_provider(settings)
 
 
 async def get_scoring_service(

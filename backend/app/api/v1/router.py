@@ -5,10 +5,14 @@ from app.api.v1.endpoints import (
     analytics,
     applications,
     auth,
+    certificates,
     confidence,
+    content_items,
+    cv_uploads,
     evidence,
     health,
     jobs,
+    linkedin,
     matches,
     personas,
     portfolio,
@@ -40,3 +44,7 @@ api_router.include_router(confidence.router)
 api_router.include_router(research.router)
 api_router.include_router(portfolio_story.router)
 api_router.include_router(personas.router)
+api_router.include_router(cv_uploads.router)
+api_router.include_router(linkedin.router)
+api_router.include_router(certificates.router)
+api_router.include_router(content_items.router)

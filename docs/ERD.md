@@ -41,6 +41,12 @@
   experience_achievements, project_achievements (n) ─── parent (1)  [Phase B]
 
   persona_archetypes (1) ─── personas (n) ─── users (1)             [Phase C]
+
+  uploaded_files (n) ─── users (1)                                  [Phase D]
+  cv_uploads (n) ─── users (1) ↔ personas (hint)                    [Phase D]
+  linkedin_snapshots (n) ─── users (1) → uploaded_files             [Phase D]
+  certificates (n) ─── users (1) → uploaded_files                   [Phase D]
+  content_items (n) ─── users (1)                                   [Phase D]
 ```
 
 ## Tables
@@ -202,6 +208,101 @@ carry *overrides* on top of archetype defaults — merged at read time by
 UNIQUE `(user_id, name)`. Partial UNIQUE
 `(user_id) WHERE is_default = true` — keeps the invariant cheap and queryable.
 Index `(user_id, is_archived)`.
+
+### uploaded_files *(Phase D)*
+Generic blob registry. Dedup is per-user via UNIQUE `(user_id, sha256)`.
+
+| column        | type                  | notes                                |
+|---------------|-----------------------|--------------------------------------|
+| id            | uuid PK               |                                      |
+| user_id       | uuid FK→users CASCADE |                                      |
+| filename      | text                  |                                      |
+| content_type  | text                  | MIME from the upload                 |
+| size_bytes    | bigint                |                                      |
+| storage_path  | text                  | local path (bind-mount volume)       |
+| sha256        | char(64)              | also used for dedup                  |
+| created_at    | timestamptz           |                                      |
+
+### cv_uploads *(Phase D)*
+A PDF / DOCX / pasted-text CV. The full pipeline lives in
+`CvIngestService`: text extraction → LLM structuring → graph ingest.
+`extracted_structure` holds the canonical structured JSON; `extracted_skills`
+is the flattened skill-name list for fast UI rendering. Dedup is by
+UNIQUE `(user_id, sha256)` — re-uploading the same file returns the
+existing row.
+
+| column              | type                                                | notes                                              |
+|---------------------|-----------------------------------------------------|----------------------------------------------------|
+| id                  | uuid PK                                             |                                                    |
+| user_id             | uuid FK→users CASCADE                               |                                                    |
+| persona_id          | uuid FK→personas SET NULL NULL                      | parsing hint; not a hard scoping boundary          |
+| filename            | text                                                |                                                    |
+| content_type        | text                                                |                                                    |
+| size_bytes          | bigint                                              |                                                    |
+| storage_path        | text NULL                                           | local blob path; NULL if write failed              |
+| sha256              | char(64)                                            |                                                    |
+| extracted_text      | text NULL                                           |                                                    |
+| parse_status        | enum(pending, parsing, parsed, failed)              | drives the UI's progress pill                      |
+| parse_error         | text NULL                                           | filled when parse_status = 'failed'                |
+| extracted_structure | jsonb                                               | `{summary, experiences[], skills[]}` shape         |
+| extracted_skills    | jsonb (array of strings)                            | flattened distinct skill names                     |
+| resume_id           | uuid FK→resumes SET NULL NULL                       | optional link to a derived Resume row              |
+| created_at          | timestamptz                                         |                                                    |
+| updated_at          | timestamptz                                         |                                                    |
+
+### linkedin_snapshots *(Phase D)*
+A parsed LinkedIn "Save to PDF" export. Same pipeline shape as `cv_uploads`
+but kept as its own table so future LinkedIn-specific structuring prompts
+can land cleanly. Blob is referenced from the generic `uploaded_files`
+registry.
+
+| column              | type                                          | notes                                |
+|---------------------|-----------------------------------------------|--------------------------------------|
+| id                  | uuid PK                                       |                                      |
+| user_id             | uuid FK→users CASCADE                         |                                      |
+| file_id             | uuid FK→uploaded_files SET NULL NULL          | references the source PDF blob       |
+| extracted_text      | text NULL                                     |                                      |
+| extracted_structure | jsonb                                         | same shape as cv_uploads             |
+| parse_status        | enum(pending, parsing, parsed, failed)        |                                      |
+| parse_error         | text NULL                                     |                                      |
+| parsed_at           | timestamptz NULL                              | set when parse_status transitions    |
+| created_at          | timestamptz                                   |                                      |
+
+### certificates *(Phase D)*
+Self-attested credentials (with optional credential URL / file).
+
+| column          | type                                          | notes                              |
+|-----------------|-----------------------------------------------|------------------------------------|
+| id              | uuid PK                                       |                                    |
+| user_id         | uuid FK→users CASCADE                         |                                    |
+| name            | text                                          | e.g. "AWS Solutions Architect"     |
+| issuer          | text                                          | e.g. "Amazon Web Services"         |
+| issued_date     | date NULL                                     |                                    |
+| expiry_date     | date NULL                                     |                                    |
+| credential_id   | text NULL                                     |                                    |
+| credential_url  | text NULL                                     | verification link                  |
+| file_id         | uuid FK→uploaded_files SET NULL NULL          | optional certificate PDF           |
+| created_at      | timestamptz                                   |                                    |
+| updated_at      | timestamptz                                   |                                    |
+
+### content_items *(Phase D)*
+Published artefacts that signal expertise — blog posts, talks, papers,
+open-source projects. URL-only entries are fine; `raw_text` is optional
+and reserved for future analysis (Phase G market-aware recommendations
+will use it to detect declared expertise areas).
+
+| column          | type                                                          | notes                          |
+|-----------------|---------------------------------------------------------------|--------------------------------|
+| id              | uuid PK                                                       |                                |
+| user_id         | uuid FK→users CASCADE                                         |                                |
+| type            | enum(blog_post, talk, paper, open_source)                     |                                |
+| title           | text                                                          |                                |
+| url             | text NULL                                                     |                                |
+| published_date  | date NULL                                                     |                                |
+| summary         | text NULL                                                     | 1-2 sentences                  |
+| raw_text        | text NULL                                                     | optional full body             |
+| created_at      | timestamptz                                                   |                                |
+| updated_at      | timestamptz                                                   |                                |
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.

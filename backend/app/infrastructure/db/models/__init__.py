@@ -11,6 +11,13 @@ from app.infrastructure.db.models.experience import (
     ExperienceAchievement,
     ExperienceSkill,
 )
+from app.infrastructure.db.models.ingestion import (
+    Certificate,
+    ContentItem,
+    CvUpload,
+    LinkedInSnapshot,
+    UploadedFile,
+)
 from app.infrastructure.db.models.job import Job, JobSkill
 from app.infrastructure.db.models.job_analysis import JobAnalysis
 from app.infrastructure.db.models.opportunity_score import OpportunityScore
@@ -34,12 +41,17 @@ __all__ = [
     "Application",
     "ApplicationHistory",
     "ApplicationPortfolio",
+    "Certificate",
     "Client",
+    "ContentItem",
+    "CvUpload",
     "EmailOtpCode",
     "Embedding",
     "Experience",
     "ExperienceAchievement",
     "ExperienceSkill",
+    "LinkedInSnapshot",
+    "UploadedFile",
     "Job",
     "JobAnalysis",
     "JobSkill",

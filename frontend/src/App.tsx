@@ -18,6 +18,7 @@ import { OnboardingPage } from "@/pages/Onboarding";
 import { PersonaNewPage } from "@/pages/PersonaNew";
 import { PersonasPage } from "@/pages/Personas";
 import { PlaceholderPage } from "@/pages/Placeholder";
+import { SourcesPage } from "@/pages/Sources";
 import { PortfolioPage } from "@/pages/Portfolio";
 import { PortfolioFormPage } from "@/pages/PortfolioForm";
 import { RegisterPage } from "@/pages/Register";
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="/applications/:id" element={<ApplicationDetailPage />} />
             <Route path="/personas" element={<PersonasPage />} />
             <Route path="/personas/new" element={<PersonaNewPage />} />
+            <Route path="/sources" element={<SourcesPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" phase="Phase 10" />} />
           </Route>

@@ -214,6 +214,80 @@ Frontend:
 - `auth.ts` (Zustand) gains `activePersonaId` — mirrored from the
   server-resolved default so other components can read it synchronously.
 
+## Source ingestion (Phase D)
+
+The knowledge graph grows beyond the Phase B portfolios/repos backfill via
+four ingest paths: CV uploads, LinkedIn PDF exports, certificates, and
+content items.
+
+The pipeline shared by CV + LinkedIn:
+
+```
+upload bytes
+  → sha256 (dedup vs existing row)
+  → text extraction (pdfminer.six for PDF, python-docx for DOCX,
+                     passthrough for paste)
+  → INSERT row with parse_status='parsing'
+  → LLM structuring (CvStructuredPayload — Pydantic-validated JSON
+                     with experiences[], skills[], summary)
+  → KnowledgeGraphService.ingest_from_cv()
+       · resolve each skill via SkillCatalogService (auto-creates
+         unknown skills with is_system_seeded=false)
+       · UPSERT user_skills with sources={cv_upload_ids:[<id>]}
+       · INSERT experiences (dedup on lower(company)+lower(role)+start_date)
+       · INSERT experience_skills + experience_achievements
+  → UPDATE row parse_status='parsed', persist extracted_structure +
+    extracted_skills JSONB
+```
+
+Key services in `app/application/services/`:
+
+- **`text_extraction.py`** — pure functions over bytes. Raises
+  `TextExtractionError` for image-only PDFs / unsupported types, so
+  callers can surface a human-readable failure on the upload row.
+- **`cv_structuring.py`** — Pydantic schema (`CvStructuredPayload`) +
+  system prompt + `structure_cv(ai_provider, text)`. Re-used by CV and
+  LinkedIn ingest. Truncates input to ~12 K chars to bound prompt cost.
+  Routes through the existing `AIProvider` port — the mock provider
+  recognizes the `CV_INGEST_MARKER` and returns a heuristic structured
+  payload so dev / offline runs exercise the full pipeline.
+- **`CvIngestService`** — accepts (user_id, persona_id?, filename,
+  content_type, bytes). Idempotent on re-upload. Persists the blob to
+  `var/uploads/<sha256>` (bind-mount volume — survives container
+  restarts). On any failure (extraction, structuring, graph ingest)
+  flips the row to `parse_status='failed'` with a human-readable
+  `parse_error`, preserving everything that did succeed.
+- **`LinkedInIngestService`** — same shape, writes to
+  `linkedin_snapshots`, references blob via the generic `uploaded_files`
+  registry for cross-feature dedup.
+- **`KnowledgeGraphService.ingest_from_cv()`** (extended) — when an
+  `ExperienceRepository` is wired in, writes experiences and
+  experience-level skills; otherwise falls back to skills-only ingest
+  (used by tests that don't need the full graph).
+
+CRUD-only surfaces:
+
+- **Certificates** — manual add via `SQLAlchemyCertificateRepository`;
+  optional `file_id` → uploaded_files attachment lands in Phase D.1.
+- **Content items** — manual add; blog/talk/paper/open_source URL +
+  title + summary. Future phases can fetch + parse content for richer
+  signals.
+
+API surface (all under `/api/v1`):
+- `GET /cv-uploads`, `POST /cv-uploads` (multipart), `POST /cv-uploads/paste`.
+- `GET /linkedin`, `POST /linkedin/import` (multipart PDF).
+- `GET /certificates`, `POST /certificates`, `PATCH /certificates/{id}`,
+  `DELETE /certificates/{id}`.
+- `GET /content-items`, `POST /content-items`, `PATCH /content-items/{id}`,
+  `DELETE /content-items/{id}`.
+
+Frontend:
+- `/sources` page — unified entry point for all four ingest paths,
+  card-per-source layout, paste-or-upload toggle for CVs.
+- Onboarding "Upload CV" card now routes to `/sources` (the placeholder
+  is gone).
+- Sidebar entry "Sources" beside Personas.
+
 ## AI Provider Abstraction
 
 ```python

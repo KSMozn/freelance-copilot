@@ -35,9 +35,9 @@ export function OnboardingPage() {
           <SourceCard
             icon={<FileUp className="h-6 w-6" />}
             title="Upload your CV"
-            description="PDF, DOCX, or paste plain text. We'll extract experiences, skills, and projects."
-            badge="Coming in next update"
-            disabled
+            description="PDF, DOCX, or paste plain text. We'll extract experiences, skills, and projects into your graph."
+            cta="Upload CV"
+            onClick={() => navigate("/sources")}
           />
           <SourceCard
             icon={<Github className="h-6 w-6" />}

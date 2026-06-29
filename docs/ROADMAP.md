@@ -405,14 +405,72 @@ scoring-engine code change.
 
 ---
 
-## Phase D — Source ingestion (CV + LinkedIn + certificates + content) *(next)*
+## Phase D — Source ingestion (CV + LinkedIn + certificates + content) ✅
 
-Activates the wide ingest paths so the knowledge graph grows beyond the
-existing portfolios/repos backfill. Adds `cv_uploads`, `linkedin_snapshots`,
-`certificates`, `content_items`, `uploaded_files` tables; `CvIngestService`
-(pdfminer.six + python-docx + paste); `LinkedInIngestService`;
-`CertificateService`. The "one thing" onboarding card stops being a
-placeholder.
+**Goal:** the knowledge graph grows beyond the Phase B portfolios/repos
+backfill via four ingest paths. The "one thing" onboarding card stops
+being a placeholder.
+
+- Migration `0023_phase_d_ingestion` adds `uploaded_files` (generic blob
+  registry with UNIQUE per-user sha dedup), `cv_uploads`,
+  `linkedin_snapshots`, `certificates`, `content_items`.
+- Added backend deps `pdfminer.six` (PDF) + `python-docx` (DOCX).
+- Pipeline (`CvIngestService`):
+  upload bytes → sha256 dedup → text extraction
+  (pdfminer.six / python-docx / paste passthrough) → INSERT
+  `parse_status='parsing'` → LLM-structure via `structure_cv()`
+  (Pydantic-validated JSON shape) → `KnowledgeGraphService.ingest_from_cv`
+  (auto-creates skills, upserts user_skills with `cv_upload_ids`
+  provenance, INSERTs experiences with dedup on lower(company)+role+start)
+  → UPDATE `parse_status='parsed'` with the structured JSON +
+  flattened skill list. On any failure, the row flips to `failed` with a
+  human-readable `parse_error` so the UI can show what went wrong.
+- Services:
+  - `text_extraction.py` — pure PDF/DOCX/text extractor. Raises
+    `TextExtractionError` for image-only PDFs / unsupported types.
+  - `cv_structuring.py` — Pydantic schema + system prompt + LLM
+    structuring call. Truncates input to ~12 K chars. Mock provider
+    recognizes `CV_INGEST_MARKER` and returns a heuristic deterministic
+    structured payload (companies + roles via regex; skills via known-set
+    matcher) so dev / offline runs exercise the full pipeline.
+  - `CvIngestService`, `LinkedInIngestService` — orchestrators. Persist
+    blobs under `var/uploads/<sha256>` (bind-mount volume → survives
+    container restarts).
+  - `KnowledgeGraphService.ingest_from_cv()` — extended to write
+    experiences + experience_skills + experience_achievements via the
+    new `ExperienceRepository`. Backwards compatible: callers that pass
+    no experience repo fall back to skills-only ingest.
+  - `SkillCatalogService` (Phase B) is the single funnel for skill
+    normalization — every CV skill string flows through slug → alias →
+    fuzzy trigram before landing in the catalog + pot.
+- API (`/api/v1`):
+  - `GET /cv-uploads`, `POST /cv-uploads` (multipart), `POST /cv-uploads/paste`.
+  - `GET /linkedin`, `POST /linkedin/import` (multipart PDF).
+  - `GET /certificates`, `POST /`, `PATCH /{id}`, `DELETE /{id}`.
+  - `GET /content-items`, `POST /`, `PATCH /{id}`, `DELETE /{id}`.
+- Frontend:
+  - `/sources` page — unified surface for all four ingest paths.
+    Card-per-source layout. CVs offer paste-or-upload. Status badges
+    (pending / parsing / parsed / failed) per upload row.
+  - Onboarding "Upload CV" card now routes to `/sources` (was a stub).
+  - Sidebar entry "Sources" beside Personas.
+
+**Exit:** pasted-CV smoke test on the demo user produces 2 experiences +
+10 user_skills rows with `sources.cv_upload_ids` populated. Backend boots
+clean through 0023; existing test suite stays green (197/197 of the
+meaningful tests). Files persist across container restarts via the
+backend bind-mount.
+
+---
+
+## Phase E — Persona-aware match report + gap recommendations *(next)*
+
+Wires the persona's effective profile into a new `match_reports` table
+that captures `technical_fit`, `architecture_fit`, `domain_fit`,
+`leadership_fit`, `soft_skills_fit`, `missing_critical_skills`, and
+**actionable gap recommendations** (projects to build / certs to earn /
+learning resources / GitHub enhancements). Job detail page gains the new
+Match Report card.
 
 ---
 

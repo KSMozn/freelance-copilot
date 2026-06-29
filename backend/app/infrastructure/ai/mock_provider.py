@@ -253,6 +253,10 @@ PROPOSAL_MARKER = "--- PROPOSAL ASSIGNMENT ---"
 STAR_MARKER = "--- STAR STORY ASSIGNMENT ---"
 RESEARCH_MARKER = "--- COMPANY RESEARCH ASSIGNMENT ---"
 PORTFOLIO_STORY_MARKER = "--- PORTFOLIO STORY ASSIGNMENT ---"
+# Phase D — surfaced from app.application.services.cv_structuring. Kept as a
+# duplicate literal here to avoid importing application-layer code from the
+# infrastructure layer.
+CV_INGEST_MARKER = "CV_INGEST_MARKER"
 
 
 def _build_portfolio_story_payload(user_prompt: str) -> dict[str, Any]:
@@ -442,6 +446,8 @@ class MockAIProvider:
             data = _build_star_payload(user_prompt)
         elif PROPOSAL_MARKER in user_prompt:
             data = _build_proposal_payload(user_prompt)
+        elif CV_INGEST_MARKER in user_prompt:
+            data = _build_cv_ingest_payload(user_prompt)
         else:
             data = _build_analyzer_payload(user_prompt)
         return AIRawResponse(data=data, provider=self.name, model=self.model)
@@ -938,3 +944,115 @@ def _parse_budget(budget: str) -> tuple[float | None, float | None]:
     if len(numbers) == 1:
         return numbers[0], numbers[0]
     return min(numbers), max(numbers)
+
+
+# ----------------------- Phase D — CV structuring -----------------------
+
+
+def _build_cv_ingest_payload(user_prompt: str) -> dict[str, Any]:
+    """Heuristic CV → structured-JSON for dev / offline runs.
+
+    Detects experience blocks via simple ``Company`` / ``Role`` / date
+    patterns. Doesn't try to be clever — the real extraction happens with a
+    real LLM in production; this just gives us a deterministic shape so the
+    CvIngestService + KG ingest path is exercisable without network calls.
+    """
+    text = user_prompt
+    # Strip the marker preamble so we don't pick "CV" out of it.
+    text = text.split("\n\n", 2)[-1] if "\n\n" in text else text
+
+    skills = _extract_skills_from_text(text)
+    experiences = _extract_experiences_from_text(text)
+
+    summary = ""
+    for line in text.splitlines():
+        stripped = line.strip()
+        if 60 < len(stripped) < 300 and stripped.endswith(("." , "!", "?")):
+            summary = stripped
+            break
+
+    return {
+        "summary": summary or "Experienced engineer.",
+        "experiences": experiences,
+        "skills": skills,
+    }
+
+
+_KNOWN_SKILLS = {
+    "Python", "TypeScript", "JavaScript", "Go", "Rust", "Java", "Kotlin",
+    "FastAPI", "Django", "Flask", "Express", "NestJS", "Next.js", "React",
+    "Vue", "Angular", "Svelte", "Spring", "Rails", "Laravel",
+    "PostgreSQL", "MySQL", "MongoDB", "Redis", "Elasticsearch", "ClickHouse",
+    "Cassandra", "DynamoDB", "Neo4j", "pgvector",
+    "AWS", "GCP", "Azure", "Kubernetes", "Docker", "Vercel", "Cloudflare",
+    "Terraform", "GraphQL", "REST", "gRPC", "Kafka", "RabbitMQ", "Celery",
+    "OpenAI", "Anthropic", "RAG", "LangChain", "PyTorch", "TensorFlow",
+    "System Design", "Microservices", "Domain-Driven Design", "CI/CD",
+    "Mentoring", "Team Leadership", "Communication",
+}
+
+
+def _extract_skills_from_text(text: str) -> list[str]:
+    """Pick up known skill names case-insensitively, preserving canonical case."""
+    lower = text.lower()
+    hits: list[str] = []
+    for skill in _KNOWN_SKILLS:
+        if skill.lower() in lower and skill not in hits:
+            hits.append(skill)
+    return hits
+
+
+# Capture lines that look like "Company — Role (2021–2023)" or
+# "Role at Company, 2021–present".
+_EXP_PATTERNS = [
+    re.compile(
+        r"^(?P<company>[A-Z][\w &.,'-]{1,60})\s*[—\-–]\s*(?P<role>[\w &.,'/-]{2,80})"
+        r"\s*\((?P<start>\d{4})\s*[-–—]\s*(?P<end>\d{4}|present|current)\)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^(?P<role>[\w &.,'/-]{2,80})\s+at\s+(?P<company>[A-Z][\w &.,'-]{1,60})"
+        r"\s*,?\s*(?P<start>\d{4})\s*[-–—]\s*(?P<end>\d{4}|present|current)",
+        re.IGNORECASE,
+    ),
+]
+
+
+def _extract_experiences_from_text(text: str) -> list[dict[str, Any]]:
+    seen: set[tuple[str, str]] = set()
+    experiences: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or len(stripped) > 200:
+            continue
+        for pattern in _EXP_PATTERNS:
+            m = pattern.search(stripped)
+            if not m:
+                continue
+            company = m.group("company").strip()
+            role = m.group("role").strip()
+            start = m.group("start")
+            end_raw = m.group("end")
+            key = (company.lower(), role.lower())
+            if key in seen:
+                continue
+            seen.add(key)
+            experiences.append(
+                {
+                    "company": company,
+                    "role": role,
+                    "location": None,
+                    "employment_type": None,
+                    "start_date": f"{start}-01-01" if start.isdigit() else None,
+                    "end_date": (
+                        f"{end_raw}-12-31"
+                        if end_raw.isdigit()
+                        else None
+                    ),
+                    "summary": None,
+                    "skills": _extract_skills_from_text(stripped),
+                    "achievements": [],
+                }
+            )
+            break
+    return experiences
