@@ -13,6 +13,7 @@ import { JobCreatePage } from "@/pages/JobCreate";
 import { JobDetailPage } from "@/pages/JobDetail";
 import { JobImportPage } from "@/pages/JobImport";
 import { JobsPage } from "@/pages/Jobs";
+import { CareerFitnessPage } from "@/pages/CareerFitness";
 import { LoginPage } from "@/pages/Login";
 import { OnboardingPage } from "@/pages/Onboarding";
 import { PersonaNewPage } from "@/pages/PersonaNew";
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/personas" element={<PersonasPage />} />
             <Route path="/personas/new" element={<PersonaNewPage />} />
             <Route path="/sources" element={<SourcesPage />} />
+            <Route path="/career-fitness" element={<CareerFitnessPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" phase="Phase 10" />} />
           </Route>

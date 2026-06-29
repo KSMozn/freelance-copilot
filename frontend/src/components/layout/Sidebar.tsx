@@ -1,4 +1,4 @@
-import { BarChart3, Briefcase, FileText, FolderGit2, Github, LayoutDashboard, Sparkles, Settings, UserCog } from "lucide-react";
+import { BarChart3, Briefcase, FileText, FolderGit2, Github, Heart, LayoutDashboard, Sparkles, Settings, UserCog } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/jobs", label: "Jobs", icon: Briefcase },
+  { to: "/career-fitness", label: "Career Fitness", icon: Heart },
   { to: "/personas", label: "Personas", icon: UserCog },
   { to: "/sources", label: "Sources", icon: Sparkles },
   { to: "/portfolio", label: "Portfolio", icon: FolderGit2 },

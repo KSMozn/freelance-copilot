@@ -16,6 +16,11 @@ from app.application.services.gap_recommendation_service import (
 )
 from app.application.services.knowledge_graph_service import KnowledgeGraphService
 from app.application.services.linkedin_ingest_service import LinkedInIngestService
+from app.application.services.career_fitness_service import (
+    CareerFitness,
+    CareerFitnessService,
+)
+from app.application.services.market_signal_service import MarketSignalService
 from app.application.services.match_report_service import MatchReportService
 from app.application.services.output_generation_service import (
     OutputGenerationService,
@@ -546,6 +551,75 @@ def get_output_generation_service(
         experiences=SQLAlchemyExperienceRepository(session),
         citations=citations,
     )
+
+
+def get_market_signal_service() -> MarketSignalService:
+    return MarketSignalService()
+
+
+def get_career_fitness_service(
+    market: Annotated[MarketSignalService, Depends(get_market_signal_service)],
+) -> CareerFitnessService:
+    return CareerFitnessService(market=market)
+
+
+async def get_career_fitness_assembler(
+    session: SessionDep,
+    service: Annotated[
+        CareerFitnessService, Depends(get_career_fitness_service)
+    ],
+):
+    """Return a callable ``(user_id) -> CareerFitness`` bundling repo reads.
+
+    Saves the endpoint from threading six repos through its signature;
+    keeps the heavy lifting in one place so future caching / pagination
+    has one seam to grow at.
+    """
+    from app.infrastructure.db.repositories.sqlalchemy_match_report_repository import (
+        SQLAlchemyMatchReportRepository as _Reports,
+    )
+
+    analysis_repo = SQLAlchemyJobAnalysisRepository(session)
+    application_repo = SQLAlchemyApplicationRepository(session)
+    match_repo = _Reports(session)
+    repository_store = SQLAlchemyRepositoryStore(session)
+    user_skill_repo = SQLAlchemyUserSkillRepository(session)
+    catalog_repo = SQLAlchemySkillCatalogRepository(session)
+
+    async def _assemble(user_id) -> CareerFitness:
+        analyses = await analysis_repo.list_for_user(user_id)
+        # `list_for_analytics` returns a plain list without pagination —
+        # exactly the shape we want for the dashboard aggregation.
+        applications = await application_repo.list_for_analytics(user_id)
+
+        # match_repo doesn't have a list-by-user (only by job). We
+        # aggregate by iterating the user's analyses' jobs.
+        match_reports = []
+        for a in analyses:
+            match_reports.extend(
+                await match_repo.list_for_job(user_id=user_id, job_id=a.job_id)
+            )
+        repositories = await repository_store.list_all_for_user(user_id)
+        user_skills = await user_skill_repo.list_for_user(user_id)
+
+        # Hydrate catalog rows we need so the service stays free of DB IO.
+        catalog_by_id = {}
+        for row in user_skills:
+            entry = await catalog_repo.get_by_id(row.skill_id)
+            if entry is not None:
+                catalog_by_id[row.skill_id] = entry
+
+        return service.compose(
+            user_id=user_id,
+            analyses=analyses,
+            applications=applications,
+            match_reports=match_reports,
+            repositories=repositories,
+            user_skills=user_skills,
+            catalog_by_id=catalog_by_id,
+        )
+
+    return _assemble
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

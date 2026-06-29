@@ -406,6 +406,46 @@ Frontend:
   actions. `activePersonaId` flows through to the generator — switching
   personas re-tones future outputs without invalidating past ones.
 
+## Market signals + Career Fitness (Phase G)
+
+Phase G turns the user's accumulating job-analysis + application +
+match-report data into a continuous market-awareness signal. **No new
+tables** — everything is derived on demand from existing rows, so the
+dashboard stays as fresh as the underlying data.
+
+`MarketSignalService` (pure):
+- `skill_demand` — every skill cited across the user's `job_analyses`,
+  weighted required (1.0) vs preferred (0.5).
+- `domain_demand` — count per `business_domain`.
+- `feedback` — win-weighted application outcomes. Won/completed → +3
+  per cited skill; interview → +1; rejected/withdrawn → -1. Net
+  positive shows "what gets you hired"; negatives flag skills that
+  show up but don't convert.
+- `recurring_gaps` — skills that appear as `missing_critical_skills`
+  across multiple `match_reports`.
+
+`CareerFitnessService` (composes signals + user state):
+- `market_skills` — join market demand with the user's `user_skills`
+  pot to mark each skill "you have at proficiency N" vs "missing."
+- `top_gaps` — skills where the user lacks proficiency ≥ 3. Severity
+  scales with market weight, capped at 5.
+- `repo_suggestions` — for each scanned repo, if its `derived_skills()`
+  overlap with in-demand market skills AND its `architecture_summary`
+  is under 240 chars, suggest expanding the README around those
+  specific skills. Surfaces "you already demonstrate X — make the
+  README say so."
+
+API: `GET /career-fitness` returns the whole composed payload in one
+query.
+
+Frontend:
+- `/career-fitness` route with seven cards: Top gaps · Market demand ·
+  Application feedback (positive/negative split) · Recurring critical
+  gaps · Business domain demand · Repo README suggestions. One HTTP
+  call, 5-minute `staleTime`.
+- Sidebar entry "Career Fitness" sits beside "Jobs" since it's the
+  cross-job aggregate view.
+
 ## AI Provider Abstraction
 
 ```python

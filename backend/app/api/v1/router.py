@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     analytics,
     applications,
     auth,
+    career_fitness,
     certificates,
     confidence,
     content_items,
@@ -52,3 +53,4 @@ api_router.include_router(certificates.router)
 api_router.include_router(content_items.router)
 api_router.include_router(match_reports.router)
 api_router.include_router(outputs.router)
+api_router.include_router(career_fitness.router)

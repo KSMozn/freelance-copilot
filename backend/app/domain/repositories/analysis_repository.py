@@ -7,6 +7,13 @@ from app.domain.entities.analysis import JobAnalysis, OpportunityScore, RiskItem
 class JobAnalysisRepository(Protocol):
     async def get_by_job_id(self, job_id: UUID) -> JobAnalysis | None: ...
 
+    async def list_for_user(self, user_id: UUID) -> list[JobAnalysis]:
+        """All analyses owned (transitively, via jobs.user_id) by ``user_id``.
+
+        Phase G aggregates across this list to compute market-demand signals.
+        """
+        ...
+
     async def upsert(
         self,
         *,

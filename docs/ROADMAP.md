@@ -560,12 +560,53 @@ citations to user_skills / experiences. Existing test suite stays green
 
 ---
 
-## Phase G — Market-aware recommendations + Career Fitness dashboard *(next)*
+## Phase G — Market-aware recommendations + Career Fitness dashboard ✅
 
-`MarketSignalService` ranks skill demand across the user's analyzed-job
-corpus. New `/career-fitness` dashboard surfaces skill-gap-vs-market,
-GitHub README suggestions, and portfolio gaps. Successful-application
-feedback weights up the skills they emphasized.
+**Goal:** turn the user's accumulating data (job analyses + applications
++ match reports + repos + skill pot) into a continuous market-awareness
+signal, surfaced in a single dashboard. Compute-on-demand — no new
+tables.
+
+- Domain repo extension: `JobAnalysisRepository.list_for_user(user_id)`
+  joins through `jobs.user_id` to fetch the user's entire analyzed
+  corpus in one query.
+- Services:
+  - `MarketSignalService` — pure aggregator. Outputs:
+    - `skill_demand` (weighted required 1.0 / preferred 0.5)
+    - `domain_demand` (count per business_domain)
+    - `feedback` (win-weighted by application outcome — won/completed
+      +3, interview +1, rejected/withdrawn -1)
+    - `recurring_gaps` (skills missing across multiple match_reports,
+      with average importance)
+  - `CareerFitnessService` — composes the market signals with the
+    user's `user_skills` pot + scanned repos to produce:
+    - `market_skills` (every demand row marked "you have at P_n" vs
+      "missing")
+    - `top_gaps` (severity-scaled by market weight)
+    - `repo_suggestions` (repos whose `derived_skills()` overlap with
+      market demand but whose README is thin — actionable nudges)
+- API: `GET /career-fitness` returns the full composed payload.
+- Frontend: `/career-fitness` route with seven cards (Top gaps, Market
+  demand, Application feedback split positive/negative, Recurring
+  critical gaps, Business domain demand, Repo README suggestions).
+  Sidebar entry "Career Fitness" sits next to "Jobs."
+
+**Exit:** the demo user's `/career-fitness` returns real signals — 18
+jobs analyzed, 12 applications, Python at demand=8 (in pot, prof 5),
+"AI" flagged as severity-2 gap, Docker leading the feedback loop with
+score=15 from won applications, 1 repo suggestion (industrial-water-ops-
+platform's README could call out its in-demand skills). Existing test
+suite stays green (197/197).
+
+---
+
+## Phase H — Application Tracker extensions *(next)*
+
+Recruiter interactions thread, interview events timeline, follow-up
+reminders. Application detail page rebuild. Migration `0033` adds
+`recruiter_interactions`, `interview_events`, `follow_up_reminders`
+tables; applications gains `resume_output_id` + `cover_letter_output_id`
+FKs to outputs so "which version did I send?" is one read.
 
 ---
 

@@ -92,6 +92,18 @@ class SQLAlchemyJobAnalysisRepository:
         row = (await self._session.execute(stmt)).scalar_one_or_none()
         return _analysis_to_domain(row) if row else None
 
+    async def list_for_user(self, user_id: UUID) -> list[DomainAnalysis]:
+        from app.infrastructure.db.models.job import Job
+
+        stmt = (
+            select(AnalysisModel)
+            .join(Job, Job.id == AnalysisModel.job_id)
+            .where(Job.user_id == user_id)
+            .order_by(AnalysisModel.created_at.desc())
+        )
+        rows = (await self._session.execute(stmt)).scalars().all()
+        return [_analysis_to_domain(r) for r in rows]
+
     async def upsert(
         self,
         *,
