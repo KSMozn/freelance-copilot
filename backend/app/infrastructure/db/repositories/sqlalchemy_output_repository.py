@@ -4,9 +4,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.entities.output import Citation
+from app.domain.entities.output import Citation, OutputKind
 from app.domain.entities.output import Output as DomainOutput
-from app.domain.entities.output import OutputKind
 from app.infrastructure.db.models.output import Output
 
 

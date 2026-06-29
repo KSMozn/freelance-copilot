@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
@@ -6,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.repository import (
     Repository as DomainRepository,
+)
+from app.domain.entities.repository import (
     StarStory,
 )
 from app.infrastructure.db.models.repository import Repository as RepositoryModel

@@ -22,15 +22,14 @@ the dashboard becomes hot.
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 from uuid import UUID
 
 from app.domain.analytics.definitions import LOST_STATUSES, WON_STATUSES
-from app.domain.entities.application import Application
 from app.domain.entities.analysis import JobAnalysis
+from app.domain.entities.application import Application
 from app.domain.entities.match_report import MatchReport
-
 
 # Required skills carry more weight than preferred. Weights are normalized
 # so the dashboard's "demand counter" stays interpretable.

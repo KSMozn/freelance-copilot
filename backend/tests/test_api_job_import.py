@@ -15,7 +15,6 @@ from app.infrastructure.ai.mock_provider import MockAIProvider
 from app.main import app
 from tests.factories import FakeJobRepository
 
-
 _TINY_PNG = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
     b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\x00\x01"
@@ -43,7 +42,9 @@ def client(user: User):  # type: ignore[no-untyped-def]
     repo = FakeJobRepository()
 
     async def _create(**kw):  # type: ignore[no-untyped-def]
-        from datetime import UTC, datetime as dt
+        from datetime import UTC
+        from datetime import datetime as dt
+
         from app.domain.entities.job import Job
         now = dt.now(UTC)
         job = Job(

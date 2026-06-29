@@ -6,13 +6,17 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.application import (
-    Application as DomainApplication,
+    TERMINAL_STATUSES,
     ApplicationHistoryEntry,
     ApplicationStatus,
-    TERMINAL_STATUSES,
+)
+from app.domain.entities.application import (
+    Application as DomainApplication,
 )
 from app.infrastructure.db.models.application import (
     Application as ApplicationModel,
+)
+from app.infrastructure.db.models.application import (
     ApplicationHistory as ApplicationHistoryModel,
 )
 from app.infrastructure.db.models.job import Job as JobModel

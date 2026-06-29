@@ -393,7 +393,7 @@ export function ApplicationDetailPage() {
         </CardContent>
       </Card>
 
-      <ApplicationActivityCard applicationId={application.id} />
+      <ApplicationActivityCard applicationId={app.id} />
     </div>
   );
 }

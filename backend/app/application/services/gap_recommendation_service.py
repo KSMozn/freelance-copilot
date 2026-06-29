@@ -18,8 +18,7 @@ Output is a list of :class:`GapRecommendation` objects, ordered by priority
 """
 from __future__ import annotations
 
-from app.domain.entities.match_report import GapRecommendation, RecommendationKind
-
+from app.domain.entities.match_report import GapRecommendation
 
 # Per-skill canned recommendations. Keyed by lowercase canonical name; falls
 # back to a generic "learn it" prompt for anything we don't have rules for.

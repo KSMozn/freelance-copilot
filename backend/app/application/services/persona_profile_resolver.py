@@ -16,7 +16,6 @@ from app.domain.repositories.persona_repository import (
 from app.domain.repositories.skill_catalog_repository import SkillCatalogRepository
 from app.domain.repositories.user_skill_repository import UserSkillRepository
 
-
 # Categories that contribute to "strong skills" (technical-fit signal).
 _SKILL_CATEGORIES = {
     "language",

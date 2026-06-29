@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.application.services.proposal_prompts import BANNED_PHRASES

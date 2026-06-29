@@ -41,7 +41,10 @@ export function useCreateResume() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: ResumeCreate): Promise<Resume> => {
-      const { data } = await api.post<Resume>("/resumes", _strip(payload));
+      const { data } = await api.post<Resume>(
+        "/resumes",
+        _strip(payload as unknown as Record<string, unknown>),
+      );
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["resumes"] }),

@@ -3,13 +3,16 @@ from uuid import UUID
 
 from sqlalchemy import (
     Enum as SAEnum,
+)
+from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.db.base import Base, TimestampMixin, UUIDPKMixin

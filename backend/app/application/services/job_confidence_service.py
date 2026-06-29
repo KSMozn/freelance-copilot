@@ -22,7 +22,6 @@ from app.application.services.repository_matching_service import (
     RepositoryMatchingService,
 )
 from app.application.services.skill_evidence_service import SkillEvidenceService
-from app.domain.exceptions import NotFoundError
 from app.domain.repositories.analysis_repository import OpportunityScoreRepository
 
 DEFAULT_IMPORTANCE = 3  # used when evidence has no importance attached

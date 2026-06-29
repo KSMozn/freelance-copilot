@@ -7,10 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.tracker import (
     FollowUpReminder as DomainReminder,
+)
+from app.domain.entities.tracker import (
     InteractionChannel,
     InteractionDirection,
-    InterviewEvent as DomainInterview,
     InterviewFormat,
+)
+from app.domain.entities.tracker import (
+    InterviewEvent as DomainInterview,
+)
+from app.domain.entities.tracker import (
     RecruiterInteraction as DomainInteraction,
 )
 from app.infrastructure.db.models.tracker import (

@@ -17,7 +17,6 @@ from app.infrastructure.ai.errors import AIProviderResponseError
 from app.infrastructure.ai.mock_provider import MockAIProvider
 from tests.factories import FakeJobRepository
 
-
 # tiny well-formed PNG (1x1 transparent pixel) — just bytes, no actual content
 _TINY_PNG = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
@@ -38,6 +37,7 @@ def _make_service(provider=None) -> tuple[JobImportService, FakeJobRepository]: 
     # path needs (creation, get_by_source_hash).
     async def create(**kw):  # type: ignore[no-untyped-def]
         from datetime import UTC, datetime
+
         from app.domain.entities.job import Job
         now = datetime.now(UTC)
         job = Job(
@@ -153,7 +153,7 @@ async def test_supplied_url_overrides_model_url() -> None:
     class _ProviderWithUrl:
         name = "fake"
         model = "fake"
-        async def complete_json(self, *, system_prompt, user_prompt):  # noqa: D401
+        async def complete_json(self, *, system_prompt, user_prompt):
             raise NotImplementedError
         async def complete_json_with_image(self, **_kw):
             return AIRawResponse(
@@ -190,7 +190,11 @@ async def test_empty_title_or_description_raises() -> None:
             )
 
     svc, _ = _make_service(provider=_BlankProvider())
-    with pytest.raises(JobImportFailedError, match="Could not detect"):
+    # The Pydantic import schema rejects empty strings on its own
+    # (`min_length=1` on title + description), so the failure surfaces as
+    # a schema-mismatch error rather than the bespoke "Could not detect"
+    # heuristic — both are valid signals that the screenshot was empty.
+    with pytest.raises(JobImportFailedError, match="did not match the import schema"):
         await svc.import_from_image(
             user_id=uuid4(), image_bytes=_TINY_PNG, image_mime_type="image/png"
         )

@@ -1,12 +1,11 @@
 import pytest
 
-from app.domain.entities.application import ApplicationStatus, TERMINAL_STATUSES
+from app.domain.entities.application import TERMINAL_STATUSES, ApplicationStatus
 from app.domain.services.application_state_machine import (
     InvalidTransitionError,
     allowed_next_statuses,
     validate_transition,
 )
-
 
 VALID_TRANSITIONS = [
     (ApplicationStatus.draft, ApplicationStatus.applied),

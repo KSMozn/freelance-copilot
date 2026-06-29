@@ -22,7 +22,6 @@ from app.infrastructure.db.models.ingestion import (
     UploadedFile,
 )
 
-
 # ---- to-domain converters ------------------------------------------------
 
 
@@ -288,7 +287,8 @@ class SQLAlchemyLinkedInSnapshotRepository:
             row.parse_error = parse_error
         if extracted_structure is not None:
             row.extracted_structure = extracted_structure
-        from datetime import UTC, datetime as _dt
+        from datetime import UTC
+        from datetime import datetime as _dt
         row.parsed_at = _dt.now(UTC)
         await self._session.flush()
         await self._session.refresh(row)

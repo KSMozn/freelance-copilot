@@ -1,6 +1,5 @@
 from uuid import uuid4
 
-from app.application.dto.analysis_dto import ScoreBreakdown
 from app.application.dto.portfolio_dto import PortfolioMatch, PortfolioMatchesResponse
 from app.application.dto.resume_dto import (
     ResumeRecommendation,
@@ -12,7 +11,11 @@ from app.application.services.proposal_context import (
 )
 from app.domain.entities.analysis import (
     JobAnalysis as DomainAnalysis,
+)
+from app.domain.entities.analysis import (
     OpportunityScore as DomainScore,
+)
+from app.domain.entities.analysis import (
     RiskItem,
 )
 from tests.factories import make_job

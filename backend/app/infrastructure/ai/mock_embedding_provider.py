@@ -13,7 +13,9 @@ import hashlib
 import math
 import re
 
-from app.domain.providers.embedding_provider import EmbeddingProvider  # noqa: F401 -- protocol assertion below
+from app.domain.providers.embedding_provider import (
+    EmbeddingProvider,  # noqa: F401 -- protocol assertion below
+)
 
 EMBEDDING_DIM = 1536
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_+#.\-]+")

@@ -12,7 +12,6 @@ from app.application.dto.career_fitness_dto import (
 )
 from app.application.services.career_fitness_service import (
     CareerFitness,
-    CareerFitnessService,
 )
 from app.core.deps import CurrentUser, get_career_fitness_assembler
 

@@ -19,8 +19,8 @@ from __future__ import annotations
 import json
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 
 revision = "0021_phase_c_seed_archetypes"
 down_revision = "0020_phase_c_personas"

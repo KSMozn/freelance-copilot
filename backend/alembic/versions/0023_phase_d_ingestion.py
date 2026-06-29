@@ -24,9 +24,9 @@ Create Date: 2026-06-29
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
 
 revision = "0023_phase_d_ingestion"
 down_revision = "0022_phase_c_backfill_primary"

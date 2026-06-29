@@ -8,7 +8,6 @@ from app.domain.entities.tracker import (
     InteractionDirection,
     InterviewEvent,
     InterviewFormat,
-    InterviewOutcome,
     RecruiterInteraction,
 )
 

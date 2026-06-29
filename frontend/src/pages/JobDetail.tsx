@@ -165,8 +165,8 @@ export function JobDetailPage() {
       ) : hasAnalysis ? (
         <>
           <ScoreCard score={score} />
-          <MatchReportCard jobId={id} />
-          <OutputsCard jobId={id} />
+          {id && <MatchReportCard jobId={id} />}
+          {id && <OutputsCard jobId={id} />}
           <ConfidencePanelCard
             report={confidenceQuery.data}
             isLoading={confidenceQuery.isLoading}

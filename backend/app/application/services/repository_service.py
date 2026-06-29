@@ -15,7 +15,7 @@ from app.application.dto.repository_dto import (
     StarStorySchema,
 )
 from app.application.services.repository_scan_service import RepositoryScanService
-from app.domain.entities.repository import Repository, StarStory
+from app.domain.entities.repository import Repository
 from app.domain.exceptions import NotFoundError
 from app.domain.providers.embedding_provider import EmbeddingProvider
 from app.domain.repositories.embedding_repository import EmbeddingRepository
@@ -179,7 +179,7 @@ class RepositoryService:
     async def _run_scan(self, repo: Repository) -> Repository:
         try:
             result = await self._scan.scan(owner=repo.owner, name=repo.name)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning(
                 "scan failed for %s/%s: %s", repo.owner, repo.name, exc
             )

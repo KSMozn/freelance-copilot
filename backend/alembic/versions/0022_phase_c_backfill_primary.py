@@ -15,8 +15,8 @@ Create Date: 2026-06-29
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 
 revision = "0022_phase_c_backfill_primary"
 down_revision = "0021_phase_c_seed_archetypes"

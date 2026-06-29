@@ -11,7 +11,6 @@ from typing import Any
 
 from app.domain.providers.ai_provider import AIRawResponse
 
-
 _KNOWN_SKILLS = (
     "Python", "FastAPI", "Django", "Flask", "PostgreSQL", "MySQL", "MongoDB",
     "Docker", "Kubernetes", "AWS", "GCP", "Azure", "React", "TypeScript",
@@ -436,7 +435,7 @@ class MockAIProvider:
     async def complete_json(
         self,
         *,
-        system_prompt: str,  # noqa: ARG002 -- accepted for protocol compatibility
+        system_prompt: str,
         user_prompt: str,
     ) -> AIRawResponse:
         if RESEARCH_MARKER in user_prompt:
@@ -458,10 +457,10 @@ class MockAIProvider:
     async def complete_json_with_image(
         self,
         *,
-        system_prompt: str,  # noqa: ARG002
-        user_prompt: str,  # noqa: ARG002
+        system_prompt: str,
+        user_prompt: str,
         image_bytes: bytes,
-        image_mime_type: str,  # noqa: ARG002
+        image_mime_type: str,
     ) -> AIRawResponse:
         """Deterministic placeholder for image-input flows.
 
@@ -1070,7 +1069,7 @@ def _build_output_payload(user_prompt: str) -> dict[str, Any]:
     """
     kind = _extract_kind(user_prompt)
     job_title = _extract_section(user_prompt, "Title:") or "the role"
-    persona = _extract_section(user_prompt, "Persona:") or "Default"
+    # persona = _extract_section(user_prompt, "Persona:") or "Default"  # currently unused; tone comes from system prompt
     target_role = _extract_section(user_prompt, "Target role:") or "the role"
     top_skills = _extract_csv_section(user_prompt, "## Top skills")
     top_experiences = _extract_bullet_section(user_prompt, "## Recent experiences")
@@ -1101,9 +1100,9 @@ def _build_output_payload(user_prompt: str) -> dict[str, Any]:
             f"which I've shipped end-to-end in prior work"
             + (f" ({exp_phrase})" if exp_phrase else "")
             + ".\n\n"
-            f"In the first 30 days I'd focus on a tight scoping pass, "
-            f"a baseline metrics dashboard, and one shipped slice of the "
-            f"highest-risk path."
+            "In the first 30 days I'd focus on a tight scoping pass, "
+            "a baseline metrics dashboard, and one shipped slice of the "
+            "highest-risk path."
         )
         return {"title": None, "body_markdown": body}
 
@@ -1215,10 +1214,10 @@ def _consulting_steps(skills: list[str]) -> list[str]:
         head = skills[0]
         return [
             f"Discovery: 2-3 stakeholder interviews focused on {head}.",
-            f"Scoping doc with explicit success metrics + 3 risks.",
+            "Scoping doc with explicit success metrics + 3 risks.",
             f"First slice: smallest end-to-end working path through {head}.",
-            f"Iteration on real production data — weekly written checkpoint.",
-            f"Handoff + 2-week support window.",
+            "Iteration on real production data — weekly written checkpoint.",
+            "Handoff + 2-week support window.",
         ]
     return [
         "Discovery: stakeholder interviews.",

@@ -23,8 +23,8 @@ import json
 import re
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 
 revision = "0019_phase_b_backfill"
 down_revision = "0018_phase_b_seed_catalog"

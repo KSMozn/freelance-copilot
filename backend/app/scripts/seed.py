@@ -39,20 +39,14 @@ from app.application.services.resume_recommendation_service import (
 )
 from app.application.services.resume_service import ResumeService
 from app.application.services.scoring_service import ScoringService
-from app.domain.exceptions import AlreadyExistsError
-from app.domain.profiles.freelancer_profile import DEFAULT_FREELANCER_PROFILE
-from app.infrastructure.ai.factory import build_ai_provider
 from app.core.config import get_settings
 from app.core.database import AsyncSessionLocal
 from app.core.security import hash_password
 from app.domain.entities.job import BudgetType, JobStatus
+from app.domain.exceptions import AlreadyExistsError
+from app.domain.profiles.freelancer_profile import DEFAULT_FREELANCER_PROFILE
 from app.infrastructure.ai.embedding_factory import build_embedding_provider
-from app.infrastructure.db.repositories.sqlalchemy_embedding_repository import (
-    SQLAlchemyEmbeddingRepository,
-)
-from app.infrastructure.db.repositories.sqlalchemy_job_repository import (
-    SQLAlchemyJobRepository,
-)
+from app.infrastructure.ai.factory import build_ai_provider
 from app.infrastructure.db.repositories.sqlalchemy_analysis_repository import (
     SQLAlchemyJobAnalysisRepository,
     SQLAlchemyOpportunityScoreRepository,
@@ -60,6 +54,12 @@ from app.infrastructure.db.repositories.sqlalchemy_analysis_repository import (
 from app.infrastructure.db.repositories.sqlalchemy_application_repository import (
     SQLAlchemyApplicationHistoryRepository,
     SQLAlchemyApplicationRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_embedding_repository import (
+    SQLAlchemyEmbeddingRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_job_repository import (
+    SQLAlchemyJobRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_portfolio_repository import (
     SQLAlchemyPortfolioRepository,
@@ -622,9 +622,9 @@ async def _seed_analytics_application(
     user_id: Any,
     spec: dict[str, Any],
     jobs_repo: SQLAlchemyJobRepository,
-    analyzer: "JobAnalysisService",
-    generator: "ProposalGenerationService",
-    app_service: "ApplicationService",
+    analyzer: JobAnalysisService,
+    generator: ProposalGenerationService,
+    app_service: ApplicationService,
 ) -> None:
     """Create one demo application end-to-end and back-date its timestamps.
 
@@ -890,9 +890,7 @@ async def main() -> None:
                     resume_recommendation_service=rec_service,
                 )
                 try:
-                    proposal_id = (
-                        latest.id if hasattr(latest, "id") else latest.id  # type: ignore[union-attr]
-                    )
+                    proposal_id = latest.id  # type: ignore[union-attr]
                     application = await app_service.create_from_proposal(
                         user_id=user.id,
                         proposal_id=proposal_id,

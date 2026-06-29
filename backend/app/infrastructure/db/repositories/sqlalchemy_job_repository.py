@@ -9,8 +9,10 @@ from app.domain.entities.analysis import OpportunityScore as DomainOpportunitySc
 from app.domain.entities.job import (
     BudgetType,
     CompanyResearch,
-    Job as DomainJob,
     JobStatus,
+)
+from app.domain.entities.job import (
+    Job as DomainJob,
 )
 from app.infrastructure.db.models.job import Job as JobModel
 
@@ -55,7 +57,6 @@ def _research_to_jsonb(r: CompanyResearch | None) -> dict | None:
 from app.infrastructure.db.models.opportunity_score import (
     OpportunityScore as OpportunityScoreModel,
 )
-
 
 _BREAKDOWN_SORT_KEYS = {
     "technical_fit",

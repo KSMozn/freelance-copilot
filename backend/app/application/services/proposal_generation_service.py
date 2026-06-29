@@ -29,6 +29,8 @@ from app.application.dto.proposal_dto import (
 )
 from app.application.services.portfolio_matching_service import (
     DEFAULT_TOP_N as PORTFOLIO_DEFAULT_TOP_N,
+)
+from app.application.services.portfolio_matching_service import (
     PortfolioMatchingService,
 )
 from app.application.services.proposal_context import (
@@ -40,6 +42,8 @@ from app.application.services.proposal_prompts import PROMPT_VERSION, SYSTEM_PRO
 from app.application.services.proposal_review_service import ProposalReviewService
 from app.application.services.resume_recommendation_service import (
     DEFAULT_TOP_N as RESUME_DEFAULT_TOP_N,
+)
+from app.application.services.resume_recommendation_service import (
     ResumeRecommendationService,
 )
 from app.domain.entities.proposal import (

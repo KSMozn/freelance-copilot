@@ -19,7 +19,6 @@ from uuid import UUID
 
 from app.application.services.market_signal_service import (
     MarketSignalService,
-    MarketSignals,
 )
 from app.domain.entities.analysis import JobAnalysis
 from app.domain.entities.application import Application
@@ -27,7 +26,6 @@ from app.domain.entities.match_report import MatchReport
 from app.domain.entities.repository import Repository
 from app.domain.entities.skill_catalog import SkillCatalogEntry
 from app.domain.entities.user_skill import UserSkillEntry
-
 
 # ---- Dashboard DTO shape -------------------------------------------------
 

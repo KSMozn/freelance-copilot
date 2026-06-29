@@ -79,7 +79,7 @@ async def test_get_before_analyze_raises_not_found() -> None:
 
 async def test_reanalyze_upserts_in_place() -> None:
     job = make_job()
-    service, analyses, scores = _service(jobs=[job])
+    service, _analyses, _scores = _service(jobs=[job])
     first = await service.analyze(user_id=job.user_id, job_id=job.id)
     second = await service.analyze(user_id=job.user_id, job_id=job.id)
     # same row id across runs (upsert, not insert)

@@ -8,8 +8,8 @@ from __future__ import annotations
 import io
 import logging
 
-from pdfminer.high_level import extract_text as _pdfminer_extract
 from docx import Document as _DocxDocument
+from pdfminer.high_level import extract_text as _pdfminer_extract
 
 logger = logging.getLogger(__name__)
 

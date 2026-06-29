@@ -22,7 +22,6 @@ from app.domain.entities.analysis import JobAnalysis as DomainAnalysis
 from app.domain.entities.portfolio import Portfolio
 from app.domain.entities.proposal import Proposal
 
-
 # Per-dimension caps. Sum must equal 100.
 MAX_SPECIFICITY = 20
 MAX_RELEVANCE = 20

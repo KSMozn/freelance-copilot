@@ -427,7 +427,7 @@ class RepositoryScanService:
                 user_prompt=_build_llm_prompt(scan=scan),
             )
             parsed = _ArchitectureSummary.model_validate(response.data)
-        except (ValidationError, Exception) as exc:  # noqa: BLE001
+        except (ValidationError, Exception) as exc:
             logger.warning("scanner: LLM enrichment failed, continuing without it: %s", exc)
             return
         scan.architecture_summary = parsed.architecture_summary

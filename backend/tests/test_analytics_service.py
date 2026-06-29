@@ -227,12 +227,15 @@ async def test_domain_performance_uses_snapshot_domain() -> None:
 async def test_budget_performance_buckets() -> None:
     user_id = uuid4()
     apps = [
-        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 75-150")),
-        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 400-700")),
-        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 800")),
-        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 1500-2500")),
-        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 3000-5000")),
-        make_application(user_id=user_id, snapshot=_snapshot(budget=None)),
+        # Buckets are computed from the parsed *max* in the budget string
+        # — see `_parse_budget_max` in analytics_extraction.py. Inputs are
+        # picked so each one lands cleanly in a different bucket.
+        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 75-150")),     # max 150 → under_250
+        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 300-400")),    # max 400 → 250_500
+        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 700")),        # max 700 → 500_1000
+        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 1500-2500")),  # max 2500 → 1000_3000
+        make_application(user_id=user_id, snapshot=_snapshot(budget="USD 3000-5000")),  # max 5000 → 3000_plus
+        make_application(user_id=user_id, snapshot=_snapshot(budget=None)),             # → unknown
     ]
     svc = _service(apps)
     dash = await svc.get_dashboard(user_id=user_id)

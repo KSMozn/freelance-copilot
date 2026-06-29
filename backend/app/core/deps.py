@@ -8,18 +8,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.services.analytics_service import AnalyticsService
 from app.application.services.application_service import ApplicationService
 from app.application.services.auth_service import AuthService
+from app.application.services.career_fitness_service import (
+    CareerFitness,
+    CareerFitnessService,
+)
 from app.application.services.citation_service import CitationService
+from app.application.services.company_research_service import CompanyResearchService
 from app.application.services.cv_ingest_service import CvIngestService
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.gap_recommendation_service import (
     GapRecommendationService,
 )
+from app.application.services.job_analysis_service import JobAnalysisService
+from app.application.services.job_confidence_service import JobConfidenceService
+from app.application.services.job_import_service import JobImportService
+from app.application.services.job_service import JobService
 from app.application.services.knowledge_graph_service import KnowledgeGraphService
 from app.application.services.linkedin_ingest_service import LinkedInIngestService
-from app.application.services.career_fitness_service import (
-    CareerFitness,
-    CareerFitnessService,
-)
 from app.application.services.market_signal_service import MarketSignalService
 from app.application.services.match_report_service import MatchReportService
 from app.application.services.output_generation_service import (
@@ -27,16 +32,16 @@ from app.application.services.output_generation_service import (
 )
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
 from app.application.services.persona_service import PersonaService
-from app.application.services.skill_catalog_service import SkillCatalogService
-from app.application.services.job_analysis_service import JobAnalysisService
-from app.application.services.job_import_service import JobImportService
-from app.application.services.job_service import JobService
 from app.application.services.portfolio_matching_service import PortfolioMatchingService
 from app.application.services.portfolio_service import PortfolioService
+from app.application.services.portfolio_story_service import PortfolioStoryService
 from app.application.services.proposal_generation_service import (
     ProposalGenerationService,
 )
 from app.application.services.proposal_review_service import ProposalReviewService
+from app.application.services.repository_improvement_service import (
+    RepositoryImprovementService,
+)
 from app.application.services.repository_matching_service import (
     RepositoryMatchingService,
 )
@@ -48,39 +53,42 @@ from app.application.services.repository_star_story_service import (
 from app.application.services.resume_recommendation_service import (
     ResumeRecommendationService,
 )
-from app.application.services.company_research_service import CompanyResearchService
-from app.application.services.job_confidence_service import JobConfidenceService
-from app.application.services.portfolio_story_service import PortfolioStoryService
-from app.application.services.repository_improvement_service import (
-    RepositoryImprovementService,
-)
-from app.application.services.skill_evidence_service import SkillEvidenceService
 from app.application.services.resume_service import ResumeService
 from app.application.services.scoring_service import ScoringService
+from app.application.services.skill_catalog_service import SkillCatalogService
+from app.application.services.skill_evidence_service import SkillEvidenceService
 from app.core.config import Settings, get_settings
 from app.core.database import AsyncSessionLocal
 from app.domain.entities.user import User
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
-from app.domain.profiles.freelancer_profile import DEFAULT_FREELANCER_PROFILE
 from app.domain.providers.ai_provider import AIProvider
 from app.domain.providers.email_provider import EmailProvider
 from app.domain.providers.embedding_provider import EmbeddingProvider
 from app.infrastructure.ai.embedding_factory import build_embedding_provider
 from app.infrastructure.ai.factory import build_ai_provider
-from app.infrastructure.email.factory import build_email_provider
+from app.infrastructure.db.repositories.sqlalchemy_analysis_repository import (
+    SQLAlchemyJobAnalysisRepository,
+    SQLAlchemyOpportunityScoreRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_application_repository import (
+    SQLAlchemyApplicationHistoryRepository,
+    SQLAlchemyApplicationRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_email_otp_repository import (
     SQLAlchemyEmailOtpRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_embedding_repository import (
+    SQLAlchemyEmbeddingRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_experience_repository import (
     SQLAlchemyExperienceRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_ingestion_repositories import (
-    SQLAlchemyCertificateRepository,
-    SQLAlchemyContentItemRepository,
     SQLAlchemyCvUploadRepository,
     SQLAlchemyLinkedInSnapshotRepository,
     SQLAlchemyUploadedFileRepository,
 )
+from app.infrastructure.db.repositories.sqlalchemy_job_repository import SQLAlchemyJobRepository
 from app.infrastructure.db.repositories.sqlalchemy_match_report_repository import (
     SQLAlchemyMatchReportRepository,
 )
@@ -90,24 +98,6 @@ from app.infrastructure.db.repositories.sqlalchemy_output_repository import (
 from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
     SQLAlchemyPersonaArchetypeRepository,
     SQLAlchemyPersonaRepository,
-)
-from app.infrastructure.db.repositories.sqlalchemy_skill_catalog_repository import (
-    SQLAlchemySkillCatalogRepository,
-)
-from app.infrastructure.db.repositories.sqlalchemy_user_skill_repository import (
-    SQLAlchemyUserSkillRepository,
-)
-from app.infrastructure.db.repositories.sqlalchemy_analysis_repository import (
-    SQLAlchemyJobAnalysisRepository,
-    SQLAlchemyOpportunityScoreRepository,
-)
-from app.infrastructure.db.repositories.sqlalchemy_embedding_repository import (
-    SQLAlchemyEmbeddingRepository,
-)
-from app.infrastructure.db.repositories.sqlalchemy_job_repository import SQLAlchemyJobRepository
-from app.infrastructure.db.repositories.sqlalchemy_application_repository import (
-    SQLAlchemyApplicationHistoryRepository,
-    SQLAlchemyApplicationRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_portfolio_repository import (
     SQLAlchemyPortfolioRepository,
@@ -121,7 +111,14 @@ from app.infrastructure.db.repositories.sqlalchemy_repository_store import (
 from app.infrastructure.db.repositories.sqlalchemy_resume_repository import (
     SQLAlchemyResumeRepository,
 )
+from app.infrastructure.db.repositories.sqlalchemy_skill_catalog_repository import (
+    SQLAlchemySkillCatalogRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
+from app.infrastructure.db.repositories.sqlalchemy_user_skill_repository import (
+    SQLAlchemyUserSkillRepository,
+)
+from app.infrastructure.email.factory import build_email_provider
 from app.infrastructure.github.github_client import GithubClient
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)

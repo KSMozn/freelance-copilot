@@ -7,20 +7,33 @@ from __future__ import annotations
 
 from dataclasses import field, replace
 from datetime import UTC, datetime
+
+
+def _as_aware(dt: datetime) -> datetime:
+    """Normalize naïve datetimes to UTC so comparisons don't raise.
+
+    The factory-built rows are tz-naïve; the date range coming from the
+    real endpoint is tz-aware. Promote the naïve side rather than failing.
+    """
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
 from app.domain.entities.analysis import (
     JobAnalysis as DomainAnalysis,
+)
+from app.domain.entities.analysis import (
     OpportunityScore as DomainScore,
+)
+from app.domain.entities.analysis import (
     RiskItem,
 )
 from app.domain.entities.application import (
+    TERMINAL_STATUSES,
     Application,
     ApplicationHistoryEntry,
     ApplicationStatus,
-    TERMINAL_STATUSES,
 )
 from app.domain.entities.job import BudgetType, Job, JobStatus
 from app.domain.entities.portfolio import Portfolio
@@ -437,14 +450,7 @@ class FakeProposalRepository:
             return None
         for k, v in fields.items():
             if k == "milestones" and isinstance(v, list):
-                setattr(
-                    p,
-                    "milestones",
-                    [
-                        m if isinstance(m, Milestone) else Milestone(**m)
-                        for m in v
-                    ],
-                )
+                p.milestones = [m if isinstance(m, Milestone) else Milestone(**m) for m in v]
             else:
                 setattr(p, k, v)
         p.updated_at = datetime.now(UTC)
@@ -555,9 +561,15 @@ class FakeApplicationRepository:
     ) -> list[Application]:
         results = [a for a in self._items.values() if a.user_id == user_id]
         if from_date is not None:
-            results = [a for a in results if a.created_at and a.created_at >= from_date]
+            results = [
+                a for a in results
+                if a.created_at and _as_aware(a.created_at) >= _as_aware(from_date)
+            ]
         if to_date is not None:
-            results = [a for a in results if a.created_at and a.created_at <= to_date]
+            results = [
+                a for a in results
+                if a.created_at and _as_aware(a.created_at) <= _as_aware(to_date)
+            ]
         return results
 
 

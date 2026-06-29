@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -37,7 +37,7 @@ class MockEmailProvider:
     async def send(self, message: EmailMessage) -> EmailSendResult:
         self._outbox.parent.mkdir(parents=True, exist_ok=True)
         record = {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "to": message.to,
             "subject": message.subject,
             "text_body": message.text_body,

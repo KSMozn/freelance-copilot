@@ -41,7 +41,10 @@ export function useCreatePortfolio() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: PortfolioCreate): Promise<Portfolio> => {
-      const { data } = await api.post<Portfolio>("/portfolio", _strip(payload));
+      const { data } = await api.post<Portfolio>(
+        "/portfolio",
+        _strip(payload as unknown as Record<string, unknown>),
+      );
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["portfolio"] }),

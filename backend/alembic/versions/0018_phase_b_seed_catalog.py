@@ -17,8 +17,8 @@ from __future__ import annotations
 import json
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 
 revision = "0018_phase_b_seed_catalog"
 down_revision = "0017_phase_b_graph_core"

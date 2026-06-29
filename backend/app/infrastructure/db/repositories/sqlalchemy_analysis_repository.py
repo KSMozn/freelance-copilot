@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.analysis import (
     JobAnalysis as DomainAnalysis,
+)
+from app.domain.entities.analysis import (
     OpportunityScore as DomainScore,
+)
+from app.domain.entities.analysis import (
     RiskItem,
     StackRequirement,
 )

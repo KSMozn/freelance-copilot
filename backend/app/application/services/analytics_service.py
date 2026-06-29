@@ -11,10 +11,11 @@ maybe a few hundred per user) and a single Postgres round-trip pulls it.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
 from statistics import mean
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID
 
 from app.application.dto.analytics_dto import (

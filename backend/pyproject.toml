@@ -39,7 +39,16 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "ASYNC", "RUF"]
-ignore = ["B008"]  # FastAPI uses Depends() in defaults
+ignore = [
+    "B008",   # FastAPI uses Depends() in defaults
+    "E402",   # module-import-not-at-top-of-file — jobs.py & job_repo have intentional deferred imports for SQLAlchemy mapper registry ordering
+    "E501",   # line-too-long — formatter handles it; bare prose lines (docstrings, prompts) routinely exceed 100
+    "N818",   # exception-name — our `*Unavailable` errors describe states, not generic errors; renaming to `*UnavailableError` is noise
+    "RUF001", # ambiguous-unicode-character-string — we deliberately use em/en dashes in docstrings + prompts
+    "RUF002", # same, in docstrings
+    "RUF003", # same, in comments
+    "RUF046", # unnecessary-cast-to-int — `int(round(x))` is more explicit than `round(x)` in scoring code
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

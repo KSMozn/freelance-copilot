@@ -13,8 +13,9 @@ Create Date: 2026-06-29
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "0011_phase15_implementation_plan"
 down_revision = "0010_phase14_repo_star_story"

@@ -15,8 +15,7 @@ hit "Re-run analysis."
 """
 from __future__ import annotations
 
-from uuid import uuid4
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.application.services.gap_recommendation_service import (
     GapRecommendationService,

@@ -25,9 +25,9 @@ from app.application.services.resume_recommendation_service import (
     ResumeRecommendationService,
 )
 from app.domain.entities.application import (
+    STATUS_TIMESTAMP_FIELD,
     Application,
     ApplicationStatus,
-    STATUS_TIMESTAMP_FIELD,
 )
 from app.domain.exceptions import AlreadyExistsError, DomainError, NotFoundError
 from app.domain.repositories.analysis_repository import OpportunityScoreRepository

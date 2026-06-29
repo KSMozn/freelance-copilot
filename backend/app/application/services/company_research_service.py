@@ -13,7 +13,6 @@ from uuid import UUID
 from pydantic import ValidationError
 
 from app.application.dto.job_dto import CompanyResearchSchema
-from app.domain.entities.job import CompanyResearch
 from app.domain.exceptions import DomainError, NotFoundError
 from app.domain.providers.ai_provider import AIProvider
 from app.domain.repositories.job_repository import JobRepository

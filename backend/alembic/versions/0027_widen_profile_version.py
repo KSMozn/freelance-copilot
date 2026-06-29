@@ -15,8 +15,8 @@ Create Date: 2026-06-30
 from __future__ import annotations
 
 import sqlalchemy as sa
-from alembic import op
 
+from alembic import op
 
 revision = "0027_widen_profile_version"
 down_revision = "0026_phase_h_tracker"

@@ -7,9 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities.proposal import (
     ImplementationWeek,
     Milestone,
-    Proposal as DomainProposal,
     ProposalDiagram,
     ProposalStrategy,
+)
+from app.domain.entities.proposal import (
+    Proposal as DomainProposal,
 )
 from app.infrastructure.db.models.proposal import Proposal as ProposalModel
 

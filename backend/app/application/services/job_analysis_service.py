@@ -22,7 +22,11 @@ from app.application.services.prompts import (
 from app.application.services.scoring_service import ScoringService
 from app.domain.entities.analysis import (
     JobAnalysis as DomainAnalysis,
+)
+from app.domain.entities.analysis import (
     OpportunityScore as DomainScore,
+)
+from app.domain.entities.analysis import (
     RiskItem,
     StackRequirement,
 )

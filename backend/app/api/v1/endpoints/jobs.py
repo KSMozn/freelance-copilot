@@ -3,7 +3,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 
-
 JobSortBy = Literal[
     "created_at",
     "title",

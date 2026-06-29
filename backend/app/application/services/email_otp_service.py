@@ -58,7 +58,7 @@ class EmailOtpService:
         )
         if recent >= self._rate_limit:
             raise RateLimitedError(
-                f"Too many code requests. Try again in a few minutes."
+                "Too many code requests. Try again in a few minutes."
             )
 
         code = f"{secrets.randbelow(1_000_000):06d}"

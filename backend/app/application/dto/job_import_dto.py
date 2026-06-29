@@ -58,7 +58,7 @@ class JobImportPreview(BaseModel):
 # The endpoint returns the persisted Job (using the existing JobRead) plus
 # the structured extraction preview for the UI. JobRead lives in job_dto.py;
 # this DTO composes them.
-from app.application.dto.job_dto import JobRead  # noqa: E402
+from app.application.dto.job_dto import JobRead
 
 
 class JobImportResponse(BaseModel):
