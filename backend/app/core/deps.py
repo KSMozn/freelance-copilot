@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.application.services.analytics_service import AnalyticsService
 from app.application.services.application_service import ApplicationService
 from app.application.services.auth_service import AuthService
+from app.application.services.citation_service import CitationService
 from app.application.services.cv_ingest_service import CvIngestService
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.gap_recommendation_service import (
@@ -16,6 +17,9 @@ from app.application.services.gap_recommendation_service import (
 from app.application.services.knowledge_graph_service import KnowledgeGraphService
 from app.application.services.linkedin_ingest_service import LinkedInIngestService
 from app.application.services.match_report_service import MatchReportService
+from app.application.services.output_generation_service import (
+    OutputGenerationService,
+)
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
 from app.application.services.persona_service import PersonaService
 from app.application.services.skill_catalog_service import SkillCatalogService
@@ -74,6 +78,9 @@ from app.infrastructure.db.repositories.sqlalchemy_ingestion_repositories import
 )
 from app.infrastructure.db.repositories.sqlalchemy_match_report_repository import (
     SQLAlchemyMatchReportRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_output_repository import (
+    SQLAlchemyOutputRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
     SQLAlchemyPersonaArchetypeRepository,
@@ -513,6 +520,31 @@ def get_match_report_service(
         user_skills=SQLAlchemyUserSkillRepository(session),
         skill_catalog=SQLAlchemySkillCatalogRepository(session),
         reports=SQLAlchemyMatchReportRepository(session),
+    )
+
+
+def get_citation_service() -> CitationService:
+    return CitationService()
+
+
+def get_output_generation_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    resolver: Annotated[
+        PersonaProfileResolver, Depends(get_persona_profile_resolver)
+    ],
+    citations: Annotated[CitationService, Depends(get_citation_service)],
+) -> OutputGenerationService:
+    return OutputGenerationService(
+        ai_provider=ai_provider,
+        outputs=SQLAlchemyOutputRepository(session),
+        jobs=SQLAlchemyJobRepository(session),
+        personas=SQLAlchemyPersonaRepository(session),
+        resolver=resolver,
+        user_skills=SQLAlchemyUserSkillRepository(session),
+        skill_catalog=SQLAlchemySkillCatalogRepository(session),
+        experiences=SQLAlchemyExperienceRepository(session),
+        citations=citations,
     )
 
 

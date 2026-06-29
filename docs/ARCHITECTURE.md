@@ -334,6 +334,78 @@ Frontend:
   `force=true`. Persona-aware label clarifies which lens the report
   represents.
 
+## Multi-format outputs + citations (Phase F)
+
+`OutputGenerationService` is the unified, persona-aware artifact
+generator. One service, one prompt-template module, one `outputs` table
+— seven output kinds today. Per-kind specialisation lives in
+`output_prompts.system_prompt_for(kind, …)`, not in extra services or
+tables. The legacy `proposals` table is untouched for backwards compat;
+Phase F ships its sibling rather than migrating in-place.
+
+Pipeline (sync; ~3-10s end-to-end depending on provider):
+
+```
+generate(kind, job_id?, persona_id?)
+  → resolve persona (default if omitted) + load FreelancerProfile
+  → assemble evidence: top user_skills (prof ≥ 4 or pinned),
+                       most-recent experiences, top projects (Phase F.1)
+  → compose system + user prompts (kind-specific tone, word budget,
+                                   structure rules)
+  → AIProvider.complete_json → Pydantic-validated {title, body_markdown}
+  → CitationService.attach (substring-match graph nodes in the body)
+  → INSERT outputs row with content + citations + profile_version
+```
+
+Per-kind prompt rules (word budget + structure) live in
+`output_prompts.py`:
+
+| Kind                 | Budget    | Structure                                           |
+|----------------------|-----------|-----------------------------------------------------|
+| `upwork_proposal`    | 120-180w  | concrete proof first; close with call invite        |
+| `cover_letter`       | 200-300w  | 3 paragraphs; optional bullet list                  |
+| `recruiter_reply`    | 60-100w   | warm, brief, next-step ask                          |
+| `linkedin_message`   | 40-70w    | hook + 1 relevance sentence + CTA                   |
+| `consulting_proposal`| 400-600w  | ## Understanding / ## Approach / ## Why me / etc.   |
+| `screening_answer`   | 100-160w  | direct answer + 2 proofs + 30-day plan              |
+| `resume_tailored`    | 8-12 bul  | `### Role @ Company` headers + bullets              |
+
+The mock `AIProvider` recognises `OUTPUT_MARKER` and routes to
+`_build_output_payload`, which returns deterministic per-kind canned
+content so the full pipeline (validate → cite → persist) is
+exercisable without network calls.
+
+### CitationService
+
+Deterministic substring matching (no LLM, no embeddings). For each graph
+node in the supplied `GraphSnapshot` (experiences, projects, top skills)
+the service searches for word-boundary occurrences of the node's name in
+`content_markdown`. Each hit produces a `Citation` row with:
+  - `claim`: the matched phrase
+  - `evidence_type`: one of `experience`, `project`, `repository`,
+    `certificate`, `content_item`, `skill`
+  - `evidence_id`: the originating graph row's UUID
+  - `evidence_label`: human-readable (e.g. "Senior Backend Engineer @ Acme")
+  - `snippet`: ±60-char excerpt for the UI to display in a tooltip
+
+Capped at 20 citations per output. Phase G can layer an LLM-backed
+grounding pass on top when market signals + persona context are
+available to prioritise.
+
+API (`/api/v1`):
+- `POST /outputs` — generate. Body: `{kind, job_id?, persona_id?}`.
+- `GET /outputs?job_id=…&kind=…` — list (per-user, optionally filtered).
+- `GET /outputs/{id}` — single read.
+- `DELETE /outputs/{id}` — soft scoping by user_id.
+
+Frontend:
+- `OutputsCard` on Job Detail — 7 one-click "Generate" buttons (per kind)
+  + collapsible list of past drafts for this job. Each draft expands to
+  show the markdown body, a chip row of evidence citations
+  (per-evidence-type icon; hover for the snippet), and Copy / Delete
+  actions. `activePersonaId` flows through to the generator — switching
+  personas re-tones future outputs without invalidating past ones.
+
 ## AI Provider Abstraction
 
 ```python

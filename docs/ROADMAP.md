@@ -513,13 +513,59 @@ stays green (197/197).
 
 ---
 
-## Phase F — Multi-format outputs + citations *(next)*
+## Phase F — Multi-format outputs + citations ✅
 
-`OutputGenerationService` unifies generation; `CitationService` attaches
-evidence chips. New output kinds: cover letter, recruiter reply, LinkedIn
-message, consulting proposal, screening answer, tailored resume. Existing
-proposals migrate as `kind=upwork_proposal`. Every claim cites a graph
-node (experience / project / repo / cert / content).
+**Goal:** one click to draft a tailored artifact for the active persona,
+in seven formats, every claim cited against the user's graph.
+
+- Migration `0025_phase_f_outputs` — `outputs` table (kind enum,
+  content_markdown / content_html, citations JSONB, metadata, tone,
+  ai_provider + ai_model, indexed on `(user_id, job_id)` and
+  `(user_id, kind, created_at)`). Legacy `proposals` table untouched —
+  the new table is a sibling, not a replacement.
+- Services:
+  - `output_prompts.py` — single module of per-kind system + user prompt
+    builders. Word budgets, structure rules, formatting hints baked in.
+    Persona's tone + target_role + strategic_priorities are interpolated
+    at compose time.
+  - `OutputGenerationService` — orchestrator. Resolves persona, loads
+    profile, assembles top-skills / experiences / projects evidence,
+    calls the AI provider, validates the JSON response (Pydantic
+    `{title, body_markdown}` shape), attaches citations, persists.
+  - `CitationService` — pure substring-match attacher over the supplied
+    `GraphSnapshot`. Word-boundary matching against experience names
+    ("Senior Backend Engineer @ Acme"), project names, and known
+    skills. Capped at 20 citations to keep the UI honest.
+- Mock provider gains `OUTPUT_MARKER` routing → deterministic per-kind
+  canned bodies (cover letter, Upwork proposal, recruiter reply,
+  LinkedIn DM, consulting proposal, screening answer, resume bullets)
+  so the full pipeline is exercisable offline.
+- API:
+  - `POST /outputs` — generate.
+  - `GET /outputs?job_id=&kind=` — list (user-scoped).
+  - `GET /outputs/{id}`, `DELETE /outputs/{id}`.
+- Frontend:
+  - `OutputsCard` on Job Detail — 7 one-click "Generate" buttons per
+    kind. Collapsible list of past drafts; each expands to show the
+    markdown body + evidence chips (per-type icon, hover for snippet) +
+    Copy / Delete. Reads `activePersonaId` from the Zustand store so
+    persona switches retone subsequent outputs.
+
+**Exit:** smoke test on the demo "AI Platform for Resident Feedback" job
+generates cover_letter (11 citations), linkedin_message (5),
+recruiter_reply (7), and consulting_proposal (20) with real LLM
+backing — every artifact carries persona-tuned tone + structure +
+citations to user_skills / experiences. Existing test suite stays green
+(197/197).
+
+---
+
+## Phase G — Market-aware recommendations + Career Fitness dashboard *(next)*
+
+`MarketSignalService` ranks skill demand across the user's analyzed-job
+corpus. New `/career-fitness` dashboard surfaces skill-gap-vs-market,
+GitHub README suggestions, and portfolio gaps. Successful-application
+feedback weights up the skills they emphasized.
 
 ---
 

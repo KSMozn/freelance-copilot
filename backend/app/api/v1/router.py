@@ -15,6 +15,7 @@ from app.api.v1.endpoints import (
     linkedin,
     match_reports,
     matches,
+    outputs,
     personas,
     portfolio,
     portfolio_story,
@@ -50,3 +51,4 @@ api_router.include_router(linkedin.router)
 api_router.include_router(certificates.router)
 api_router.include_router(content_items.router)
 api_router.include_router(match_reports.router)
+api_router.include_router(outputs.router)

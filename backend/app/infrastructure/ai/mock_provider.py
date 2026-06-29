@@ -257,6 +257,7 @@ PORTFOLIO_STORY_MARKER = "--- PORTFOLIO STORY ASSIGNMENT ---"
 # duplicate literal here to avoid importing application-layer code from the
 # infrastructure layer.
 CV_INGEST_MARKER = "CV_INGEST_MARKER"
+OUTPUT_MARKER = "OUTPUT_GENERATION"  # Phase F — mirrors output_prompts.OUTPUT_MARKER
 
 
 def _build_portfolio_story_payload(user_prompt: str) -> dict[str, Any]:
@@ -448,6 +449,8 @@ class MockAIProvider:
             data = _build_proposal_payload(user_prompt)
         elif CV_INGEST_MARKER in user_prompt:
             data = _build_cv_ingest_payload(user_prompt)
+        elif OUTPUT_MARKER in user_prompt:
+            data = _build_output_payload(user_prompt)
         else:
             data = _build_analyzer_payload(user_prompt)
         return AIRawResponse(data=data, provider=self.name, model=self.model)
@@ -1056,3 +1059,171 @@ def _extract_experiences_from_text(text: str) -> list[dict[str, Any]]:
             )
             break
     return experiences
+
+
+# ----------------------- Phase F — output generation ---------------------
+
+
+def _build_output_payload(user_prompt: str) -> dict[str, Any]:
+    """Deterministic per-kind canned body so the OutputGenerationService
+    pipeline (validate → cite → persist) is exercisable without network.
+    """
+    kind = _extract_kind(user_prompt)
+    job_title = _extract_section(user_prompt, "Title:") or "the role"
+    persona = _extract_section(user_prompt, "Persona:") or "Default"
+    target_role = _extract_section(user_prompt, "Target role:") or "the role"
+    top_skills = _extract_csv_section(user_prompt, "## Top skills")
+    top_experiences = _extract_bullet_section(user_prompt, "## Recent experiences")
+    skill_phrase = ", ".join(top_skills[:3]) if top_skills else "the relevant stack"
+    exp_phrase = top_experiences[0] if top_experiences else None
+
+    if kind == "linkedin_message":
+        body = (
+            f"Hey — saw the {job_title} opening and it lines up with my "
+            f"current focus on {skill_phrase}. "
+            f"Happy to share a quick rundown of the closest project. "
+            f"Open to a 15-minute chat this week?"
+        )
+        return {"title": None, "body_markdown": body}
+
+    if kind == "recruiter_reply":
+        body = (
+            f"Thanks for reaching out about {job_title}. "
+            f"I'm currently working on {skill_phrase}, and the scope looks "
+            f"like a strong overlap. "
+            f"What's the best next step — a quick intro call?"
+        )
+        return {"title": None, "body_markdown": body}
+
+    if kind == "screening_answer":
+        body = (
+            f"I'm a strong fit because the role centres on {skill_phrase}, "
+            f"which I've shipped end-to-end in prior work"
+            + (f" ({exp_phrase})" if exp_phrase else "")
+            + ".\n\n"
+            f"In the first 30 days I'd focus on a tight scoping pass, "
+            f"a baseline metrics dashboard, and one shipped slice of the "
+            f"highest-risk path."
+        )
+        return {"title": None, "body_markdown": body}
+
+    if kind == "consulting_proposal":
+        steps = "\n".join(
+            [f"{i+1}. {step}" for i, step in enumerate(_consulting_steps(top_skills))]
+        )
+        body = (
+            f"## Understanding\n"
+            f"You're looking for {target_role.lower()} support on {job_title}. "
+            f"The strongest leverage looks to be around {skill_phrase}.\n\n"
+            f"## Proposed approach\n{steps}\n\n"
+            f"## Why me\n"
+            + (f"- {exp_phrase}\n" if exp_phrase else "")
+            + f"- Hands-on with {skill_phrase}\n\n"
+            f"## Engagement model\n"
+            f"- 4-6 weeks, 20 hours/week\n"
+            f"- Weekly written checkpoints\n\n"
+            f"## Next steps\n"
+            f"A 45-minute scoping call, then a fixed-scope written plan."
+        )
+        return {"title": f"Engagement proposal — {job_title}", "body_markdown": body}
+
+    if kind == "resume_tailored":
+        header = exp_phrase or "Recent role @ Company (2022–present)"
+        bullets = "\n".join(
+            [
+                f"- Shipped {s} in production with measurable impact."
+                for s in (top_skills[:4] or ["the relevant stack"])
+            ]
+        )
+        body = f"### {header}\n{bullets}\n"
+        return {"title": f"Tailored bullets — {job_title}", "body_markdown": body}
+
+    if kind == "cover_letter":
+        body = (
+            f"Dear hiring team,\n\n"
+            f"I'm writing about the {job_title} opening. "
+            f"What caught my eye is the emphasis on {skill_phrase} — "
+            f"that's been the focus of my recent work"
+            + (f" ({exp_phrase})" if exp_phrase else "")
+            + ".\n\n"
+            f"In prior engagements I've shipped projects across "
+            f"{skill_phrase}, with concrete responsibility for design "
+            f"decisions and delivery. I'd bring the same hands-on cadence "
+            f"to your team.\n\n"
+            f"I'd welcome a brief conversation about the role. "
+            f"Available most weekday afternoons."
+        )
+        return {"title": f"Cover letter — {job_title}", "body_markdown": body}
+
+    # Default: Upwork-style proposal.
+    body = (
+        f"Hi — I'd like to put my name in for {job_title}. "
+        f"The closest analogue in my work is "
+        + (exp_phrase or "a recent project")
+        + f", where I delivered against {skill_phrase}.\n\n"
+        f"My approach would be a short discovery pass, then a tight first "
+        f"slice within two weeks so we can validate scope on real output.\n\n"
+        f"Happy to share the closest project and walk through the plan on a call."
+    )
+    return {"title": None, "body_markdown": body}
+
+
+def _extract_kind(user_prompt: str) -> str:
+    m = re.search(r"OUTPUT_GENERATION:\s*kind=([a-z_]+)", user_prompt)
+    return m.group(1) if m else "upwork_proposal"
+
+
+def _extract_section(user_prompt: str, label: str) -> str | None:
+    for line in user_prompt.splitlines():
+        if line.startswith(label):
+            return line.split(":", 1)[-1].strip() or None
+    return None
+
+
+def _extract_csv_section(user_prompt: str, header: str) -> list[str]:
+    lines = user_prompt.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip().startswith(header):
+            for follow in lines[i + 1 : i + 4]:
+                if follow.strip() and not follow.startswith("#"):
+                    return [s.strip() for s in follow.split(",") if s.strip()]
+    return []
+
+
+def _extract_bullet_section(user_prompt: str, header: str) -> list[str]:
+    lines = user_prompt.splitlines()
+    out: list[str] = []
+    capturing = False
+    for line in lines:
+        if line.strip().startswith(header):
+            capturing = True
+            continue
+        if capturing:
+            if line.startswith("- "):
+                out.append(line[2:].strip())
+            elif line.startswith("#"):
+                break
+            elif not line.strip():
+                # Allow a blank line between header and first bullet.
+                if out:
+                    break
+    return out
+
+
+def _consulting_steps(skills: list[str]) -> list[str]:
+    if skills:
+        head = skills[0]
+        return [
+            f"Discovery: 2-3 stakeholder interviews focused on {head}.",
+            f"Scoping doc with explicit success metrics + 3 risks.",
+            f"First slice: smallest end-to-end working path through {head}.",
+            f"Iteration on real production data — weekly written checkpoint.",
+            f"Handoff + 2-week support window.",
+        ]
+    return [
+        "Discovery: stakeholder interviews.",
+        "Scoping doc with success metrics + risks.",
+        "First slice: smallest end-to-end working path.",
+        "Iteration on real production data.",
+        "Handoff + 2-week support window.",
+    ]

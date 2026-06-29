@@ -13,6 +13,7 @@ import {
 import { CompanyResearchCard } from "@/components/analysis/CompanyResearchCard";
 import { ConfidencePanelCard } from "@/components/analysis/ConfidencePanelCard";
 import { MatchReportCard } from "@/components/analysis/MatchReportCard";
+import { OutputsCard } from "@/components/outputs/OutputsCard";
 import { ScoreBreakdown } from "@/components/analysis/ScoreBreakdown";
 import { ScoreCard } from "@/components/analysis/ScoreCard";
 import { SkillEvidenceCard } from "@/components/analysis/SkillEvidenceCard";
@@ -165,6 +166,7 @@ export function JobDetailPage() {
         <>
           <ScoreCard score={score} />
           <MatchReportCard jobId={id} />
+          <OutputsCard jobId={id} />
           <ConfidencePanelCard
             report={confidenceQuery.data}
             isLoading={confidenceQuery.isLoading}

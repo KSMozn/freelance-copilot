@@ -49,6 +49,8 @@
   content_items (n) ─── users (1)                                   [Phase D]
 
   match_reports (n) ─── users (1) → jobs → personas (one per pair)  [Phase E]
+
+  outputs (n) ─── users (1) → personas, jobs                        [Phase F]
 ```
 
 ## Tables
@@ -333,6 +335,34 @@ UNIQUE `(job_id, persona_id)`. Index `(user_id, job_id)`.
 
 Recommendation `kind` is one of: `project_to_build`, `certification`,
 `learning_resource`, `github_enhancement`, `experience_to_emphasize`.
+
+### outputs *(Phase F)*
+Unified "generated artifact" table — subsumes any AI-produced text about
+a job (cover letter, Upwork proposal, recruiter reply, LinkedIn DM,
+consulting proposal, screening answer, tailored resume). Per-kind
+specialisation lives in the prompt template, not in extra tables.
+
+| column            | type                                                                                                | notes                                                  |
+|-------------------|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| id                | uuid PK                                                                                             |                                                        |
+| user_id           | uuid FK→users CASCADE                                                                               |                                                        |
+| persona_id        | uuid FK→personas SET NULL                                                                           | the lens that produced this output                     |
+| job_id            | uuid FK→jobs CASCADE NULL                                                                           | nullable so kindless outputs (Phase J) fit here too    |
+| kind              | enum(upwork_proposal, cover_letter, recruiter_reply, linkedin_message, consulting_proposal, screening_answer, resume_tailored) |                                  |
+| title             | text NULL                                                                                           | filled for standalone docs; NULL for chat-style        |
+| content_markdown  | text                                                                                                | the artifact in markdown                               |
+| content_html      | text NULL                                                                                           | optional rendered HTML                                 |
+| citations         | jsonb (array of Citation)                                                                           | each `{claim, evidence_type, evidence_id, evidence_label, snippet}` |
+| metadata          | jsonb                                                                                               | `{profile_version, …}`                                 |
+| tone              | text NULL                                                                                           | persona tone used at generation                        |
+| ai_provider       | text NULL                                                                                           | e.g. `openai`, `mock`                                  |
+| ai_model          | text NULL                                                                                           |                                                        |
+| created_at        | timestamptz                                                                                         |                                                        |
+
+Indexes: `(user_id, job_id)`, `(user_id, kind, created_at)`.
+
+`Citation.evidence_type` ∈ `experience | project | repository |
+certificate | content_item | skill`.
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.
