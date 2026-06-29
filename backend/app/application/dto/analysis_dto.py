@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Complexity = Literal["low", "medium", "high"]
 RiskLevel = Literal["low", "medium", "high"]
@@ -28,6 +28,51 @@ StackCategory = Literal[
     "nice_to_have",
 ]
 
+# LLMs reliably slip on singular/plural and on a handful of stylistic
+# variants (`auth`, `db`, `ci/cd`, etc.). Normalizing here is cheap and
+# avoids rejecting an entire analysis because one row uses a near-miss
+# label. The map is intentionally tight — only safe, unambiguous aliases.
+_STACK_CATEGORY_ALIASES: dict[str, str] = {
+    "integration": "integrations",
+    "integration_partners": "integrations",
+    "third_party": "integrations",
+    "third_party_integrations": "integrations",
+    "auth": "authentication",
+    "iam": "authentication",
+    "db": "database",
+    "databases": "database",
+    "storage": "database",
+    "ci_cd": "devops",
+    "ci/cd": "devops",
+    "cicd": "devops",
+    "infra": "devops",
+    "infrastructure": "devops",
+    "cloud": "cloud_platform",
+    "platform": "cloud_platform",
+    "ai": "ai_llm",
+    "llm": "ai_llm",
+    "ml": "ai_llm",
+    "machine_learning": "ai_llm",
+    "tests": "testing",
+    "qa": "testing",
+    "deploy": "deployment",
+    "release": "deployment",
+    "appsec": "security",
+    "infosec": "security",
+    "payments": "billing",
+    "subscription": "billing",
+    "tech": "tech_stack",
+    "stack": "tech_stack",
+    "languages": "tech_stack",
+    "language": "tech_stack",
+    "frameworks": "tech_stack",
+    "framework": "tech_stack",
+    "nice_to_have": "nice_to_have",
+    "nice-to-have": "nice_to_have",
+    "optional": "nice_to_have",
+    "bonus": "nice_to_have",
+}
+
 
 class StackRequirementSchema(BaseModel):
     """One structured stack signal — category + canonical name + 1–5 star importance."""
@@ -37,6 +82,17 @@ class StackRequirementSchema(BaseModel):
     category: StackCategory
     name: str = Field(min_length=1, max_length=80)
     importance: int = Field(ge=1, le=5)
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def _normalize_category(cls, value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+        key = value.strip().lower().replace(" ", "_").replace("-", "_")
+        # If the LLM gave us a known canonical value, pass it through. If
+        # we recognize an alias, swap it. Otherwise let the literal check
+        # raise — there are no silent fallbacks here.
+        return _STACK_CATEGORY_ALIASES.get(key, key)
 
 
 class RiskItemSchema(BaseModel):
