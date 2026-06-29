@@ -47,6 +47,8 @@
   linkedin_snapshots (n) ─── users (1) → uploaded_files             [Phase D]
   certificates (n) ─── users (1) → uploaded_files                   [Phase D]
   content_items (n) ─── users (1)                                   [Phase D]
+
+  match_reports (n) ─── users (1) → jobs → personas (one per pair)  [Phase E]
 ```
 
 ## Tables
@@ -303,6 +305,34 @@ will use it to detect declared expertise areas).
 | raw_text        | text NULL                                                     | optional full body             |
 | created_at      | timestamptz                                                   |                                |
 | updated_at      | timestamptz                                                   |                                |
+
+### match_reports *(Phase E)*
+Persisted persona-aware match analysis. One row per `(job, persona)` —
+`MatchReportService` UPSERTs by that pair so re-runs don't pile up.
+
+| column                  | type                                   | notes                                                  |
+|-------------------------|----------------------------------------|--------------------------------------------------------|
+| id                      | uuid PK                                |                                                        |
+| user_id                 | uuid FK→users CASCADE                  | tenancy boundary                                       |
+| job_id                  | uuid FK→jobs CASCADE                   |                                                        |
+| persona_id              | uuid FK→personas CASCADE NULL          | NULL = pre-Phase-C "user-level" report                 |
+| overall_match           | smallint                               | 0..100, weighted from the dimensions below             |
+| technical_fit           | smallint                               | 0..100, importance-weighted skill coverage             |
+| architecture_fit        | smallint                               | 0..100, best semantic match across portfolio + repos   |
+| domain_fit              | smallint                               | 0..100, domain overlap                                 |
+| leadership_fit          | smallint NULL                          | 0..100; NULL when the job carries no leadership signals|
+| soft_skills_fit         | smallint NULL                          | 0..100; NULL when the job carries no soft signals      |
+| interview_chance        | enum(low, medium, high)                | bucketed                                               |
+| missing_critical_skills | jsonb (array of {name, importance, status}) | self-contained snapshot for diffing               |
+| missing_recommendations | jsonb (array of GapRecommendation)     | `{skill, kind, suggestion, effort_estimate, priority}` |
+| rationale               | jsonb (array of strings)               | one-line narrative bullets                             |
+| profile_version         | text NULL                              | e.g. `persona:<uuid>` or `default-v1`                  |
+| computed_at             | timestamptz                            |                                                        |
+
+UNIQUE `(job_id, persona_id)`. Index `(user_id, job_id)`.
+
+Recommendation `kind` is one of: `project_to_build`, `certification`,
+`learning_resource`, `github_enhancement`, `experience_to_emphasize`.
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.

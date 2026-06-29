@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     health,
     jobs,
     linkedin,
+    match_reports,
     matches,
     personas,
     portfolio,
@@ -48,3 +49,4 @@ api_router.include_router(cv_uploads.router)
 api_router.include_router(linkedin.router)
 api_router.include_router(certificates.router)
 api_router.include_router(content_items.router)
+api_router.include_router(match_reports.router)

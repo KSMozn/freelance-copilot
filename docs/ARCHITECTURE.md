@@ -288,6 +288,52 @@ Frontend:
   is gone).
 - Sidebar entry "Sources" beside Personas.
 
+## Persona-aware match reports (Phase E)
+
+`MatchReportService` is the orchestrator that produces a persisted,
+persona-keyed report for every `(job, persona)` pair. It composes:
+
+- `JobConfidenceService` (Phase 2) for the existing dimensions
+  (technical / architecture / domain / interview_chance / rationale).
+- `SkillEvidenceService` re-run to attach `importance` + `status` to each
+  missing-skill string before it becomes a recommendation input.
+- `leadership_signals.py` for the Phase E additions
+  (`leadership_fit`, `soft_skills_fit`). These **abstain** (return NULL)
+  when the job description carries no leadership / soft-skill signal —
+  an IC role correctly gets a NULL `leadership_fit` rather than a 0.
+- `PersonaProfileResolver` (Phase C) supplies the `profile_version`
+  stamp so historical rows are debuggable.
+- `GapRecommendationService` turns each missing skill into one of five
+  recommendation kinds (`project_to_build`, `certification`,
+  `learning_resource`, `github_enhancement`, `experience_to_emphasize`)
+  with a free-form `suggestion` + `effort_estimate` + `priority`.
+  Phase E ships a deterministic rules tier (canned for ~15 well-known
+  skills, fallback template for anything else); Phase G hooks the
+  market signal in for prioritization.
+
+Persistence: `match_reports` table, UPSERT keyed by `(job_id, persona_id)`.
+Callers ask for `force=true` to recompute; otherwise the cached row is
+returned.
+
+Overall score recomposes when leadership / soft are scored:
+- No extras → `0.50·tech + 0.30·arch + 0.20·domain`
+- With extras → `0.45·tech + 0.25·arch + 0.15·domain + 0.15/N` per
+  scored extra (so leadership-heavy roles can lift Eng Manager scores
+  without inflating IC scores).
+
+API (`/api/v1`):
+- `POST /jobs/{id}/match-report?persona_id=…&force=…` — build-or-get.
+  Default persona is used when `persona_id` is omitted.
+- `GET /jobs/{id}/match-reports` — list all persona-keyed reports for a
+  job (used in Phase F's parallel-analyses tab strip).
+
+Frontend:
+- `MatchReportCard` on the Job Detail page reads the active persona from
+  the Zustand store, calls the build-or-get endpoint, and renders the
+  overall score + dimension bars + recommendation cards. "Re-run" sends
+  `force=true`. Persona-aware label clarifies which lens the report
+  represents.
+
 ## AI Provider Abstraction
 
 ```python

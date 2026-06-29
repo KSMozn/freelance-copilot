@@ -10,8 +10,12 @@ from app.application.services.application_service import ApplicationService
 from app.application.services.auth_service import AuthService
 from app.application.services.cv_ingest_service import CvIngestService
 from app.application.services.email_otp_service import EmailOtpService
+from app.application.services.gap_recommendation_service import (
+    GapRecommendationService,
+)
 from app.application.services.knowledge_graph_service import KnowledgeGraphService
 from app.application.services.linkedin_ingest_service import LinkedInIngestService
+from app.application.services.match_report_service import MatchReportService
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
 from app.application.services.persona_service import PersonaService
 from app.application.services.skill_catalog_service import SkillCatalogService
@@ -67,6 +71,9 @@ from app.infrastructure.db.repositories.sqlalchemy_ingestion_repositories import
     SQLAlchemyCvUploadRepository,
     SQLAlchemyLinkedInSnapshotRepository,
     SQLAlchemyUploadedFileRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_match_report_repository import (
+    SQLAlchemyMatchReportRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
     SQLAlchemyPersonaArchetypeRepository,
@@ -480,6 +487,32 @@ def get_job_confidence_service(
         portfolio_matching=portfolio_matching,
         repository_matching=repository_matching,
         score_repo=SQLAlchemyOpportunityScoreRepository(session),
+    )
+
+
+def get_gap_recommendation_service() -> GapRecommendationService:
+    return GapRecommendationService()
+
+
+def get_match_report_service(
+    session: SessionDep,
+    confidence: Annotated[JobConfidenceService, Depends(get_job_confidence_service)],
+    evidence: Annotated[SkillEvidenceService, Depends(get_skill_evidence_service)],
+    recs: Annotated[GapRecommendationService, Depends(get_gap_recommendation_service)],
+    resolver: Annotated[
+        PersonaProfileResolver, Depends(get_persona_profile_resolver)
+    ],
+) -> MatchReportService:
+    return MatchReportService(
+        confidence=confidence,
+        evidence=evidence,
+        gap_recs=recs,
+        resolver=resolver,
+        jobs=SQLAlchemyJobRepository(session),
+        personas=SQLAlchemyPersonaRepository(session),
+        user_skills=SQLAlchemyUserSkillRepository(session),
+        skill_catalog=SQLAlchemySkillCatalogRepository(session),
+        reports=SQLAlchemyMatchReportRepository(session),
     )
 
 

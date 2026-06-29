@@ -463,14 +463,63 @@ backend bind-mount.
 
 ---
 
-## Phase E — Persona-aware match report + gap recommendations *(next)*
+## Phase E — Persona-aware match report + gap recommendations ✅
 
-Wires the persona's effective profile into a new `match_reports` table
-that captures `technical_fit`, `architecture_fit`, `domain_fit`,
-`leadership_fit`, `soft_skills_fit`, `missing_critical_skills`, and
-**actionable gap recommendations** (projects to build / certs to earn /
-learning resources / GitHub enhancements). Job detail page gains the new
-Match Report card.
+**Goal:** every `(job, persona)` pair gets a persisted, scored, gap-fixed
+match analysis. Job detail page gains the new Match Report card.
+
+- Migration `0024_phase_e_match_reports` — `match_reports` table keyed by
+  `(job_id, persona_id)` UNIQUE. Captures all existing dimensions
+  (technical / architecture / domain) plus the Phase E additions
+  (`leadership_fit`, `soft_skills_fit` — both nullable, "not applicable"
+  is a first-class state), `missing_critical_skills` (with importance +
+  status), `missing_recommendations`, `rationale`, `profile_version`.
+- `MatchReportService` — orchestrator. Composes `JobConfidenceService`
+  for the base dimensions, `SkillEvidenceService` to attach importance
+  to missing skills, `leadership_signals` (Phase E) for the new
+  dimensions, `PersonaProfileResolver` for the profile stamp, and
+  `GapRecommendationService` for the recs. UPSERTs by `(job, persona)`;
+  caching is implicit unless caller passes `force=true`.
+- `leadership_signals.py` — pure detectors + scorer. Returns NULL when
+  the job carries no leadership / soft signals so IC roles aren't
+  scored against irrelevant criteria.
+- `GapRecommendationService` — turns missing skills into structured
+  recommendations of 5 kinds:
+  `project_to_build`, `certification`, `learning_resource`,
+  `github_enhancement`, `experience_to_emphasize`. Phase E ships
+  deterministic canned rules for ~15 high-frequency skills (Kafka,
+  Kubernetes, Terraform, RAG, AWS / GCP / Azure cert paths, …) +
+  generic fallback for anything else. Phase G hooks market signals in.
+- Overall recomposition: when leadership / soft are scored, the headline
+  weights shift so leadership-heavy roles can lift Eng Manager scores
+  without inflating IC scores.
+- API:
+  - `POST /jobs/{id}/match-report?persona_id=…&force=…` — build-or-get.
+  - `GET /jobs/{id}/match-reports` — list all persona-keyed reports for
+    a job (used in Phase F's parallel-analyses tab strip).
+- Frontend:
+  - `MatchReportCard` on Job Detail — overall + dimensions + persona
+    chip + "Re-run" button + structured recommendation list (per-kind
+    icon, effort estimate, priority).
+  - Persona-aware: reads `activePersonaId` from the Zustand store; the
+    report re-fetches when the user switches personas via the topbar.
+
+**Exit:** smoke test on demo data produces a persisted match report
+(`profile_version=persona:<uuid>`) with 6 missing skills → 6 prioritized
+recommendations (Azure cert, learning resources for niche skills,
+fallback templates). Leadership_fit + soft_skills_fit are both scored
+because the test job carries leadership signals. Existing test suite
+stays green (197/197).
+
+---
+
+## Phase F — Multi-format outputs + citations *(next)*
+
+`OutputGenerationService` unifies generation; `CitationService` attaches
+evidence chips. New output kinds: cover letter, recruiter reply, LinkedIn
+message, consulting proposal, screening answer, tailored resume. Existing
+proposals migrate as `kind=upwork_proposal`. Every claim cites a graph
+node (experience / project / repo / cert / content).
 
 ---
 
