@@ -60,6 +60,18 @@ class Application(Base, UUIDPKMixin, TimestampMixin):
         ForeignKey("resumes.id", ondelete="SET NULL"),
         nullable=True,
     )
+    # Phase H — exact Output rows that were sent. NULL on rows created
+    # before Phase F or applications where the user typed their own text.
+    resume_output_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("outputs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    cover_letter_output_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("outputs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     portfolio_ids: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
 
     status: Mapped[str] = mapped_column(

@@ -36,6 +36,11 @@ from app.infrastructure.db.models.resume import Resume, ResumeSkill
 from app.infrastructure.db.models.skill import Skill
 from app.infrastructure.db.models.skill_catalog import SkillCatalog
 from app.infrastructure.db.models.tag import Tag
+from app.infrastructure.db.models.tracker import (
+    FollowUpReminder,
+    InterviewEvent,
+    RecruiterInteraction,
+)
 from app.infrastructure.db.models.user import User
 from app.infrastructure.db.models.user_skill import UserSkill
 
@@ -52,14 +57,17 @@ __all__ = [
     "Experience",
     "ExperienceAchievement",
     "ExperienceSkill",
-    "LinkedInSnapshot",
-    "UploadedFile",
+    "FollowUpReminder",
+    "InterviewEvent",
     "Job",
     "JobAnalysis",
     "JobSkill",
+    "LinkedInSnapshot",
     "MatchReport",
     "OpportunityScore",
     "Output",
+    "RecruiterInteraction",
+    "UploadedFile",
     "Persona",
     "PersonaArchetype",
     "Portfolio",

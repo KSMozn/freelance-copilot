@@ -600,13 +600,57 @@ suite stays green (197/197).
 
 ---
 
-## Phase H — Application Tracker extensions *(next)*
+## Phase H — Application Tracker extensions ✅
 
-Recruiter interactions thread, interview events timeline, follow-up
-reminders. Application detail page rebuild. Migration `0033` adds
-`recruiter_interactions`, `interview_events`, `follow_up_reminders`
-tables; applications gains `resume_output_id` + `cover_letter_output_id`
-FKs to outputs so "which version did I send?" is one read.
+**Goal:** turn each application from "a row with a status" into a
+proper engagement log — recruiter interactions, interview rounds,
+follow-up to-dos, and a one-read link to the exact outputs that were
+sent.
+
+- Migration `0026_phase_h_tracker` adds:
+  - `recruiter_interactions` (channel + direction + occurred_at +
+    summary + raw content)
+  - `interview_events` (round_label + format + scheduled_at + duration
+    + interviewer notes + my feedback + outcome enum)
+  - `follow_up_reminders` (due_at + note + channel + completed_at,
+    partial unique index on `(user_id, due_at) WHERE completed_at IS NULL`)
+  - `applications.resume_output_id` + `applications.cover_letter_output_id`
+    — FKs into the Phase F `outputs` table, SET NULL on delete.
+- All three child tables denormalize `user_id` so tenant scoping is one
+  predicate without a join.
+- API:
+  - `GET /applications/{id}/activity` — bundles all three lists in one
+    response for the detail page.
+  - Per-resource POST/PATCH/DELETE for interactions / interviews /
+    reminders, plus `POST /reminders/{id}/complete` for the one-click
+    "done" action.
+  - `GET /tracker/reminders` — open reminders across the user's
+    applications, ordered by due_at; backs the dashboard widget.
+- Frontend:
+  - `ApplicationActivityCard` mounted on the existing
+    `/applications/{id}` page — three sections (reminders, interviews,
+    interactions). Each section has an inline "Add" form,
+    overdue/done badges, and inline outcome editing for interviews.
+  - One TanStack query backs all three sections via the `/activity`
+    bundle endpoint.
+
+**Exit:** smoke test on demo data — picked an existing application,
+added 1 inbound email interaction (Jane Recruiter, asking about
+availability), scheduled 1 phone-screen interview (Hiring manager,
+30 min, 2026-07-05), added 1 follow-up reminder (reply with
+availability, due 2026-07-02), confirmed the activity bundle returns
+`{interactions:1, interviews:1, reminders:1}` in one call. Existing
+test suite stays green (197/197).
+
+---
+
+## Phase I — Chrome Extension *(roadmap)*
+
+Separate codebase. Form detection on LinkedIn / Greenhouse / Lever /
+Workday / Ashby / Wellfound / Upwork / generic. Persona auto-suggest.
+Field-fill assist via the web API. **Hard compliance rules**: never
+auto-submit, never bypass CAPTCHA, never violate platform ToS, all
+field-fills require explicit user click-through.
 
 ---
 

@@ -1,4 +1,6 @@
 import { ArrowLeft, Briefcase, ExternalLink, Loader2, Save, Trash2 } from "lucide-react";
+
+import { ApplicationActivityCard } from "@/components/tracker/ApplicationActivityCard";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -390,6 +392,8 @@ export function ApplicationDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <ApplicationActivityCard applicationId={application.id} />
     </div>
   );
 }

@@ -446,6 +446,45 @@ Frontend:
 - Sidebar entry "Career Fitness" sits beside "Jobs" since it's the
   cross-job aggregate view.
 
+## Application Tracker extensions (Phase H)
+
+Three child tables on `applications`, all `ON DELETE CASCADE` and
+denormalized with `user_id` for tenant-scoped queries:
+
+- `recruiter_interactions` — every back-and-forth on a given
+  application. Channel + direction + occurred_at + summary + optional
+  raw content (pasted email body, DM, etc.).
+- `interview_events` — one row per scheduled round. Format enum,
+  scheduled_at, duration, interviewer notes, my feedback, outcome
+  (pending → pass / fail / cancelled). Outcomes can be updated inline
+  from the UI without opening an edit form.
+- `follow_up_reminders` — personal to-do list per application. Partial
+  unique index `(user_id, due_at) WHERE completed_at IS NULL` makes the
+  "open reminders for me" query a single index scan.
+
+Two new FK columns on `applications` close the loop with Phase F:
+- `resume_output_id` → `outputs.id` (SET NULL) — the exact resume sent.
+- `cover_letter_output_id` → `outputs.id` (SET NULL) — the exact cover
+  letter sent.
+
+API (all under `/api/v1`):
+- Per-application:
+  `GET /applications/{id}/activity` returns the full three-list bundle
+  in one query.
+  `POST/DELETE /applications/{id}/interactions[/{interaction_id}]`
+  `POST/PATCH/DELETE /applications/{id}/interviews[/{event_id}]`
+  `POST/POST/DELETE /applications/{id}/reminders[/{reminder_id}/complete|/{reminder_id}]`
+- Top-level: `GET /tracker/reminders` — open reminders across all of the
+  user's applications, ordered by due date. Backs the dashboard widget.
+
+Frontend:
+- `ApplicationActivityCard` on the existing `/applications/{id}` page —
+  three collapsible sections (reminders, interviews, interactions) each
+  with an inline "Add" form and per-row actions. Overdue reminders get
+  a red badge; completed reminders are struck through. Interview
+  outcomes are editable inline via a `<select>`. One TanStack query
+  backs all three sections via the `/activity` bundle endpoint.
+
 ## AI Provider Abstraction
 
 ```python

@@ -51,6 +51,11 @@
   match_reports (n) ─── users (1) → jobs → personas (one per pair)  [Phase E]
 
   outputs (n) ─── users (1) → personas, jobs                        [Phase F]
+
+  recruiter_interactions (n) ─── applications (1)                   [Phase H]
+  interview_events (n) ─── applications (1)                         [Phase H]
+  follow_up_reminders (n) ─── applications (1)                      [Phase H]
+  applications.{resume_output_id, cover_letter_output_id} → outputs [Phase H]
 ```
 
 ## Tables
@@ -363,6 +368,69 @@ Indexes: `(user_id, job_id)`, `(user_id, kind, created_at)`.
 
 `Citation.evidence_type` ∈ `experience | project | repository |
 certificate | content_item | skill`.
+
+### recruiter_interactions *(Phase H)*
+Every back-and-forth with a recruiter on a given application.
+
+| column        | type                                                  | notes                                            |
+|---------------|-------------------------------------------------------|--------------------------------------------------|
+| id            | uuid PK                                               |                                                  |
+| application_id| uuid FK→applications CASCADE                          |                                                  |
+| user_id       | uuid FK→users CASCADE                                 | denormalized for tenant-scoped queries           |
+| channel       | enum(email, linkedin, phone, in_person, other)        |                                                  |
+| direction     | enum(inbound, outbound)                               | who reached out                                  |
+| occurred_at   | timestamptz                                           |                                                  |
+| contact_name  | text NULL                                             |                                                  |
+| summary       | text NULL                                             | 1-line of what was said                          |
+| raw_content   | text NULL                                             | optional full body (pasted email, DM, …)         |
+| created_at    | timestamptz                                           |                                                  |
+
+### interview_events *(Phase H)*
+One row per scheduled interview round.
+
+| column            | type                                                                                       | notes                                       |
+|-------------------|--------------------------------------------------------------------------------------------|---------------------------------------------|
+| id                | uuid PK                                                                                    |                                             |
+| application_id    | uuid FK→applications CASCADE                                                               |                                             |
+| user_id           | uuid FK→users CASCADE                                                                      |                                             |
+| round_label       | text                                                                                       | "Hiring manager screen"                     |
+| format            | enum(phone_screen, technical, system_design, behavioral, onsite, final, other)             |                                             |
+| scheduled_at      | timestamptz NULL                                                                           |                                             |
+| duration_minutes  | smallint NULL                                                                              | 5..600                                      |
+| interviewer_names | text NULL                                                                                  | free-form CSV                               |
+| interviewer_notes | text NULL                                                                                  | what they cared about                       |
+| my_feedback       | text NULL                                                                                  | what I'd improve next time                  |
+| outcome           | enum(pending, pass, fail, cancelled)                                                       |                                             |
+| created_at, updated_at | timestamptz                                                                           |                                             |
+
+### follow_up_reminders *(Phase H)*
+A personal to-do list per application. The UI surfaces overdue + due-soon
+items on the dashboard.
+
+| column          | type                                                  | notes                                        |
+|-----------------|-------------------------------------------------------|----------------------------------------------|
+| id              | uuid PK                                               |                                              |
+| application_id  | uuid FK→applications CASCADE                          |                                              |
+| user_id         | uuid FK→users CASCADE                                 |                                              |
+| due_at          | timestamptz                                           |                                              |
+| channel         | enum(interaction_channel) NULL                        | optional reminder of *how* to follow up      |
+| note            | text                                                  | the actual to-do                             |
+| completed_at    | timestamptz NULL                                      | NULL = still open                            |
+| created_at      | timestamptz                                           |                                              |
+
+Indexes: `(application_id)`, `(user_id, due_at) WHERE completed_at IS NULL`
+— the partial unique index keeps the "open reminders for user X" query
+to a single index scan.
+
+### applications *(Phase H additions)*
+Two new FK columns:
+- `resume_output_id` → `outputs.id` SET NULL — the exact tailored resume
+  sent.
+- `cover_letter_output_id` → `outputs.id` SET NULL — the exact cover
+  letter sent.
+
+Closes the loop with Phase F: "which version did I send for this
+application?" is one read.
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.
