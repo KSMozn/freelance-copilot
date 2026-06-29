@@ -20,6 +20,7 @@ def build_ai_provider(settings: Settings) -> AIProvider:
         return OpenAIProvider(
             api_key=settings.openai_api_key,
             model=settings.openai_model,
+            base_url=settings.openai_base_url,
         )
     if provider == "claude":
         if not settings.anthropic_api_key:

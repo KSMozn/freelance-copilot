@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import re
 from typing import Any
@@ -36,18 +37,52 @@ class ClaudeProvider:
         self._timeout = timeout_s
         self._max_tokens = max_tokens
 
-    async def analyze_job(
+    async def complete_json(
         self,
         *,
         system_prompt: str,
         user_prompt: str,
+    ) -> AIRawResponse:
+        return await self._messages(
+            system_prompt=system_prompt,
+            user_content=user_prompt,
+        )
+
+    async def complete_json_with_image(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        image_bytes: bytes,
+        image_mime_type: str,
+    ) -> AIRawResponse:
+        return await self._messages(
+            system_prompt=system_prompt,
+            user_content=[
+                {"type": "text", "text": user_prompt},
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": image_mime_type,
+                        "data": base64.b64encode(image_bytes).decode("ascii"),
+                    },
+                },
+            ],
+        )
+
+    async def _messages(
+        self,
+        *,
+        system_prompt: str,
+        user_content: str | list[dict[str, Any]],
     ) -> AIRawResponse:
         payload: dict[str, Any] = {
             "model": self.model,
             "max_tokens": self._max_tokens,
             "temperature": 0.2,
             "system": system_prompt,
-            "messages": [{"role": "user", "content": user_prompt}],
+            "messages": [{"role": "user", "content": user_content}],
         }
         headers = {
             "x-api-key": self._api_key,

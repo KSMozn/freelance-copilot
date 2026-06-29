@@ -12,6 +12,32 @@ BudgetAssessment = Literal["low", "reasonable", "high", "unclear"]
 Recommendation = Literal["Strong Apply", "Apply", "Maybe", "Skip"]
 Confidence = Literal["high", "medium", "low"]
 
+StackCategory = Literal[
+    "tech_stack",
+    "architecture",
+    "cloud_platform",
+    "ai_llm",
+    "authentication",
+    "billing",
+    "integrations",
+    "database",
+    "devops",
+    "testing",
+    "deployment",
+    "security",
+    "nice_to_have",
+]
+
+
+class StackRequirementSchema(BaseModel):
+    """One structured stack signal — category + canonical name + 1–5 star importance."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    category: StackCategory
+    name: str = Field(min_length=1, max_length=80)
+    importance: int = Field(ge=1, le=5)
+
 
 class RiskItemSchema(BaseModel):
     """A single risk the LLM identified, with severity + mitigation guidance."""
@@ -52,6 +78,7 @@ class JobAnalysisSchema(BaseModel):
     questions_to_ask_client: list[str] = Field(default_factory=list)
     risk_level: RiskLevel = "medium"
     communication_required: str | None = None
+    stack_requirements: list[StackRequirementSchema] = Field(default_factory=list)
 
 
 class JobAnalysisRead(BaseModel):
@@ -83,6 +110,7 @@ class JobAnalysisRead(BaseModel):
     provider: str | None
     model: str | None
     prompt_version: str | None
+    stack_requirements: list[StackRequirementSchema] = Field(default_factory=list)
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

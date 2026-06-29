@@ -2,7 +2,9 @@ import hashlib
 import re
 from uuid import UUID
 
+from app.application.dto.analysis_dto import OpportunityScoreRead
 from app.application.dto.job_dto import JobCreate, JobListResponse, JobRead, JobUpdate
+from app.domain.entities.analysis import OpportunityScore
 from app.domain.entities.job import Job, JobStatus
 from app.domain.exceptions import NotFoundError
 from app.domain.repositories.job_repository import JobRepository
@@ -16,8 +18,11 @@ def _hash_description(description: str) -> str:
     return hashlib.sha256(_normalize(description).encode("utf-8")).hexdigest()
 
 
-def _to_read(job: Job) -> JobRead:
-    return JobRead.model_validate(job)
+def _to_read(job: Job, score: OpportunityScore | None = None) -> JobRead:
+    read = JobRead.model_validate(job)
+    if score is not None:
+        read = read.model_copy(update={"opportunity_score": OpportunityScoreRead.model_validate(score)})
+    return read
 
 
 class JobService:
@@ -54,12 +59,20 @@ class JobService:
         limit: int,
         offset: int,
         search: str | None,
+        sort_by: str = "created_at",
+        sort_dir: str = "desc",
     ) -> JobListResponse:
         items, total = await self._jobs.list_for_user(
-            user_id, status=status, limit=limit, offset=offset, search=search
+            user_id,
+            status=status,
+            limit=limit,
+            offset=offset,
+            search=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
         )
         return JobListResponse(
-            items=[_to_read(j) for j in items],
+            items=[_to_read(j, s) for j, s in items],
             total=total,
             limit=limit,
             offset=offset,

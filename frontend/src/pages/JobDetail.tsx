@@ -10,16 +10,34 @@ import {
   RisksCard,
   SummaryCard,
 } from "@/components/analysis/AnalysisSections";
+import { CompanyResearchCard } from "@/components/analysis/CompanyResearchCard";
+import { ConfidencePanelCard } from "@/components/analysis/ConfidencePanelCard";
 import { ScoreBreakdown } from "@/components/analysis/ScoreBreakdown";
 import { ScoreCard } from "@/components/analysis/ScoreCard";
+import { SkillEvidenceCard } from "@/components/analysis/SkillEvidenceCard";
+import { StackRequirementsCard } from "@/components/analysis/StackRequirementsCard";
 import { PortfolioMatchesCard } from "@/components/portfolio/PortfolioMatchesCard";
+import { PortfolioStoryCard } from "@/components/portfolio/PortfolioStoryCard";
+import { ProposalCard } from "@/components/proposal/ProposalCard";
+import { RepositoryMatchesCard } from "@/components/repository/RepositoryMatchesCard";
+import { ResumeRecommendationCard } from "@/components/resume/ResumeRecommendationCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { useAnalyzeJob, useJobAnalysis } from "@/lib/analysis";
+import { useJobConfidence } from "@/lib/confidence";
+import { useJobEvidence } from "@/lib/evidence";
 import { useMatchPortfolio } from "@/lib/portfolio-matches";
-import type { Job, JobStatus, PortfolioMatchesResponse } from "@/types/api";
+import { useMatchRepositories } from "@/lib/repositories";
+import { useRecommendResume } from "@/lib/resume-recommendations";
+import type {
+  Job,
+  JobStatus,
+  PortfolioMatchesResponse,
+  RepositoryMatchesResponse,
+  ResumeRecommendationsResponse,
+} from "@/types/api";
 
 const NEXT_STATUSES: JobStatus[] = ["new", "shortlisted", "applied", "ignored", "archived"];
 
@@ -41,6 +59,12 @@ export function JobDetailPage() {
   const analyze = useAnalyzeJob(id);
   const matchPortfolio = useMatchPortfolio(id);
   const matchesData: PortfolioMatchesResponse | undefined = matchPortfolio.data;
+  const recommendResume = useRecommendResume(id);
+  const resumeRecsData: ResumeRecommendationsResponse | undefined = recommendResume.data;
+  const matchRepositories = useMatchRepositories(id);
+  const repoMatchesData: RepositoryMatchesResponse | undefined = matchRepositories.data;
+  const evidenceQuery = useJobEvidence(id, !!analysisData?.score);
+  const confidenceQuery = useJobConfidence(id, !!analysisData?.score);
 
   const statusMutation = useMutation({
     mutationFn: async (status: JobStatus) => {
@@ -139,13 +163,26 @@ export function JobDetailPage() {
       ) : hasAnalysis ? (
         <>
           <ScoreCard score={score} />
+          <ConfidencePanelCard
+            report={confidenceQuery.data}
+            isLoading={confidenceQuery.isLoading}
+            hasAnalysis={hasAnalysis}
+          />
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="space-y-4 lg:col-span-2">
               <SummaryCard analysis={analysis} />
+              <CompanyResearchCard jobId={id} research={job.client_research} />
+              <StackRequirementsCard analysis={analysis} />
+              <SkillEvidenceCard
+                report={evidenceQuery.data}
+                isLoading={evidenceQuery.isLoading}
+                hasAnalysis={hasAnalysis}
+              />
               <ExtractionCard analysis={analysis} />
               <RisksCard analysis={analysis} />
               <FlagsCard analysis={analysis} />
               <QuestionsCard analysis={analysis} />
+              <PortfolioStoryCard jobId={id} hasAnalysis={hasAnalysis} />
               <PortfolioMatchesCard
                 data={matchesData}
                 isPending={matchPortfolio.isPending}
@@ -167,6 +204,49 @@ export function JobDetailPage() {
                   })
                 }
               />
+              <RepositoryMatchesCard
+                data={repoMatchesData}
+                isPending={matchRepositories.isPending}
+                hasAnalysis={hasAnalysis}
+                onRun={() =>
+                  matchRepositories.mutate(undefined, {
+                    onSuccess: (d) =>
+                      toast.success(
+                        d.matches.length
+                          ? `Matched ${d.matches.length} of ${d.repository_count} repos`
+                          : "No scanned repositories yet",
+                      ),
+                    onError: (err: unknown) => {
+                      const detail =
+                        (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+                          ?.data?.detail ?? "Repository match failed";
+                      toast.error(detail);
+                    },
+                  })
+                }
+              />
+              <ResumeRecommendationCard
+                data={resumeRecsData}
+                isPending={recommendResume.isPending}
+                hasAnalysis={hasAnalysis}
+                onRun={() =>
+                  recommendResume.mutate(undefined, {
+                    onSuccess: (d) =>
+                      toast.success(
+                        d.recommendations.length
+                          ? `Top resume: ${d.recommendations[0].title}`
+                          : "No resume profiles yet",
+                      ),
+                    onError: (err: unknown) => {
+                      const detail =
+                        (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+                          ?.data?.detail ?? "Recommendation failed";
+                      toast.error(detail);
+                    },
+                  })
+                }
+              />
+              <ProposalCard jobId={id} hasAnalysis={hasAnalysis} />
             </div>
             <div className="space-y-4">
               <ScoreBreakdown breakdown={score.score_breakdown} />

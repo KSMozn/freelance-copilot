@@ -8,6 +8,7 @@ from app.domain.entities.analysis import (
     JobAnalysis as DomainAnalysis,
     OpportunityScore as DomainScore,
     RiskItem,
+    StackRequirement,
 )
 from app.infrastructure.db.models.job_analysis import JobAnalysis as AnalysisModel
 from app.infrastructure.db.models.opportunity_score import OpportunityScore as ScoreModel
@@ -23,6 +24,16 @@ def _analysis_to_domain(row: AnalysisModel) -> DomainAnalysis:
         )
         for r in raw_risks
         if isinstance(r, dict)
+    ]
+    raw_stack = row.stack_requirements or []
+    stack = [
+        StackRequirement(
+            category=str(item.get("category", "tech_stack")),
+            name=str(item.get("name", "")),
+            importance=int(item.get("importance", 3)),
+        )
+        for item in raw_stack
+        if isinstance(item, dict) and item.get("name")
     ]
     return DomainAnalysis(
         id=row.id,
@@ -49,6 +60,7 @@ def _analysis_to_domain(row: AnalysisModel) -> DomainAnalysis:
         provider=row.provider,
         model=row.model,
         prompt_version=row.prompt_version,
+        stack_requirements=stack,
         raw_response=row.raw_response,
         created_at=row.created_at,
         updated_at=row.updated_at,
@@ -106,6 +118,7 @@ class SQLAlchemyJobAnalysisRepository:
         provider: str,
         model: str,
         prompt_version: str,
+        stack_requirements: list[StackRequirement],
         raw_response: dict[str, Any] | None,
     ) -> DomainAnalysis:
         stmt = select(AnalysisModel).where(AnalysisModel.job_id == job_id)
@@ -113,6 +126,10 @@ class SQLAlchemyJobAnalysisRepository:
 
         serialized_risks = [
             {"risk": r.risk, "severity": r.severity, "mitigation": r.mitigation} for r in risks
+        ]
+        serialized_stack = [
+            {"category": s.category, "name": s.name, "importance": s.importance}
+            for s in stack_requirements
         ]
 
         if existing is None:
@@ -135,6 +152,7 @@ class SQLAlchemyJobAnalysisRepository:
                 red_flags=red_flags,
                 green_flags=green_flags,
                 questions_to_ask_client=questions_to_ask_client,
+                stack_requirements=serialized_stack,
                 risk_level=risk_level,
                 communication_required=communication_required,
                 provider=provider,
@@ -161,6 +179,7 @@ class SQLAlchemyJobAnalysisRepository:
             existing.red_flags = red_flags
             existing.green_flags = green_flags
             existing.questions_to_ask_client = questions_to_ask_client
+            existing.stack_requirements = serialized_stack
             existing.risk_level = risk_level
             existing.communication_required = communication_required
             existing.provider = provider

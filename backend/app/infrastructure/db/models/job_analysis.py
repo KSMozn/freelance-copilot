@@ -46,6 +46,7 @@ class JobAnalysis(Base, UUIDPKMixin, TimestampMixin):
     red_flags: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     green_flags: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     questions_to_ask_client: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    stack_requirements: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     prompt_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
     raw_response: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

@@ -8,6 +8,8 @@ export interface AuthUser {
   is_active: boolean;
   is_superuser: boolean;
   created_at: string;
+  email_verified_at: string | null;
+  last_login_at: string | null;
 }
 
 interface AuthState {

@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
@@ -13,7 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.entities.job import BudgetType, JobStatus
@@ -57,6 +58,8 @@ class Job(Base, UUIDPKMixin, TimestampMixin):
     imported_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+    client_research: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
 
 class JobSkill(Base):

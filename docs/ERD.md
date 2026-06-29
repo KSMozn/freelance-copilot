@@ -31,21 +31,45 @@
   application_history (n) ─── applications (1)
   embeddings (polymorphic by owner_type/owner_id)
   skills (master list)  ─── jobs_skills, portfolio_skills (m2m)
+
+  email_otp_codes (n) ─── users (1) by email (not FK)   [Phase A]
 ```
 
 ## Tables
 
 ### users
-| column        | type           | notes                          |
-|---------------|----------------|--------------------------------|
-| id            | uuid PK        |                                |
-| email         | citext UNIQUE  |                                |
-| password_hash | text           | bcrypt                         |
-| full_name     | text           |                                |
-| is_active     | bool           | default true                   |
-| is_superuser  | bool           | default false                  |
-| created_at    | timestamptz    |                                |
-| updated_at    | timestamptz    |                                |
+| column            | type           | notes                                                        |
+|-------------------|----------------|--------------------------------------------------------------|
+| id                | uuid PK        |                                                              |
+| email             | citext UNIQUE  |                                                              |
+| password_hash     | text NULL      | bcrypt — nullable (Phase A): OTP-only accounts have no password |
+| full_name         | text           |                                                              |
+| is_active         | bool           | default true                                                 |
+| is_superuser      | bool           | default false                                                |
+| email_verified_at | timestamptz NULL | *(Phase A)* set when an OTP is successfully consumed      |
+| last_login_at     | timestamptz NULL | *(Phase A)* touched on every successful auth              |
+| created_at        | timestamptz    |                                                              |
+| updated_at        | timestamptz    |                                                              |
+
+### email_otp_codes *(Phase A)*
+Hashed 6-digit codes used for passwordless signup / sign-in / email-change verification.
+
+| column       | type                                          | notes                                              |
+|--------------|-----------------------------------------------|----------------------------------------------------|
+| id           | uuid PK                                       |                                                    |
+| email        | citext                                        | indexed; not FK — allows pre-registration codes    |
+| code_hash    | text                                          | bcrypt hash of the 6-digit code (never plaintext)  |
+| purpose      | enum(login, register, email_change)           |                                                    |
+| expires_at   | timestamptz                                   | typically now + 10 min                             |
+| consumed_at  | timestamptz NULL                              | set on successful verify; prevents reuse           |
+| attempts     | smallint                                      | default 0; cap at 5 incorrect submissions          |
+| ip_address   | inet NULL                                     | recorded at issuance for abuse forensics           |
+| user_agent   | text NULL                                     | recorded at issuance for abuse forensics           |
+| created_at   | timestamptz                                   |                                                    |
+
+Indexes:
+- `(email, purpose, consumed_at)` — find the active code at verify time
+- `(expires_at)` — cleanup job
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.
@@ -128,15 +152,29 @@ Structured AI extraction.
 See [`docs/ROADMAP.md`](ROADMAP.md) Phase 2; one row per job, upserted by
 `/jobs/{id}/analyze`.
 
-### resumes
-| column        | type    | notes                                  |
-|---------------|---------|----------------------------------------|
-| id            | uuid PK |                                        |
-| user_id       | uuid FK |                                        |
-| label         | text    | e.g. 'Python', 'AI', 'Engineering Mgr' |
-| content       | text    | markdown / structured                  |
-| file_url      | text NULL |                                      |
-| is_default    | bool    |                                        |
+### resumes *(Phase 4 shape)*
+| column              | type      | notes                                   |
+|---------------------|-----------|-----------------------------------------|
+| id                  | uuid PK   |                                         |
+| user_id             | uuid FK   |                                         |
+| title               | text      | renamed from `label`                    |
+| target_role         | text NULL | "AI / Backend Engineer", etc.           |
+| summary             | text NULL | one-paragraph profile blurb             |
+| seniority_level     | text NULL | junior / mid / senior / lead / staff /  |
+|                     |           | principal                               |
+| primary_skills      | jsonb     | list[string] — weight 1.0 in matching   |
+| secondary_skills    | jsonb     | list[string] — weight 0.5 in matching   |
+| industries          | jsonb     | list[string]                            |
+| domains             | jsonb     | list[string] — matched against the job  |
+|                     |           | analysis's business_domain              |
+| achievements        | jsonb     | list[string]                            |
+| project_highlights  | jsonb     | list[string]                            |
+| keywords            | jsonb     | list[string]                            |
+| notes               | text NULL | private guidance ("when to lead with…") |
+
+Phase 4 dropped the Phase-1 `content`, `file_url`, and `is_default` columns —
+the resume is a structured profile, not a file, and recommendations replace
+the "default resume" rule.
 
 ### skills *(master list)*
 | column | type | notes |
@@ -148,45 +186,73 @@ See [`docs/ROADMAP.md`](ROADMAP.md) Phase 2; one row per job, upserted by
 ### jobs_skills *(m2m)*  ·  portfolio_skills *(m2m)*  ·  resume_skills *(m2m)*
 `(parent_id, skill_id, weight numeric)`
 
-### applications
-| column          | type      | notes |
-|-----------------|-----------|-------|
-| id              | uuid PK   |       |
-| user_id         | uuid FK   |       |
-| job_id          | uuid FK   |       |
-| proposal_id     | uuid FK NULL |    |
-| resume_id       | uuid FK NULL |    |
-| status          | enum(applied, viewed, interview, rejected, won, completed, withdrawn) |
-| connects_spent  | int NULL  |       |
-| bid_amount      | numeric NULL |    |
-| applied_at      | timestamptz |     |
-| outcome_at      | timestamptz NULL | |
-| notes           | text NULL |       |
+### applications *(Phase 6 shape)*
+| column              | type      | notes                                                |
+|---------------------|-----------|------------------------------------------------------|
+| id                  | uuid PK   |                                                      |
+| user_id             | uuid FK   |                                                      |
+| job_id              | uuid FK   |                                                      |
+| proposal_id         | uuid FK NULL |                                                   |
+| resume_id           | uuid FK NULL |                                                   |
+| portfolio_ids       | jsonb     | list[uuid] copied from the proposal at apply time     |
+| status              | enum      | draft, applied, viewed, interview, offer, won,        |
+|                     |           | rejected, withdrawn, completed                       |
+| applied_at          | timestamptz NULL | set when status first enters `applied`          |
+| viewed_at           | timestamptz NULL |                                                |
+| interview_at        | timestamptz NULL |                                                |
+| offer_at            | timestamptz NULL |                                                |
+| won_at              | timestamptz NULL |                                                |
+| rejected_at         | timestamptz NULL |                                                |
+| withdrawn_at        | timestamptz NULL |                                                |
+| completed_at        | timestamptz NULL |                                                |
+| contract_amount     | numeric NULL | replaces the Phase-1 `bid_amount`                 |
+| client_response     | text NULL |                                                      |
+| rejection_reason    | text NULL |                                                      |
+| notes               | text NULL |                                                      |
+| snapshot            | jsonb NULL | immutable record of job + score + proposal + resume |
+|                     |           | + portfolio at submission time                       |
 
-### application_history
+Phase 6 dropped `connects_spent`, `bid_amount`, and `outcome_at` from Phase 1.
+
+### application_history *(Phase 6 shape)*
 Append-only log of status transitions on an application.
 
-| column         | type        |
-|----------------|-------------|
-| id             | uuid PK     |
-| application_id | uuid FK     |
-| from_status    | text NULL   |
-| to_status      | text        |
-| changed_at     | timestamptz |
-| note           | text NULL   |
+| column         | type        | notes                                       |
+|----------------|-------------|---------------------------------------------|
+| id             | uuid PK     |                                             |
+| application_id | uuid FK     |                                             |
+| user_id        | uuid FK NULL | added in Phase 6                            |
+| from_status    | text NULL   | null on the initial create row              |
+| to_status      | text        |                                             |
+| note           | text NULL   |                                             |
+| created_at     | timestamptz | renamed from `changed_at`                   |
 
-### proposals
-| column         | type      | notes                          |
-|----------------|-----------|--------------------------------|
-| id             | uuid PK   |                                |
-| user_id        | uuid FK   |                                |
-| job_id         | uuid FK   |                                |
-| body           | text      | final proposal text            |
-| draft_body     | text NULL | last AI draft before edits     |
-| provider       | text NULL | for AI drafts                  |
-| model          | text NULL |                                |
-| score          | numeric NULL | AI self-evaluation          |
-| created_at     | timestamptz |                              |
+### proposals *(Phase 5 shape)*
+| column             | type      | notes                                           |
+|--------------------|-----------|-------------------------------------------------|
+| id                 | uuid PK   |                                                 |
+| user_id            | uuid FK   |                                                 |
+| job_id             | uuid FK   |                                                 |
+| resume_id          | uuid FK NULL | resume used as positioning input             |
+| portfolio_ids      | jsonb     | list[uuid] of portfolios referenced in the body |
+| title              | text NULL | proposal headline / opening sentence             |
+| body               | text      | current text (user-editable)                    |
+| short_body         | text NULL | 120–180 word condensed version                  |
+| questions          | jsonb     | list[string] — clarifying questions             |
+| milestones         | jsonb     | list[{name, description, estimated_hours}]      |
+| delivery_approach  | jsonb     | list[string] — 3–5 short steps                  |
+| risk_notes         | jsonb     | list[string]                                    |
+| quality_score      | int NULL  | 0..100 from the deterministic review            |
+| quality_breakdown  | jsonb NULL| per-dimension scores (sum = quality_score)      |
+| quality_warnings   | jsonb     | list[string] surfaced by the review             |
+| prompt_version     | text NULL | "proposal-v1" etc — for audit                   |
+| model_provider     | text NULL | renamed from `provider`                         |
+| model_name         | text NULL | renamed from `model`                            |
+| raw_response       | jsonb NULL| full provider response for debugging            |
+
+Phase 5 dropped the Phase-1 `draft_body` and numeric `score` columns; the
+structured `quality_score` + `quality_breakdown` + `quality_warnings`
+replace the single-number self-evaluation.
 
 ### application_portfolios *(m2m: application ↔ portfolios used in proposal)*
 `(application_id, portfolio_id, order int)`
@@ -214,5 +280,12 @@ Index: `ivfflat (vector vector_cosine_ops)`. Unique `(owner_type, owner_id, mode
   structured fields and creates `opportunity_scores`.
 - Phase 3 (migration `0003_phase3_portfolio`) reshapes `portfolios` and
   populates `embeddings` with `owner_type ∈ {'portfolio','job'}` rows.
-- Future phases will populate `application_portfolios`, build analytics views,
-  and add a per-user `scoring_configs` table for Scoring v2.
+- Phase 4 (migration `0004_phase4_resume`) reshapes `resumes` to the
+  structured-profile contract and adds `owner_type='resume'` to `embeddings`.
+- Phase 5 (migration `0005_phase5_proposal`) reshapes `proposals` to carry
+  the structured proposal body + quality review.
+- Phase 6 (migration `0006_phase6_application`) extends `applications` with
+  per-status timestamps + immutable snapshot, and adds `draft`/`offer` to
+  the status enum.
+- Future phases will build analytics views and add a per-user
+  `scoring_configs` table for Scoring v2.

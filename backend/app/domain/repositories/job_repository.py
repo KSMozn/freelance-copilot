@@ -2,6 +2,7 @@ from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
+from app.domain.entities.analysis import OpportunityScore
 from app.domain.entities.job import BudgetType, Job, JobStatus
 
 
@@ -34,7 +35,9 @@ class JobRepository(Protocol):
         limit: int,
         offset: int,
         search: str | None,
-    ) -> tuple[list[Job], int]: ...
+        sort_by: str = "created_at",
+        sort_dir: str = "desc",
+    ) -> tuple[list[tuple[Job, OpportunityScore | None]], int]: ...
 
     async def update(
         self,

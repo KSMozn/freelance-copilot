@@ -12,6 +12,7 @@ from app.application.dto.analysis_dto import (
     OpportunityScoreRead,
     RiskItemSchema,
     ScoreBreakdown,
+    StackRequirementSchema,
 )
 from app.application.services.prompts import (
     PROMPT_VERSION,
@@ -23,6 +24,7 @@ from app.domain.entities.analysis import (
     JobAnalysis as DomainAnalysis,
     OpportunityScore as DomainScore,
     RiskItem,
+    StackRequirement,
 )
 from app.domain.entities.job import Job
 from app.domain.exceptions import DomainError, NotFoundError
@@ -80,7 +82,7 @@ class JobAnalysisService:
         )
 
         try:
-            raw = await self._ai.analyze_job(
+            raw = await self._ai.complete_json(
                 system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt
             )
         except AIProviderError as exc:
@@ -120,6 +122,10 @@ class JobAnalysisService:
             provider=raw.provider,
             model=raw.model,
             prompt_version=PROMPT_VERSION,
+            stack_requirements=[
+                StackRequirement(category=s.category, name=s.name, importance=s.importance)
+                for s in schema.stack_requirements
+            ],
             raw_response=raw.data,
         )
 
@@ -182,6 +188,10 @@ def _to_response(
             provider=analysis.provider,
             model=analysis.model,
             prompt_version=analysis.prompt_version,
+            stack_requirements=[
+                StackRequirementSchema(category=s.category, name=s.name, importance=s.importance)  # type: ignore[arg-type]
+                for s in analysis.stack_requirements
+            ],
             created_at=analysis.created_at,
             updated_at=analysis.updated_at,
         ),

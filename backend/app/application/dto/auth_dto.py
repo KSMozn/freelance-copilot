@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -34,8 +35,36 @@ class UserRead(BaseModel):
     is_active: bool
     is_superuser: bool
     created_at: datetime
+    email_verified_at: datetime | None = None
+    last_login_at: datetime | None = None
 
 
 class AuthResponse(BaseModel):
     user: UserRead
     tokens: TokenPair
+
+
+# --- OTP (Phase A) ---------------------------------------------------------
+
+
+class OtpRequestRequest(BaseModel):
+    """Ask the server to send a 6-digit code to the given email."""
+
+    email: EmailStr
+    # 'login' if user already exists, 'register' if signing up. The server
+    # accepts either — we don't leak account existence by erroring early.
+    purpose: Literal["login", "register"] = "login"
+
+
+class OtpRequestResponse(BaseModel):
+    sent: bool = True
+    expires_in_minutes: int
+
+
+class OtpVerifyRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    # For register, the server creates the account if it doesn't exist.
+    purpose: Literal["login", "register"] = "login"
+    # Only used on register: optional display name to save on the new user.
+    full_name: str | None = Field(default=None, max_length=255)

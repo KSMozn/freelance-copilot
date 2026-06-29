@@ -7,9 +7,11 @@ from uuid import UUID
 class User:
     id: UUID
     email: str
-    password_hash: str
+    password_hash: str | None
     full_name: str | None
     is_active: bool
     is_superuser: bool
     created_at: datetime
     updated_at: datetime
+    email_verified_at: datetime | None = None
+    last_login_at: datetime | None = None

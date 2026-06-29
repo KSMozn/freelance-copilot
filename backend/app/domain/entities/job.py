@@ -19,6 +19,23 @@ class JobStatus(StrEnum):
 
 
 @dataclass(slots=True)
+class CompanyResearch:
+    """Structured research about the client's company / product, extracted
+    from their website + cross-referenced URLs. Used to personalize proposals.
+    """
+
+    source_url: str
+    business_domain: str | None
+    product_summary: str | None
+    target_customers: str | None
+    existing_stack: list[str] = field(default_factory=list)
+    funding_signals: str | None = None
+    likely_architecture: str | None = None
+    personalization_hook: str | None = None  # "I noticed your product focuses on …"
+    fetched_at: datetime | None = None
+
+
+@dataclass(slots=True)
 class Job:
     id: UUID
     user_id: UUID
@@ -38,3 +55,4 @@ class Job:
     proposal_count: int | None = None
     client_id: UUID | None = None
     tags: list[str] = field(default_factory=list)
+    client_research: CompanyResearch | None = None

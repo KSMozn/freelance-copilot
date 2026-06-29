@@ -63,28 +63,70 @@ OpenAI for Claude requires no changes outside `infrastructure/` + `core/deps.py`
 
 ## Authentication
 
-JWT (HS256 in dev, RS256-ready in `core/security.py`).
+JWT (HS256 in dev, RS256-ready in `core/security.py`). Two parallel sign-in
+paths share the same token model:
 
-- `POST /api/v1/auth/register` — create user, return access + refresh tokens.
+**Password (legacy):**
+- `POST /api/v1/auth/register` — create user with email + password, return access + refresh tokens.
 - `POST /api/v1/auth/login` — verify credentials, return tokens.
+
+**Email OTP (Phase A — primary path going forward):**
+- `POST /api/v1/auth/request-code` — issue a 6-digit code, email it via the configured provider. Rate-limited (3 / 15 min / email).
+- `POST /api/v1/auth/verify-code` — verify the code. If the email isn't yet registered, the account is created on the fly (no password). Marks `email_verified_at` and returns tokens.
+
+**Shared:**
 - `POST /api/v1/auth/refresh` — rotate access token from refresh token.
-- `GET  /api/v1/auth/me` — current user.
+- `GET  /api/v1/auth/me` — current user (includes `email_verified_at`, `last_login_at`).
 
-Passwords are hashed with `bcrypt` via `passlib`. Tokens carry `sub` (user id),
-`type` (`access`/`refresh`), `exp`, `iat`.
+Passwords (when used) are hashed with `bcrypt` via `passlib`. OTP codes are
+also bcrypt-hashed before storage — the server never persists plaintext codes.
+Tokens carry `sub` (user id), `type` (`access`/`refresh`), `exp`, `iat`.
 
-## AI Provider Abstraction (Phase 2+)
+`EmailOtpService` (`application/services/email_otp_service.py`) handles issue +
+verify with rate-limit, attempt cap, and expiry. It depends on `EmailProvider`
+(see below) for delivery.
+
+### Email provider abstraction (Phase A)
+
+Mirrors the `AIProvider` pattern:
 
 ```python
-class LLMProvider(Protocol):
-    async def complete_json(
-        self, *, system: str, user: str, schema: type[BaseModel]
-    ) -> BaseModel: ...
+class EmailProvider(Protocol):
+    name: str
+    async def send(self, message: EmailMessage) -> EmailSendResult: ...
 ```
 
-Two implementations live in `infrastructure/ai/`: `OpenAIProvider`, `ClaudeProvider`.
-Selection is configuration-driven (`AI_PROVIDER=openai|claude`). All prompts
-return strict JSON validated against a Pydantic schema — no free-text parsing.
+Implementations in `infrastructure/email/`:
+- `MockEmailProvider` (dev default) — writes outgoing messages to `var/dev-emails.jsonl` and logs the OTP code. Zero network.
+- `ResendEmailProvider` — calls the Resend transactional email API. Recommended prod default.
+
+Templates live next to the providers under `infrastructure/email/templates/`
+(`otp_login.html` + `otp_login.txt`) and render via `template_renderer.render()`
+— plain `str.format_map` for now, easy to swap for Jinja2 if templates grow.
+
+Selection via `EMAIL_PROVIDER=mock|resend` in `app/core/config.py`, factory in
+`app/infrastructure/email/factory.py`.
+
+## AI Provider Abstraction
+
+```python
+class AIProvider(Protocol):
+    async def complete_json(self, *, system_prompt, user_prompt) -> AIRawResponse: ...
+    async def complete_json_with_image(
+        self, *, system_prompt, user_prompt, image_bytes, image_mime_type
+    ) -> AIRawResponse: ...
+```
+
+Implementations in `infrastructure/ai/`: `OpenAIProvider`, `ClaudeProvider`,
+`MockAIProvider`. Selection is configuration-driven
+(`AI_PROVIDER=openai|claude|mock`). All prompts return strict JSON, validated
+in the application layer against task-specific Pydantic schemas — no
+free-text parsing.
+
+The two methods share most of the HTTP logic. The image-enabled method
+serializes the image into the provider's native content-block format
+(`image_url` for OpenAI, `image / base64` for Anthropic) and is used by the
+Phase-7+ "import a job from a screenshot" flow.
 
 ## Embeddings & semantic search (Phase 3)
 
@@ -104,6 +146,111 @@ score `0.60·semantic + 0.25·skill_overlap + 0.10·domain_overlap + 0.05·strat
 Per-user portfolio sets are small, so cosine is computed in Python over a
 single `embeddings` query; swap in a pgvector ANN query when that changes
 without touching the scoring rules.
+
+## Resume library (Phase 4)
+
+The same embedding pipeline is reused for resumes. `ResumeService` is a sibling
+of `PortfolioService` — CRUD + embed-on-write — and writes rows into the same
+polymorphic `embeddings` table with `owner_type='resume'`.
+
+`ResumeRecommendationService` ranks the user's resume profiles for an analyzed
+job using a hybrid score with weights tuned for resume↔job fit:
+`0.55·semantic + 0.30·skill_overlap + 0.10·domain_overlap + 0.05·seniority`.
+Skill overlap is asymmetric and weighted — a primary-skills hit contributes
+1.0, a secondary-skills hit contributes 0.5, of the per-job-skill point.
+Seniority alignment walks an ordered scale (`junior < mid < senior < lead <
+staff < principal`) and rewards exact + adjacent matches.
+
+The two services intentionally stay separate rather than collapsing into a
+generic "match-via-embeddings" helper: they share infrastructure but differ in
+weights, explanation fields, and the templates that build their text
+representations.
+
+## Proposal generation + review (Phase 5)
+
+The AIProvider port carries a single method `complete_json(system_prompt,
+user_prompt) -> AIRawResponse`. Task semantics live in the prompt, not the
+port — the analyzer (Phase 2) and the proposal generator (Phase 5) share it,
+and the MockAIProvider routes by inspecting the user prompt for task markers.
+
+`ProposalGenerationService` orchestrates the full pipeline:
+
+1. Load the job; require its analysis + opportunity score (Phase 2).
+2. Recompute fresh portfolio matches (Phase 3) and resume recommendations
+   (Phase 4). Cached embeddings make this cheap.
+3. Build a compact prompt context — truncated job description, top-N
+   skills/risks/deliverables, top score dimensions, top 2 portfolio matches,
+   top 1 resume — so prompts stay within budget regardless of input size.
+4. Call `complete_json`; validate the response against `ProposalDraftSchema`.
+5. Run the deterministic `ProposalReviewService` against the draft.
+6. Persist body + structured fields + quality data into `proposals`.
+
+`ProposalReviewService` is pure and stateless. It scores eight dimensions —
+specificity, relevance, portfolio evidence, clarity, brevity, non-generic
+wording, risk awareness, call to action — and returns a 0–100 total plus
+explicit warnings per failing dimension. The banned-phrase list is shared
+with the prompt module so prompt and review can never drift.
+
+Editing a proposal goes through the same generation service: `update` writes
+the new body; `re_review` re-runs the deterministic check against the edited
+text. Quality data is always against the current body.
+
+## Application tracker (Phase 6)
+
+`ApplicationStateMachine` is a pure domain function. It maps each status to
+its set of allowed next statuses; `validate_transition` raises an
+`InvalidTransitionError` for self-loops and illegal moves. Terminal states
+(`rejected`, `withdrawn`, `completed`) have an empty allowed-next set. The
+frontend imports the same table at compile time and renders only the
+transitions the backend will accept.
+
+`ApplicationService` orchestrates the full create-from-proposal pipeline:
+load the proposal (its `job_id`, `resume_id`, and `portfolio_ids` are
+authoritative) → enforce the one-active-app-per-job invariant → call the
+matching + recommendation services to capture the talking points / positioning
+advice the user actually saw → call
+`build_snapshot` to assemble an immutable JSONB blob → write the row + the
+initial history entry.
+
+The snapshot lives in `applications.snapshot` and is captured by value: the
+job title, budget, opportunity score breakdown, proposal body + quality,
+resume positioning, and portfolio talking points are all copied at submission
+time. Phase 8's learning loop (planned) depends on this — editing or deleting
+the source rows after the fact must not retroactively change history.
+
+Status transitions go through `update_status`. The service captures
+`from_status` by value before delegating to the repository, since some repos
+(notably the in-memory fakes) mutate the entity in place. Each transition
+emits a row into `application_history` with an optional note, and sets the
+per-status timestamp the first time we enter a state.
+
+## Analytics (Phase 7)
+
+Read-only. The whole pipeline lives in three small modules:
+
+- `domain/analytics/definitions.py` — pure predicates: `is_interviewed`,
+  `is_won`, `is_lost`, etc. Every other module imports from here so the
+  semantics are defined exactly once.
+- `application/services/analytics_extraction.py` — pure functions that pull
+  the analytics-relevant facts out of an application snapshot: score /
+  quality buckets, budget bucket, known-technology matcher, known-domain
+  matcher. Order of preference: structured snapshot fields first, body-text
+  fallback last. Pattern matching is regex with word-boundary
+  lookbehind/lookahead so `.NET` and `C++` work and `API` doesn't match
+  inside "rapidly".
+- `application/services/analytics_service.py` — `AnalyticsService`
+  composes 11 sections (overview, funnel, outcome rates, score
+  effectiveness, proposal quality effectiveness, technologies, domains,
+  budgets, revenue, time-to-status, recent activity). Pure Python over the
+  per-user application set; no materialized views per the spec. The set is
+  small enough that a single round-trip is cheap.
+
+The endpoint is `GET /api/v1/analytics/dashboard?from_date=&to_date=`.
+Dates filter `applications.created_at` inclusively.
+
+Analytics never joins back to mutable `jobs`/`proposals`/`resumes` rows —
+the Phase-6 snapshot is the source of truth. That's the same guarantee
+Phase 8's learning loop will lean on.
 
 ## Testing strategy
 

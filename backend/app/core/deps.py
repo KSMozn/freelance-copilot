@@ -5,11 +5,38 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.services.analytics_service import AnalyticsService
+from app.application.services.application_service import ApplicationService
 from app.application.services.auth_service import AuthService
+from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.job_analysis_service import JobAnalysisService
+from app.application.services.job_import_service import JobImportService
 from app.application.services.job_service import JobService
 from app.application.services.portfolio_matching_service import PortfolioMatchingService
 from app.application.services.portfolio_service import PortfolioService
+from app.application.services.proposal_generation_service import (
+    ProposalGenerationService,
+)
+from app.application.services.proposal_review_service import ProposalReviewService
+from app.application.services.repository_matching_service import (
+    RepositoryMatchingService,
+)
+from app.application.services.repository_scan_service import RepositoryScanService
+from app.application.services.repository_service import RepositoryService
+from app.application.services.repository_star_story_service import (
+    RepositoryStarStoryService,
+)
+from app.application.services.resume_recommendation_service import (
+    ResumeRecommendationService,
+)
+from app.application.services.company_research_service import CompanyResearchService
+from app.application.services.job_confidence_service import JobConfidenceService
+from app.application.services.portfolio_story_service import PortfolioStoryService
+from app.application.services.repository_improvement_service import (
+    RepositoryImprovementService,
+)
+from app.application.services.skill_evidence_service import SkillEvidenceService
+from app.application.services.resume_service import ResumeService
 from app.application.services.scoring_service import ScoringService
 from app.core.config import Settings, get_settings
 from app.core.database import AsyncSessionLocal
@@ -17,9 +44,14 @@ from app.domain.entities.user import User
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
 from app.domain.profiles.freelancer_profile import DEFAULT_FREELANCER_PROFILE
 from app.domain.providers.ai_provider import AIProvider
+from app.domain.providers.email_provider import EmailProvider
 from app.domain.providers.embedding_provider import EmbeddingProvider
 from app.infrastructure.ai.embedding_factory import build_embedding_provider
 from app.infrastructure.ai.factory import build_ai_provider
+from app.infrastructure.email.factory import build_email_provider
+from app.infrastructure.db.repositories.sqlalchemy_email_otp_repository import (
+    SQLAlchemyEmailOtpRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_analysis_repository import (
     SQLAlchemyJobAnalysisRepository,
     SQLAlchemyOpportunityScoreRepository,
@@ -28,10 +60,24 @@ from app.infrastructure.db.repositories.sqlalchemy_embedding_repository import (
     SQLAlchemyEmbeddingRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_job_repository import SQLAlchemyJobRepository
+from app.infrastructure.db.repositories.sqlalchemy_application_repository import (
+    SQLAlchemyApplicationHistoryRepository,
+    SQLAlchemyApplicationRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_portfolio_repository import (
     SQLAlchemyPortfolioRepository,
 )
+from app.infrastructure.db.repositories.sqlalchemy_proposal_repository import (
+    SQLAlchemyProposalRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_repository_store import (
+    SQLAlchemyRepositoryStore,
+)
+from app.infrastructure.db.repositories.sqlalchemy_resume_repository import (
+    SQLAlchemyResumeRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
+from app.infrastructure.github.github_client import GithubClient
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
@@ -49,8 +95,31 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
-def get_auth_service(session: SessionDep) -> AuthService:
-    return AuthService(SQLAlchemyUserRepository(session))
+def get_email_provider(settings: SettingsDep) -> EmailProvider:
+    return build_email_provider(settings)
+
+
+def get_email_otp_service(
+    session: SessionDep,
+    settings: SettingsDep,
+    email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+) -> EmailOtpService:
+    return EmailOtpService(
+        otp_repo=SQLAlchemyEmailOtpRepository(session),
+        email_provider=email_provider,
+        app_name=settings.app_name,
+        from_address=settings.email_from_address,
+        expires_minutes=settings.otp_expires_minutes,
+        max_attempts=settings.otp_max_attempts,
+        rate_limit_per_15min=settings.otp_rate_limit_per_15min,
+    )
+
+
+def get_auth_service(
+    session: SessionDep,
+    otp_service: Annotated[EmailOtpService, Depends(get_email_otp_service)],
+) -> AuthService:
+    return AuthService(SQLAlchemyUserRepository(session), otp_service)
 
 
 def get_job_service(session: SessionDep) -> JobService:
@@ -67,6 +136,16 @@ def get_embedding_provider(settings: SettingsDep) -> EmbeddingProvider:
 
 def get_scoring_service() -> ScoringService:
     return ScoringService(DEFAULT_FREELANCER_PROFILE)
+
+
+def get_job_import_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+) -> JobImportService:
+    return JobImportService(
+        ai_provider=ai_provider,
+        job_service=JobService(SQLAlchemyJobRepository(session)),
+    )
 
 
 def get_job_analysis_service(
@@ -110,13 +189,237 @@ def get_portfolio_matching_service(
     )
 
 
+def get_resume_service(
+    session: SessionDep,
+    embedding_provider: Annotated[EmbeddingProvider, Depends(get_embedding_provider)],
+) -> ResumeService:
+    return ResumeService(
+        resume_repo=SQLAlchemyResumeRepository(session),
+        embedding_repo=SQLAlchemyEmbeddingRepository(session),
+        embedding_provider=embedding_provider,
+    )
+
+
+def get_resume_recommendation_service(
+    session: SessionDep,
+    embedding_provider: Annotated[EmbeddingProvider, Depends(get_embedding_provider)],
+    resume_service: Annotated[ResumeService, Depends(get_resume_service)],
+) -> ResumeRecommendationService:
+    return ResumeRecommendationService(
+        job_repo=SQLAlchemyJobRepository(session),
+        resume_repo=SQLAlchemyResumeRepository(session),
+        analysis_repo=SQLAlchemyJobAnalysisRepository(session),
+        embedding_repo=SQLAlchemyEmbeddingRepository(session),
+        resume_service=resume_service,
+        embedding_provider=embedding_provider,
+    )
+
+
+def get_proposal_review_service() -> ProposalReviewService:
+    return ProposalReviewService()
+
+
+def get_proposal_generation_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    matching: Annotated[
+        PortfolioMatchingService, Depends(get_portfolio_matching_service)
+    ],
+    recommendations: Annotated[
+        ResumeRecommendationService, Depends(get_resume_recommendation_service)
+    ],
+    review: Annotated[ProposalReviewService, Depends(get_proposal_review_service)],
+) -> ProposalGenerationService:
+    return ProposalGenerationService(
+        job_repo=SQLAlchemyJobRepository(session),
+        analysis_repo=SQLAlchemyJobAnalysisRepository(session),
+        score_repo=SQLAlchemyOpportunityScoreRepository(session),
+        portfolio_repo=SQLAlchemyPortfolioRepository(session),
+        portfolio_matching_service=matching,
+        resume_recommendation_service=recommendations,
+        proposal_repo=SQLAlchemyProposalRepository(session),
+        ai_provider=ai_provider,
+        review_service=review,
+    )
+
+
+def get_application_service(
+    session: SessionDep,
+    matching: Annotated[
+        PortfolioMatchingService, Depends(get_portfolio_matching_service)
+    ],
+    recommendations: Annotated[
+        ResumeRecommendationService, Depends(get_resume_recommendation_service)
+    ],
+) -> ApplicationService:
+    return ApplicationService(
+        application_repo=SQLAlchemyApplicationRepository(session),
+        history_repo=SQLAlchemyApplicationHistoryRepository(session),
+        job_repo=SQLAlchemyJobRepository(session),
+        proposal_repo=SQLAlchemyProposalRepository(session),
+        resume_repo=SQLAlchemyResumeRepository(session),
+        portfolio_repo=SQLAlchemyPortfolioRepository(session),
+        score_repo=SQLAlchemyOpportunityScoreRepository(session),
+        portfolio_matching_service=matching,
+        resume_recommendation_service=recommendations,
+    )
+
+
+def get_github_client(settings: SettingsDep) -> GithubClient:
+    return GithubClient(token=settings.github_token, base_url=settings.github_api_base_url)
+
+
+def get_repository_scan_service(
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    github_client: Annotated[GithubClient, Depends(get_github_client)],
+) -> RepositoryScanService:
+    return RepositoryScanService(github_client=github_client, ai_provider=ai_provider)
+
+
+def get_repository_service(
+    session: SessionDep,
+    embedding_provider: Annotated[EmbeddingProvider, Depends(get_embedding_provider)],
+    scan_service: Annotated[RepositoryScanService, Depends(get_repository_scan_service)],
+) -> RepositoryService:
+    return RepositoryService(
+        repository_store=SQLAlchemyRepositoryStore(session),
+        embedding_repo=SQLAlchemyEmbeddingRepository(session),
+        embedding_provider=embedding_provider,
+        scan_service=scan_service,
+    )
+
+
+def get_company_research_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+) -> CompanyResearchService:
+    return CompanyResearchService(
+        job_repo=SQLAlchemyJobRepository(session),
+        ai_provider=ai_provider,
+    )
+
+
+def get_portfolio_story_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    portfolio_matching: Annotated[
+        PortfolioMatchingService, Depends(get_portfolio_matching_service)
+    ],
+) -> PortfolioStoryService:
+    return PortfolioStoryService(
+        job_repo=SQLAlchemyJobRepository(session),
+        analysis_repo=SQLAlchemyJobAnalysisRepository(session),
+        portfolio_repo=SQLAlchemyPortfolioRepository(session),
+        portfolio_matching=portfolio_matching,
+        ai_provider=ai_provider,
+    )
+
+
+def get_skill_evidence_service(session: SessionDep) -> SkillEvidenceService:
+    return SkillEvidenceService(
+        job_repo=SQLAlchemyJobRepository(session),
+        analysis_repo=SQLAlchemyJobAnalysisRepository(session),
+        portfolio_repo=SQLAlchemyPortfolioRepository(session),
+        resume_repo=SQLAlchemyResumeRepository(session),
+        repository_store=SQLAlchemyRepositoryStore(session),
+    )
+
+
+def get_repository_matching_service(
+    session: SessionDep,
+    embedding_provider: Annotated[EmbeddingProvider, Depends(get_embedding_provider)],
+    repository_service: Annotated[RepositoryService, Depends(get_repository_service)],
+) -> RepositoryMatchingService:
+    return RepositoryMatchingService(
+        job_repo=SQLAlchemyJobRepository(session),
+        repository_store=SQLAlchemyRepositoryStore(session),
+        analysis_repo=SQLAlchemyJobAnalysisRepository(session),
+        embedding_repo=SQLAlchemyEmbeddingRepository(session),
+        repository_service=repository_service,
+        embedding_provider=embedding_provider,
+    )
+
+
+def get_repository_star_story_service(
+    session: SessionDep,
+    ai_provider: Annotated[AIProvider, Depends(get_ai_provider)],
+    repository_service: Annotated[RepositoryService, Depends(get_repository_service)],
+) -> RepositoryStarStoryService:
+    return RepositoryStarStoryService(
+        repository_store=SQLAlchemyRepositoryStore(session),
+        repository_service=repository_service,
+        ai_provider=ai_provider,
+    )
+
+
+def get_repository_improvement_service(session: SessionDep) -> RepositoryImprovementService:
+    return RepositoryImprovementService(
+        job_repo=SQLAlchemyJobRepository(session),
+        analysis_repo=SQLAlchemyJobAnalysisRepository(session),
+        repository_store=SQLAlchemyRepositoryStore(session),
+    )
+
+
+def get_job_confidence_service(
+    session: SessionDep,
+    evidence: Annotated[SkillEvidenceService, Depends(get_skill_evidence_service)],
+    portfolio_matching: Annotated[
+        PortfolioMatchingService, Depends(get_portfolio_matching_service)
+    ],
+    repository_matching: Annotated[
+        RepositoryMatchingService, Depends(get_repository_matching_service)
+    ],
+) -> JobConfidenceService:
+    return JobConfidenceService(
+        evidence_service=evidence,
+        portfolio_matching=portfolio_matching,
+        repository_matching=repository_matching,
+        score_repo=SQLAlchemyOpportunityScoreRepository(session),
+    )
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 JobServiceDep = Annotated[JobService, Depends(get_job_service)]
+RepositoryServiceDep = Annotated[RepositoryService, Depends(get_repository_service)]
+RepositoryMatchingServiceDep = Annotated[
+    RepositoryMatchingService, Depends(get_repository_matching_service)
+]
+SkillEvidenceServiceDep = Annotated[SkillEvidenceService, Depends(get_skill_evidence_service)]
+CompanyResearchServiceDep = Annotated[
+    CompanyResearchService, Depends(get_company_research_service)
+]
+PortfolioStoryServiceDep = Annotated[
+    PortfolioStoryService, Depends(get_portfolio_story_service)
+]
+JobConfidenceServiceDep = Annotated[JobConfidenceService, Depends(get_job_confidence_service)]
+RepositoryImprovementServiceDep = Annotated[
+    RepositoryImprovementService, Depends(get_repository_improvement_service)
+]
+RepositoryStarStoryServiceDep = Annotated[
+    RepositoryStarStoryService, Depends(get_repository_star_story_service)
+]
+JobImportServiceDep = Annotated[JobImportService, Depends(get_job_import_service)]
 JobAnalysisServiceDep = Annotated[JobAnalysisService, Depends(get_job_analysis_service)]
 PortfolioServiceDep = Annotated[PortfolioService, Depends(get_portfolio_service)]
 PortfolioMatchingServiceDep = Annotated[
     PortfolioMatchingService, Depends(get_portfolio_matching_service)
 ]
+ResumeServiceDep = Annotated[ResumeService, Depends(get_resume_service)]
+ResumeRecommendationServiceDep = Annotated[
+    ResumeRecommendationService, Depends(get_resume_recommendation_service)
+]
+ProposalGenerationServiceDep = Annotated[
+    ProposalGenerationService, Depends(get_proposal_generation_service)
+]
+def get_analytics_service(session: SessionDep) -> AnalyticsService:
+    return AnalyticsService(
+        application_repo=SQLAlchemyApplicationRepository(session),
+        history_repo=SQLAlchemyApplicationHistoryRepository(session),
+    )
+
+
+ApplicationServiceDep = Annotated[ApplicationService, Depends(get_application_service)]
+AnalyticsServiceDep = Annotated[AnalyticsService, Depends(get_analytics_service)]
 
 
 async def get_current_user(

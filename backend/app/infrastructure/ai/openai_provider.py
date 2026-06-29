@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from typing import Any
 
@@ -13,10 +14,17 @@ from app.infrastructure.ai.errors import (
 )
 
 OPENAI_DEFAULT_MODEL = "gpt-4o-mini"
-OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1"
 
 
 class OpenAIProvider:
+    """OpenAI-compatible chat-completion provider.
+
+    `base_url` defaults to OpenAI but can point at any OpenAI-compatible host
+    (Groq: `https://api.groq.com/openai/v1`, Together, Ollama, etc.). The
+    wire protocol is identical; the model id changes with the endpoint.
+    """
+
     name = "openai"
 
     def __init__(
@@ -24,28 +32,64 @@ class OpenAIProvider:
         *,
         api_key: str,
         model: str = OPENAI_DEFAULT_MODEL,
+        base_url: str = OPENAI_DEFAULT_BASE_URL,
         timeout_s: float = 60.0,
     ) -> None:
         if not api_key:
             raise AIProviderUnavailable("OPENAI_API_KEY is not set")
         self._api_key = api_key
         self.model = model
+        self._base_url = base_url.rstrip("/")
         self._timeout = timeout_s
 
-    async def analyze_job(
+    @property
+    def _chat_url(self) -> str:
+        return f"{self._base_url}/chat/completions"
+
+    async def complete_json(
         self,
         *,
         system_prompt: str,
         user_prompt: str,
     ) -> AIRawResponse:
+        return await self._chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
+        )
+
+    async def complete_json_with_image(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        image_bytes: bytes,
+        image_mime_type: str,
+    ) -> AIRawResponse:
+        data_url = (
+            f"data:{image_mime_type};base64,"
+            + base64.b64encode(image_bytes).decode("ascii")
+        )
+        return await self._chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": user_prompt},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                },
+            ]
+        )
+
+    async def _chat(self, *, messages: list[dict[str, Any]]) -> AIRawResponse:
         payload: dict[str, Any] = {
             "model": self.model,
             "temperature": 0.2,
             "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            "messages": messages,
         }
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -54,7 +98,7 @@ class OpenAIProvider:
 
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
-                resp = await client.post(OPENAI_URL, json=payload, headers=headers)
+                resp = await client.post(self._chat_url, json=payload, headers=headers)
         except httpx.HTTPError as exc:
             raise AIProviderUnavailable(f"OpenAI request failed: {exc}") from exc
 

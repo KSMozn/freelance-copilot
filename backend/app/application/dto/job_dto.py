@@ -4,7 +4,32 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from app.application.dto.analysis_dto import OpportunityScoreRead
 from app.domain.entities.job import BudgetType, JobStatus
+
+
+class CompanyResearchSchema(BaseModel):
+    """Structured research about the client — extracted from their website
+    and surfaced as personalization context for the proposal.
+    """
+
+    model_config = ConfigDict(extra="ignore", from_attributes=True)
+
+    source_url: str
+    business_domain: str | None = None
+    product_summary: str | None = Field(default=None, max_length=600)
+    target_customers: str | None = Field(default=None, max_length=400)
+    existing_stack: list[str] = Field(default_factory=list)
+    funding_signals: str | None = Field(default=None, max_length=400)
+    likely_architecture: str | None = Field(default=None, max_length=600)
+    personalization_hook: str | None = Field(default=None, max_length=400)
+    fetched_at: datetime | None = None
+
+
+class CompanyResearchRequest(BaseModel):
+    """User-supplied URL to research (client website / product page)."""
+
+    url: HttpUrl
 
 
 class JobCreate(BaseModel):
@@ -50,6 +75,8 @@ class JobRead(BaseModel):
     imported_at: datetime
     created_at: datetime
     updated_at: datetime
+    opportunity_score: OpportunityScoreRead | None = None
+    client_research: CompanyResearchSchema | None = None
 
 
 class JobListResponse(BaseModel):

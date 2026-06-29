@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 import jwt
@@ -5,11 +6,13 @@ import jwt
 from app.application.dto.auth_dto import (
     AuthResponse,
     LoginRequest,
+    OtpVerifyRequest,
     RefreshRequest,
     RegisterRequest,
     TokenPair,
     UserRead,
 )
+from app.application.services.email_otp_service import EmailOtpService
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -27,8 +30,13 @@ from app.domain.repositories.user_repository import UserRepository
 
 
 class AuthService:
-    def __init__(self, user_repo: UserRepository) -> None:
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        otp_service: EmailOtpService | None = None,
+    ) -> None:
         self._users = user_repo
+        self._otp = otp_service
 
     @staticmethod
     def _tokens_for(user_id: UUID) -> TokenPair:
@@ -46,6 +54,8 @@ class AuthService:
             is_active=user.is_active,
             is_superuser=user.is_superuser,
             created_at=user.created_at,
+            email_verified_at=user.email_verified_at,
+            last_login_at=user.last_login_at,
         )
 
     async def register(self, payload: RegisterRequest) -> AuthResponse:
@@ -57,14 +67,20 @@ class AuthService:
             password_hash=hash_password(payload.password),
             full_name=payload.full_name,
         )
+        await self._users.touch_last_login(user.id, datetime.now(UTC))
         return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))
 
     async def login(self, payload: LoginRequest) -> AuthResponse:
         user = await self._users.get_by_email(str(payload.email))
-        if user is None or not verify_password(payload.password, user.password_hash):
+        if (
+            user is None
+            or user.password_hash is None
+            or not verify_password(payload.password, user.password_hash)
+        ):
             raise InvalidCredentialsError("Invalid email or password")
         if not user.is_active:
             raise InvalidCredentialsError("User is inactive")
+        await self._users.touch_last_login(user.id, datetime.now(UTC))
         return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))
 
     async def refresh(self, payload: RefreshRequest) -> TokenPair:
@@ -87,3 +103,55 @@ class AuthService:
         if user is None:
             raise NotFoundError("User not found")
         return user
+
+    # --- OTP flow (Phase A) ------------------------------------------------
+
+    async def request_otp(
+        self,
+        *,
+        email: str,
+        purpose: str,
+        ip_address: str | None,
+        user_agent: str | None,
+    ) -> None:
+        if self._otp is None:
+            raise RuntimeError("OTP service is not configured")
+        # We always issue a code, even if the email isn't registered. That
+        # keeps signup and sign-in indistinguishable from the outside, so an
+        # attacker can't enumerate accounts via this endpoint.
+        await self._otp.issue(
+            email=email,
+            purpose=purpose,  # type: ignore[arg-type]
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+    async def verify_otp(self, payload: OtpVerifyRequest) -> AuthResponse:
+        if self._otp is None:
+            raise RuntimeError("OTP service is not configured")
+        await self._otp.verify(
+            email=str(payload.email),
+            code=payload.code,
+            purpose=payload.purpose,
+        )
+
+        now = datetime.now(UTC)
+        user = await self._users.get_by_email(str(payload.email))
+        if user is None:
+            # First time we've seen this email — create the account.
+            user = await self._users.create(
+                email=str(payload.email),
+                password_hash=None,
+                full_name=payload.full_name,
+                email_verified_at=now,
+            )
+        elif user.email_verified_at is None:
+            await self._users.mark_email_verified(user.id, now)
+            # Reload so the response shows the new verified_at.
+            user = await self._users.get_by_id(user.id)  # type: ignore[assignment]
+
+        if user is None or not user.is_active:
+            raise InvalidCredentialsError("User is inactive")
+
+        await self._users.touch_last_login(user.id, now)
+        return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))

@@ -12,6 +12,22 @@ class RiskItem:
 
 
 @dataclass(slots=True)
+class StackRequirement:
+    """One structured stack signal extracted from a job post.
+
+    `category` is one of the well-known buckets the proposal-side UI groups
+    by (tech_stack, architecture, cloud_platform, ai_llm, authentication,
+    billing, integrations, database, devops, testing, deployment, security,
+    nice_to_have). `importance` is a 1–5 star weight the analyzer assigns
+    based on how prominently the post emphasizes the item.
+    """
+
+    category: str
+    name: str
+    importance: int  # 1..5
+
+
+@dataclass(slots=True)
 class JobAnalysis:
     """Pure domain entity: what the LLM extracted about a job.
 
@@ -42,6 +58,7 @@ class JobAnalysis:
     provider: str | None
     model: str | None
     prompt_version: str | None
+    stack_requirements: list[StackRequirement] = field(default_factory=list)
     raw_response: dict[str, Any] | None = field(default=None)
     created_at: datetime | None = None
     updated_at: datetime | None = None

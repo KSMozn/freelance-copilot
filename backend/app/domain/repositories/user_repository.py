@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -13,6 +14,13 @@ class UserRepository(Protocol):
         self,
         *,
         email: str,
-        password_hash: str,
+        password_hash: str | None,
         full_name: str | None,
+        email_verified_at: datetime | None = None,
     ) -> User: ...
+
+    async def mark_email_verified(
+        self, user_id: UUID, verified_at: datetime
+    ) -> None: ...
+
+    async def touch_last_login(self, user_id: UUID, at: datetime) -> None: ...

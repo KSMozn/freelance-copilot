@@ -14,7 +14,7 @@ async def test_mock_provider_returns_schema_valid_payload() -> None:
         budget="fixed USD 3000-5000",
         proposal_count=8,
     )
-    raw = await provider.analyze_job(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
+    raw = await provider.complete_json(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
 
     assert raw.provider == "mock"
     schema = JobAnalysisSchema.model_validate(raw.data)
@@ -32,7 +32,7 @@ async def test_mock_provider_flags_urgent_language() -> None:
         budget="unspecified",
         proposal_count=2,
     )
-    raw = await provider.analyze_job(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
+    raw = await provider.complete_json(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
     schema = JobAnalysisSchema.model_validate(raw.data)
     assert schema.red_flags, "expected at least one red flag for urgent language"
     assert schema.risk_level in ("medium", "high")
@@ -46,7 +46,7 @@ async def test_mock_provider_handles_sparse_description() -> None:
         budget="unspecified",
         proposal_count="unknown",
     )
-    raw = await provider.analyze_job(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
+    raw = await provider.complete_json(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
     schema = JobAnalysisSchema.model_validate(raw.data)
     assert schema.budget_assessment == "unclear"
     # missing scope detail should surface as a risk

@@ -31,11 +31,27 @@ class Settings(BaseSettings):
     ai_provider: Literal["openai", "claude", "mock"] = "mock"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    # Override to point the OpenAI-compatible provider at Groq, Together,
+    # Ollama, etc. Defaults to OpenAI's own endpoint.
+    openai_base_url: str = "https://api.openai.com/v1"
     anthropic_api_key: str | None = None
     claude_model: str = "claude-sonnet-4-6"
 
     embedding_provider: Literal["openai", "mock"] = "mock"
     openai_embedding_model: str = "text-embedding-3-small"
+
+    github_token: str | None = None
+    github_api_base_url: str = "https://api.github.com"
+
+    email_provider: Literal["mock", "resend"] = "mock"
+    resend_api_key: str | None = None
+    email_from_address: str = "no-reply@example.com"
+    email_from_name: str | None = "Freelance Copilot"
+    app_name: str = "Freelance Copilot"
+    otp_expires_minutes: int = 10
+    otp_max_attempts: int = 5
+    otp_rate_limit_per_15min: int = 3
+    frontend_base_url: str = "http://localhost:5173"
 
     @computed_field  # type: ignore[prop-decorator]
     @property

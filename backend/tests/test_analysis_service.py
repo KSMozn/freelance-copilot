@@ -91,7 +91,7 @@ class _BadProvider:
     name = "bad"
     model = "bad"
 
-    async def analyze_job(self, *, system_prompt: str, user_prompt: str):
+    async def complete_json(self, *, system_prompt: str, user_prompt: str):
         return AIRawResponse(data={"summary": ""}, provider=self.name, model=self.model)
 
 
@@ -99,7 +99,7 @@ class _ExplodingProvider:
     name = "exploding"
     model = "exploding"
 
-    async def analyze_job(self, *, system_prompt: str, user_prompt: str):
+    async def complete_json(self, *, system_prompt: str, user_prompt: str):
         raise AIProviderResponseError("provider returned 500")
 
 

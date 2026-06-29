@@ -21,6 +21,12 @@ dist/
 .env.local
 .env.*.local
 
+# Local-only docker overrides (per-developer port/volume tweaks)
+docker-compose.override.yml
+
+# Dev mailbox written by MockEmailProvider; contains OTP codes
+backend/var/
+
 # IDE
 .idea/
 .vscode/
