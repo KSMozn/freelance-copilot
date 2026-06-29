@@ -39,6 +39,8 @@
   projects (n) ─── users (1), → repositories | portfolios          [Phase B]
   experience_skills, project_skills (m2m → skill_catalog)           [Phase B]
   experience_achievements, project_achievements (n) ─── parent (1)  [Phase B]
+
+  persona_archetypes (1) ─── personas (n) ─── users (1)             [Phase C]
 ```
 
 ## Tables
@@ -148,6 +150,58 @@ FK→portfolios SET NULL, `origin`
 
 `project_skills`, `project_achievements`: same shape as the experience
 join tables.
+
+### persona_archetypes *(Phase C)*
+System-seeded persona templates. Immutable from user CRUD — only the
+Alembic migration `0021_phase_c_seed_archetypes` upserts rows. Eleven
+archetypes ship today (Individual Contributor, Senior Engineer, Tech
+Lead, Staff Engineer, Principal Engineer, Engineering Manager, Director
+of Engineering, AI Engineer, Solutions Architect, Consultant, Freelancer).
+
+| column                          | type                                                                          | notes                                              |
+|---------------------------------|-------------------------------------------------------------------------------|----------------------------------------------------|
+| id                              | uuid PK                                                                       |                                                    |
+| slug                            | text UNIQUE                                                                   | e.g. `tech_lead`                                   |
+| name                            | text                                                                          | display name                                       |
+| description                     | text                                                                          | one-liner shown on the archetype gallery card      |
+| default_weights                 | jsonb                                                                         | scoring weights summing to 100                     |
+| default_skill_category_weights  | jsonb                                                                         | per-category emphasis summing to 1.0               |
+| default_proposal_tone           | enum(pragmatic, technical_deep, executive, consultative, empathetic)          |                                                    |
+| default_target_roles            | jsonb (array of strings)                                                       | seed for the persona's `target_role` field         |
+| default_seniority_band          | text NULL                                                                     | feeds resume↔job seniority alignment               |
+| is_active                       | bool                                                                          | default true                                       |
+| sort_order                      | smallint                                                                      | display order in the archetype gallery             |
+| created_at                      | timestamptz                                                                   |                                                    |
+
+### personas *(Phase C)*
+Per-user instances of an archetype, freely customizable. JSONB columns
+carry *overrides* on top of archetype defaults — merged at read time by
+`PersonaProfileResolver` (persona wins).
+
+| column                | type                       | notes                                                                                  |
+|-----------------------|----------------------------|----------------------------------------------------------------------------------------|
+| id                    | uuid PK                    |                                                                                        |
+| user_id               | uuid FK→users CASCADE      |                                                                                        |
+| archetype_id          | uuid FK→persona_archetypes RESTRICT |                                                                              |
+| name                  | text                       | user-facing label                                                                      |
+| target_role           | text NULL                  | e.g. "Tech Lead — Backend"                                                             |
+| target_seniority      | text NULL                  | overrides archetype default                                                            |
+| weights               | jsonb                      | scoring-weight overrides                                                               |
+| skill_category_weights| jsonb                      | category-emphasis overrides                                                            |
+| proposal_tone         | enum(proposal_tone) NULL   | override; NULL → use archetype default                                                 |
+| strategic_priorities  | jsonb (array of strings)   | override; used by ScoringService strategic_value                                       |
+| pinned_experience_ids | jsonb (array of UUID strings) | always surface these experiences regardless of recency                              |
+| pinned_project_ids    | jsonb (array of UUID strings) | always surface these projects in matching                                            |
+| pinned_skill_ids      | jsonb (array of UUID strings) | always surface these skills in `strong_skills`                                       |
+| accent_color          | text NULL                  | hex string for the persona's topbar stripe (Phase C reserved; renders in Phase E)      |
+| is_default            | bool                       | exactly one per user via partial unique index                                          |
+| is_archived           | bool                       | soft-hide; the persona stays around for historical proposal/analysis references        |
+| created_at            | timestamptz                |                                                                                        |
+| updated_at            | timestamptz                |                                                                                        |
+
+UNIQUE `(user_id, name)`. Partial UNIQUE
+`(user_id) WHERE is_default = true` — keeps the invariant cheap and queryable.
+Index `(user_id, is_archived)`.
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.

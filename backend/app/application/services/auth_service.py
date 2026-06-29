@@ -13,6 +13,7 @@ from app.application.dto.auth_dto import (
     UserRead,
 )
 from app.application.services.email_otp_service import EmailOtpService
+from app.application.services.persona_service import PersonaService
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -34,9 +35,11 @@ class AuthService:
         self,
         user_repo: UserRepository,
         otp_service: EmailOtpService | None = None,
+        persona_service: PersonaService | None = None,
     ) -> None:
         self._users = user_repo
         self._otp = otp_service
+        self._personas = persona_service
 
     @staticmethod
     def _tokens_for(user_id: UUID) -> TokenPair:
@@ -152,6 +155,16 @@ class AuthService:
 
         if user is None or not user.is_active:
             raise InvalidCredentialsError("User is inactive")
+
+        # Every OTP-verified account needs a default persona so the dashboard
+        # has a working context. Idempotent — only creates one if absent.
+        if self._personas is not None:
+            try:
+                await self._personas.ensure_primary(user.id)
+            except Exception:
+                # Failing to provision a persona should not block sign-in;
+                # the user can create one from the UI on first visit.
+                pass
 
         await self._users.touch_last_login(user.id, now)
         return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))

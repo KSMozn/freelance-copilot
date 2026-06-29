@@ -16,9 +16,14 @@ interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
   refreshToken: string | null;
+  // Phase C — id of the persona the user is currently "wearing." Drives which
+  // pot/weights/tone downstream calls use. Hydrated from /personas/current
+  // after login; user can switch via the topbar.
+  activePersonaId: string | null;
   setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
   setUser: (user: AuthUser) => void;
+  setActivePersonaId: (id: string | null) => void;
   logout: () => void;
 }
 
@@ -28,10 +33,19 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
       refreshToken: null,
-      setAuth: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken }),
+      activePersonaId: null,
+      setAuth: (user, accessToken, refreshToken) =>
+        set({ user, accessToken, refreshToken, activePersonaId: null }),
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
       setUser: (user) => set({ user }),
-      logout: () => set({ user: null, accessToken: null, refreshToken: null }),
+      setActivePersonaId: (id) => set({ activePersonaId: id }),
+      logout: () =>
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          activePersonaId: null,
+        }),
     }),
     { name: "upwork-intel-auth" },
   ),

@@ -339,13 +339,80 @@ in for real once personas exist.
 
 ---
 
-## Phase C — Personas as lenses *(next)*
+## Phase C — Personas as lenses ✅
 
-Adds the `personas` + `persona_archetypes` tables, archetype gallery
-("+ New persona" wizard), persona switcher in topbar. Scoring services
-swap from `DEFAULT_FREELANCER_PROFILE` to `PersonaProfileResolver` —
-which already works per-user as of Phase B, so the swap is a one-line
-change per call site.
+**Goal:** instantiate personas as user-facing lenses over the knowledge
+graph and wire the scoring engine to read through `PersonaProfileResolver`.
+Biggest user-value unlock — a single user can now apply to one job as
+"Tech Lead" and another as "AI Engineer" and the system reflects both
+framings end-to-end.
+
+- Migration `0020_phase_c_personas` — `persona_archetypes` (system-seeded
+  templates) + `personas` (per-user instances) tables. Personas table
+  carries overrides (weights, skill_category_weights, proposal_tone,
+  strategic_priorities) and pinning arrays (pinned_experience_ids /
+  pinned_project_ids / pinned_skill_ids). Partial unique index enforces
+  exactly one default persona per user.
+- Migration `0021_phase_c_seed_archetypes` — seeds 11 archetypes:
+  Individual Contributor, Senior Engineer, Tech Lead, Staff Engineer,
+  Principal Engineer, Engineering Manager, Director of Engineering,
+  AI Engineer, Solutions Architect, Consultant, Freelancer. Each ships
+  scoring weights (summing to 100), category emphasis (summing to 1.0),
+  proposal tone, target roles, and seniority band. Idempotent upsert.
+- Migration `0022_phase_c_backfill_primary` — creates a `Primary` persona
+  (from the `senior_engineer` archetype, `is_default=true`) for every
+  existing user. Idempotent.
+- Services:
+  - `PersonaService` — CRUD + lifecycle: `instantiate_from_archetype`
+    (auto-uniques names), `ensure_primary` (idempotent default-persona
+    creation called from auth), `set_default` (with single-default
+    invariant), `delete` (refuses last persona; auto-promotes a new
+    default when needed).
+  - `PersonaProfileResolver` (extended) — now merges persona overrides
+    over archetype defaults over the static fallback to produce the
+    `FreelancerProfile` shape. Pinned skills bypass the proficiency
+    threshold and always appear in `strong_skills`.
+  - `AuthService` gains an optional `PersonaService` and calls
+    `ensure_primary` after every successful `verify_otp` so brand-new
+    OTP signups land with a working default persona.
+- DI rewiring (`core/deps.py`):
+  - `get_scoring_service` and `get_portfolio_matching_service` are now
+    async — they await `PersonaProfileResolver.load_for_user(user.id)`
+    and pass the per-user `FreelancerProfile` into the underlying
+    services. Scoring engine + matching code stay untouched.
+- API (`/api/v1/personas`):
+  - `GET /archetypes`, `GET /`, `GET /current`, `POST /`, `GET /{id}`,
+    `PATCH /{id}`, `POST /{id}/set-default`, `DELETE /{id}`.
+- Frontend:
+  - `PersonaSwitcher` in the topbar — dropdown with active persona,
+    switch list, "+ New persona," "Manage personas." Switching persists
+    server-side via `set-default`.
+  - `/personas` index — card grid with default badge, "Make default,"
+    "Delete."
+  - `/personas/new` — 2-step wizard: archetype gallery (11 cards) →
+    name + target role.
+  - Sidebar entry "Personas."
+  - `auth.ts` (Zustand) gains `activePersonaId`, mirrored from the
+    server-resolved default.
+
+**Exit:** the demo user has the auto-created Primary persona;
+`PersonaProfileResolver.load_for_user(demo_id)` returns
+`version=persona:<uuid>` with archetype-derived weights + the per-user
+strong_skills already wired in Phase B. New OTP signups get a Primary
+persona automatically. Existing tests stay green (197/197). Scoring on
+any job now flows through the active persona's weights without any
+scoring-engine code change.
+
+---
+
+## Phase D — Source ingestion (CV + LinkedIn + certificates + content) *(next)*
+
+Activates the wide ingest paths so the knowledge graph grows beyond the
+existing portfolios/repos backfill. Adds `cv_uploads`, `linkedin_snapshots`,
+`certificates`, `content_items`, `uploaded_files` tables; `CvIngestService`
+(pdfminer.six + python-docx + paste); `LinkedInIngestService`;
+`CertificateService`. The "one thing" onboarding card stops being a
+placeholder.
 
 ---
 

@@ -149,6 +149,71 @@ through the catalog (auto-creating unknown rows), aggregates evidence into
 `user_skills` with a `sources` provenance map, and creates one `projects`
 row per portfolio + per repository. Idempotent: safe to re-run.
 
+## Personas as lenses (Phase C)
+
+A persona is a *lens* over the user's knowledge graph — not a copy of it.
+The same user_skills / experiences / projects feed every persona; what
+changes is how they're weighted, ordered, framed, and surfaced.
+
+Tables:
+- `persona_archetypes` — system-seeded templates (11 today: IC, Senior
+  Engineer, Tech Lead, Staff, Principal, Eng Manager, Director, AI Engineer,
+  Solutions Architect, Consultant, Freelancer). Immutable from user CRUD.
+- `personas` — per-user instances of an archetype. Carry overrides
+  (`weights`, `skill_category_weights`, `proposal_tone`,
+  `strategic_priorities`) and pinning arrays
+  (`pinned_experience_ids`, `pinned_project_ids`, `pinned_skill_ids`).
+  Exactly one `is_default` per user, enforced by a partial unique index.
+
+Services:
+- **`PersonaService`** (`persona_service.py`) — CRUD + lifecycle. Notable
+  methods: `instantiate_from_archetype` (auto-uniques the name across the
+  user's personas), `ensure_primary` (idempotent default-persona creation,
+  called from `AuthService.verify_otp` so every new account lands on a
+  working dashboard), `delete` (refuses to delete the last persona,
+  auto-promotes another to default if a default is deleted).
+- **`PersonaProfileResolver`** (extended in Phase C) — now produces a
+  `FreelancerProfile` whose `weights`, `strategic_priorities`, and pinned
+  skills reflect the active persona. Merge precedence: persona override →
+  archetype default → static fallback. The scoring engine code is
+  unchanged.
+
+Wiring:
+- `get_scoring_service` and `get_portfolio_matching_service` in
+  `core/deps.py` are now async — they await
+  `PersonaProfileResolver.load_for_user(user_id)` and pass the resulting
+  per-user `FreelancerProfile` into the scoring/matching services. Every
+  authenticated request scores against the active persona's profile, with
+  zero changes to the scoring or matching code itself.
+- `AuthService` accepts an optional `PersonaService` and calls
+  `ensure_primary` on every successful `verify_otp`. New OTP users get a
+  default `Primary` persona (instantiated from the `senior_engineer`
+  archetype) before they hit the dashboard.
+
+API surface (`/api/v1/personas`):
+- `GET /personas/archetypes` — list the 11 seeded archetypes.
+- `GET /personas` — list the current user's personas.
+- `GET /personas/current` — the user's default persona (idempotent — creates
+  Primary if absent).
+- `POST /personas` — create from an archetype slug.
+- `GET /personas/{id}` / `PATCH /personas/{id}` — read / partial update
+  (whitelisted fields only).
+- `POST /personas/{id}/set-default` — promote a persona to default
+  (uses the partial unique index to enforce one-default-per-user).
+- `DELETE /personas/{id}` — refuses to delete the user's only persona;
+  auto-promotes another to default if the deleted one was default.
+
+Frontend:
+- `PersonaSwitcher` in the topbar — dropdown with the active persona,
+  switch list, "+ New persona", "Manage personas." Switching calls
+  `/personas/{id}/set-default` so the choice persists across reloads.
+- `/personas` index page — card grid with default badge, "Make default,"
+  "Delete."
+- `/personas/new` — 2-step wizard: archetype gallery, then name +
+  target role. Submits to `POST /personas`.
+- `auth.ts` (Zustand) gains `activePersonaId` — mirrored from the
+  server-resolved default so other components can read it synchronously.
+
 ## AI Provider Abstraction
 
 ```python

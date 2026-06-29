@@ -11,6 +11,7 @@ from app.application.services.auth_service import AuthService
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.knowledge_graph_service import KnowledgeGraphService
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
+from app.application.services.persona_service import PersonaService
 from app.application.services.skill_catalog_service import SkillCatalogService
 from app.application.services.job_analysis_service import JobAnalysisService
 from app.application.services.job_import_service import JobImportService
@@ -54,6 +55,10 @@ from app.infrastructure.ai.factory import build_ai_provider
 from app.infrastructure.email.factory import build_email_provider
 from app.infrastructure.db.repositories.sqlalchemy_email_otp_repository import (
     SQLAlchemyEmailOtpRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
+    SQLAlchemyPersonaArchetypeRepository,
+    SQLAlchemyPersonaRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_skill_catalog_repository import (
     SQLAlchemySkillCatalogRepository,
@@ -125,10 +130,19 @@ def get_knowledge_graph_service(
     )
 
 
+def get_persona_service(session: SessionDep) -> PersonaService:
+    return PersonaService(
+        personas=SQLAlchemyPersonaRepository(session),
+        archetypes=SQLAlchemyPersonaArchetypeRepository(session),
+    )
+
+
 def get_persona_profile_resolver(session: SessionDep) -> PersonaProfileResolver:
     return PersonaProfileResolver(
         user_skills=SQLAlchemyUserSkillRepository(session),
         skill_catalog=SQLAlchemySkillCatalogRepository(session),
+        personas=SQLAlchemyPersonaRepository(session),
+        archetypes=SQLAlchemyPersonaArchetypeRepository(session),
     )
 
 
@@ -151,8 +165,11 @@ def get_email_otp_service(
 def get_auth_service(
     session: SessionDep,
     otp_service: Annotated[EmailOtpService, Depends(get_email_otp_service)],
+    persona_service: Annotated[PersonaService, Depends(get_persona_service)],
 ) -> AuthService:
-    return AuthService(SQLAlchemyUserRepository(session), otp_service)
+    return AuthService(
+        SQLAlchemyUserRepository(session), otp_service, persona_service
+    )
 
 
 def get_job_service(session: SessionDep) -> JobService:
@@ -167,8 +184,20 @@ def get_embedding_provider(settings: SettingsDep) -> EmbeddingProvider:
     return build_embedding_provider(settings)
 
 
-def get_scoring_service() -> ScoringService:
-    return ScoringService(DEFAULT_FREELANCER_PROFILE)
+async def get_scoring_service(
+    user: "CurrentUser",
+    resolver: Annotated[
+        PersonaProfileResolver, Depends(get_persona_profile_resolver)
+    ],
+) -> ScoringService:
+    """Build a ScoringService against the *active* persona's profile.
+
+    Falls back to ``DEFAULT_FREELANCER_PROFILE`` for users with no personas
+    and an empty pot (newly signed-up accounts pre-Phase-B-backfill, or any
+    user before Phase C migrations).
+    """
+    profile = await resolver.load_for_user(user.id)
+    return ScoringService(profile)
 
 
 def get_job_import_service(
@@ -206,11 +235,16 @@ def get_portfolio_service(
     )
 
 
-def get_portfolio_matching_service(
+async def get_portfolio_matching_service(
+    user: "CurrentUser",
     session: SessionDep,
     embedding_provider: Annotated[EmbeddingProvider, Depends(get_embedding_provider)],
     portfolio_service: Annotated[PortfolioService, Depends(get_portfolio_service)],
+    resolver: Annotated[
+        PersonaProfileResolver, Depends(get_persona_profile_resolver)
+    ],
 ) -> PortfolioMatchingService:
+    profile = await resolver.load_for_user(user.id)
     return PortfolioMatchingService(
         job_repo=SQLAlchemyJobRepository(session),
         portfolio_repo=SQLAlchemyPortfolioRepository(session),
@@ -218,7 +252,7 @@ def get_portfolio_matching_service(
         embedding_repo=SQLAlchemyEmbeddingRepository(session),
         portfolio_service=portfolio_service,
         embedding_provider=embedding_provider,
-        profile=DEFAULT_FREELANCER_PROFILE,
+        profile=profile,
     )
 
 

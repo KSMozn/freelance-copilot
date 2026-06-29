@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     health,
     jobs,
     matches,
+    personas,
     portfolio,
     portfolio_story,
     proposals,
@@ -38,3 +39,4 @@ api_router.include_router(evidence.router)
 api_router.include_router(confidence.router)
 api_router.include_router(research.router)
 api_router.include_router(portfolio_story.router)
+api_router.include_router(personas.router)

@@ -14,6 +14,7 @@ from app.infrastructure.db.models.experience import (
 from app.infrastructure.db.models.job import Job, JobSkill
 from app.infrastructure.db.models.job_analysis import JobAnalysis
 from app.infrastructure.db.models.opportunity_score import OpportunityScore
+from app.infrastructure.db.models.persona import Persona, PersonaArchetype
 from app.infrastructure.db.models.portfolio import Portfolio, PortfolioSkill
 from app.infrastructure.db.models.project import (
     Project,
@@ -43,6 +44,8 @@ __all__ = [
     "JobAnalysis",
     "JobSkill",
     "OpportunityScore",
+    "Persona",
+    "PersonaArchetype",
     "Portfolio",
     "PortfolioSkill",
     "Project",

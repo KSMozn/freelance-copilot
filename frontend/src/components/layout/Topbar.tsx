@@ -1,6 +1,7 @@
 import { LogOut, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { PersonaSwitcher } from "@/components/PersonaSwitcher";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
 
@@ -15,8 +16,9 @@ export function Topbar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-6">
-      <div className="text-sm text-muted-foreground">Phase 1 · Foundation</div>
+      <div className="text-sm text-muted-foreground">Engineering Career OS</div>
       <div className="flex items-center gap-3">
+        <PersonaSwitcher />
         <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="toggle theme">
           {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>

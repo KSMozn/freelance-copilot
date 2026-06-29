@@ -15,6 +15,8 @@ import { JobImportPage } from "@/pages/JobImport";
 import { JobsPage } from "@/pages/Jobs";
 import { LoginPage } from "@/pages/Login";
 import { OnboardingPage } from "@/pages/Onboarding";
+import { PersonaNewPage } from "@/pages/PersonaNew";
+import { PersonasPage } from "@/pages/Personas";
 import { PlaceholderPage } from "@/pages/Placeholder";
 import { PortfolioPage } from "@/pages/Portfolio";
 import { PortfolioFormPage } from "@/pages/PortfolioForm";
@@ -59,6 +61,8 @@ export default function App() {
             <Route path="/resumes/:id" element={<ResumeFormPage />} />
             <Route path="/applications" element={<ApplicationsPage />} />
             <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+            <Route path="/personas" element={<PersonasPage />} />
+            <Route path="/personas/new" element={<PersonaNewPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<PlaceholderPage title="Settings" phase="Phase 10" />} />
           </Route>
