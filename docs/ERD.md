@@ -33,6 +33,12 @@
   skills (master list)  ─── jobs_skills, portfolio_skills (m2m)
 
   email_otp_codes (n) ─── users (1) by email (not FK)   [Phase A]
+
+  skill_catalog (1) ─── user_skills (n) ─── users (1)               [Phase B]
+  experiences (n) ─── users (1)                                     [Phase B]
+  projects (n) ─── users (1), → repositories | portfolios          [Phase B]
+  experience_skills, project_skills (m2m → skill_catalog)           [Phase B]
+  experience_achievements, project_achievements (n) ─── parent (1)  [Phase B]
 ```
 
 ## Tables
@@ -70,6 +76,78 @@ Hashed 6-digit codes used for passwordless signup / sign-in / email-change verif
 Indexes:
 - `(email, purpose, consumed_at)` — find the active code at verify time
 - `(expires_at)` — cleanup job
+
+### skill_catalog *(Phase B)*
+Global, normalized skill master list. Replaces the loose JSONB skill strings
+that lived on resumes / portfolios / repositories. Seeded with ~120 common
+languages / frameworks / tools / platforms / databases / practices / soft
+skills / leadership skills / domains; free-form user-added skills also land
+here with `is_system_seeded = false`.
+
+| column             | type                                                                          | notes                                              |
+|--------------------|-------------------------------------------------------------------------------|----------------------------------------------------|
+| id                 | uuid PK                                                                       |                                                    |
+| slug               | text UNIQUE                                                                   | kebab-case canonical key, e.g. `postgresql`        |
+| name               | text                                                                          | display name, e.g. `PostgreSQL`                    |
+| category           | enum(language, framework, tool, platform, database, domain, soft, practice, leadership) | drives downstream weighting                |
+| aliases            | jsonb (array of strings)                                                       | e.g. `["postgres", "psql", "pg"]`                 |
+| is_system_seeded   | bool                                                                          | true for the seed list; false for user-added rows  |
+| created_by_user_id | uuid FK→users NULL                                                            | who introduced the row (free-form add)             |
+| created_at         | timestamptz                                                                   |                                                    |
+
+Indexes: GIN on `aliases`; GIN trigram (`pg_trgm`) on `name` for fuzzy lookup.
+
+### user_skills *(Phase B)*
+The global per-user skill "pot." Personas (Phase C) project / weight rows
+from this table rather than owning their own per-persona pot.
+
+| column              | type                       | notes                                                                   |
+|---------------------|----------------------------|-------------------------------------------------------------------------|
+| id                  | uuid PK                    |                                                                         |
+| user_id             | uuid FK→users CASCADE      |                                                                         |
+| skill_id            | uuid FK→skill_catalog RESTRICT |                                                                     |
+| proficiency         | smallint                   | 1–5; defaults to 3                                                      |
+| years_experience    | numeric(4,1) NULL          | self-reported                                                           |
+| sources             | jsonb                      | `{repo_ids, resume_ids, portfolio_ids, cv_upload_ids, manual, ai_suggested}` |
+| evidence_count      | int                        | denormalized count across all source lists                              |
+| is_active           | bool                       | default true                                                            |
+| pinned              | bool                       | user-promoted in their persona view (Phase C surfaces this)             |
+| last_evidence_date  | timestamptz NULL           |                                                                         |
+| added_at            | timestamptz                |                                                                         |
+| updated_at          | timestamptz                |                                                                         |
+
+UNIQUE `(user_id, skill_id)`. Index `(user_id, proficiency DESC)`.
+
+### experiences / experience_skills / experience_achievements *(Phase B)*
+The "what I've done" facts. Populated from CV uploads / LinkedIn PDFs
+(Phase D) or manual entry; empty after Phase B migrations until ingestion
+lands. Personas can pin specific experiences for emphasis.
+
+`experiences`: `id`, `user_id`, `company`, `role`, `location`, `employment_type`
+(`full_time` | `contract` | `freelance` | `internship` | `part_time`),
+`start_date`, `end_date` (NULL = current), `summary`, `source`
+(`cv` | `linkedin` | `manual` | `backfill`), `source_ref` (UUID of the
+originating record), timestamps.
+
+`experience_skills`: m2m link to `skill_catalog` with optional `evidence_text`.
+
+`experience_achievements`: per-experience measurable outcomes —
+`statement`, `metric_value`, `metric_unit`, `evidence_text`.
+
+### projects / project_skills / project_achievements *(Phase B)*
+Unified "thing I built" — subsumes both `portfolios` and `repositories`.
+The Phase B backfill creates one `projects` row per existing portfolio
+(`origin = portfolio`, linked via `portfolio_id`) and per scanned
+repository (`origin = repo`, linked via `repo_id`). New surfaces
+(`origin = cv_extracted`, `origin = manual`) ride the same shape.
+
+`projects`: `id`, `user_id`, `name`, `summary`, `role`, `period_start`,
+`period_end`, `repo_id` FK→repositories SET NULL, `portfolio_id`
+FK→portfolios SET NULL, `origin`
+(`repo` | `portfolio` | `cv_extracted` | `manual`), timestamps.
+
+`project_skills`, `project_achievements`: same shape as the experience
+join tables.
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.

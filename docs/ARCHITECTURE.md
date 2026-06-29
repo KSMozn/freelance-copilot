@@ -107,6 +107,48 @@ Templates live next to the providers under `infrastructure/email/templates/`
 Selection via `EMAIL_PROVIDER=mock|resend` in `app/core/config.py`, factory in
 `app/infrastructure/email/factory.py`.
 
+## Professional Knowledge Graph (Phase B)
+
+The graph holds the *facts* of a user's professional identity in a normalized
+shape that personas (Phase C) project lenses over. Tables and entities:
+
+- `skill_catalog` — global normalized skill master list (slug + name +
+  category + aliases). Seeded with ~120 common technologies / practices /
+  soft skills; free-form user-added skills land here too.
+- `user_skills` — the per-user "pot": one row per (user, skill) with
+  proficiency, evidence count, and a `sources` JSONB that tracks which
+  repos / resumes / portfolios / CV uploads / LinkedIn snapshots / manual
+  edits / AI suggestions contributed.
+- `experiences` (+ `experience_skills`, `experience_achievements`) — work
+  history items populated by CV / LinkedIn ingestion (Phase D) or manual
+  entry. Empty after Phase B; backfill is Phase D territory.
+- `projects` (+ `project_skills`, `project_achievements`) — unified
+  surface that subsumes portfolios and scanned repositories. Phase B
+  backfill creates one project per existing portfolio (`origin=portfolio`)
+  and one per scanned repo (`origin=repo`).
+
+Services in `app/application/services/`:
+
+- **`SkillCatalogService`** (`skill_catalog_service.py`) — the single
+  funnel: slugify → exact-slug lookup → alias-match → fuzzy trigram
+  (`pg_trgm` similarity ≥ 0.85) → create-new. Every ingest seam calls this
+  so the pot stays deduplicated.
+- **`KnowledgeGraphService`** (`knowledge_graph_service.py`) — high-level
+  orchestrator. Phase B exposes `add_skill_evidence` (used by future
+  ingest paths) and `list_user_skills`. Phase D extends with
+  `ingest_from_cv`, `ingest_from_linkedin`, `add_certificate`.
+- **`PersonaProfileResolver`** (`persona_profile_resolver.py`) — produces
+  the legacy `FreelancerProfile` dataclass shape from per-user
+  `user_skills` + `skill_catalog`, so the scoring engine code stays
+  untouched but every user now drives scoring from *their own* graph.
+  Falls back to `DEFAULT_FREELANCER_PROFILE` for users with an empty pot.
+
+The Phase B backfill migration (`0019_phase_b_backfill`) walks every existing
+user's resumes / portfolios / repositories, normalizes the raw skill strings
+through the catalog (auto-creating unknown rows), aggregates evidence into
+`user_skills` with a `sources` provenance map, and creates one `projects`
+row per portfolio + per repository. Idempotent: safe to re-run.
+
 ## AI Provider Abstraction
 
 ```python

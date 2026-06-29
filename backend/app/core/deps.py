@@ -9,6 +9,9 @@ from app.application.services.analytics_service import AnalyticsService
 from app.application.services.application_service import ApplicationService
 from app.application.services.auth_service import AuthService
 from app.application.services.email_otp_service import EmailOtpService
+from app.application.services.knowledge_graph_service import KnowledgeGraphService
+from app.application.services.persona_profile_resolver import PersonaProfileResolver
+from app.application.services.skill_catalog_service import SkillCatalogService
 from app.application.services.job_analysis_service import JobAnalysisService
 from app.application.services.job_import_service import JobImportService
 from app.application.services.job_service import JobService
@@ -51,6 +54,12 @@ from app.infrastructure.ai.factory import build_ai_provider
 from app.infrastructure.email.factory import build_email_provider
 from app.infrastructure.db.repositories.sqlalchemy_email_otp_repository import (
     SQLAlchemyEmailOtpRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_skill_catalog_repository import (
+    SQLAlchemySkillCatalogRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_user_skill_repository import (
+    SQLAlchemyUserSkillRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_analysis_repository import (
     SQLAlchemyJobAnalysisRepository,
@@ -97,6 +106,30 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 def get_email_provider(settings: SettingsDep) -> EmailProvider:
     return build_email_provider(settings)
+
+
+# --- Phase B: knowledge graph services ------------------------------------
+
+
+def get_skill_catalog_service(session: SessionDep) -> SkillCatalogService:
+    return SkillCatalogService(SQLAlchemySkillCatalogRepository(session))
+
+
+def get_knowledge_graph_service(
+    session: SessionDep,
+    skill_catalog: Annotated[SkillCatalogService, Depends(get_skill_catalog_service)],
+) -> KnowledgeGraphService:
+    return KnowledgeGraphService(
+        skill_catalog=skill_catalog,
+        user_skills=SQLAlchemyUserSkillRepository(session),
+    )
+
+
+def get_persona_profile_resolver(session: SessionDep) -> PersonaProfileResolver:
+    return PersonaProfileResolver(
+        user_skills=SQLAlchemyUserSkillRepository(session),
+        skill_catalog=SQLAlchemySkillCatalogRepository(session),
+    )
 
 
 def get_email_otp_service(

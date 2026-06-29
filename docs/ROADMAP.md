@@ -290,12 +290,62 @@ subsequent sessions. Password login keeps working for legacy accounts.
 
 ---
 
-## Phase B — Knowledge graph foundations *(planned)*
+## Phase B — Knowledge graph foundations ✅
 
-Move `FreelancerProfile` from a static singleton to per-user graph projection.
-Adds `skill_catalog`, `user_skills` (the global "pot"), `experiences`,
-`projects`, and backfills the legacy `skills` / `portfolios` / `repositories`
-data into the new shape. No UI changes yet.
+**Goal:** move `FreelancerProfile` from a static singleton to a per-user
+projection over a normalized skill catalog + skill pot. Backend reshape
+only; no UI changes. Existing flows keep working unchanged.
+
+- Migration `0016_phase_b_catalog_and_pot` — `skill_catalog` (slug UNIQUE,
+  name, category enum, aliases JSONB, GIN + trigram indexes via `pg_trgm`)
+  and `user_skills` (the per-user "pot" — proficiency, sources JSONB,
+  evidence_count, pinned, UNIQUE(user_id, skill_id)).
+- Migration `0017_phase_b_graph_core` — `experiences` (+ `experience_skills`,
+  `experience_achievements`) and `projects` (+ `project_skills`,
+  `project_achievements`). Projects subsume portfolios + scanned repositories
+  via `origin` enum and `repo_id` / `portfolio_id` links.
+- Migration `0018_phase_b_seed_catalog` — seeds ~120 common skills
+  (Python / TypeScript / FastAPI / React / PostgreSQL / AWS / GraphQL / RAG /
+  Microservices / Mentoring / FinTech / …). Idempotent.
+- Migration `0019_phase_b_backfill` — for every user, walks resumes,
+  portfolios, repositories; normalizes each raw skill string via slug →
+  alias → fuzzy trigram (auto-creates unknown rows with
+  `is_system_seeded=false`); aggregates into `user_skills` with `sources`
+  provenance map; creates one `projects` row per portfolio
+  (`origin=portfolio`) and per repository (`origin=repo`). Idempotent.
+- Services:
+  - `SkillCatalogService` (`app/application/services/skill_catalog_service.py`)
+    — single normalize funnel used by every ingest seam.
+  - `KnowledgeGraphService` (`knowledge_graph_service.py`) — high-level
+    orchestrator. Phase B exposes `add_skill_evidence` + `list_user_skills`;
+    Phase D extends with CV / LinkedIn ingestion.
+  - `PersonaProfileResolver` (`persona_profile_resolver.py`) — produces the
+    legacy `FreelancerProfile` shape from `user_skills + skill_catalog`,
+    falling back to `DEFAULT_FREELANCER_PROFILE` for empty pots. **This is
+    the seam that lets Phase C plug personas in without scoring-engine
+    code changes.**
+- New SQLAlchemy models + domain entities + repositories for
+  `skill_catalog`, `user_skills`, `experiences`, `projects` and their
+  join tables.
+
+**Exit:** the demo user's pot has 146 user_skills rows aggregated from
+4 portfolios + 7 repositories + their resumes; `PersonaProfileResolver`
+returns a per-user `FreelancerProfile` whose `strong_skills` reflect the
+actual pot (PostgreSQL, Python, FastAPI, RAG, OpenAI, …) and whose
+`version` is `user:<uuid>` rather than `default-v1`. Existing test suite
+remains green (197/197 of the meaningful tests). No user-facing changes —
+scoring code still reads the static default; Phase C wires the resolver
+in for real once personas exist.
+
+---
+
+## Phase C — Personas as lenses *(next)*
+
+Adds the `personas` + `persona_archetypes` tables, archetype gallery
+("+ New persona" wizard), persona switcher in topbar. Scoring services
+swap from `DEFAULT_FREELANCER_PROFILE` to `PersonaProfileResolver` —
+which already works per-user as of Phase B, so the swap is a one-line
+change per call site.
 
 ---
 
