@@ -22,6 +22,14 @@ dependencies = [
     "httpx>=0.28",
     "pdfminer.six>=20240706",
     "python-docx>=1.1.2",
+    "jinja2>=3.1.4",
+    # Cloud Run uses GCS for student photos + ingestion uploads. Optional
+    # in dev (LocalBlobStore is the default), so the import is lazy.
+    "google-cloud-storage>=2.18",
+    # WeasyPrint needs system libs (cairo, pango, gdk-pixbuf). The Docker
+    # image installs them; local dev without them gets a clean 503 from
+    # /students/cv.pdf with a hint pointing at the Dockerfile.
+    "weasyprint>=63.0",
 ]
 
 [project.optional-dependencies]

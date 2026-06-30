@@ -21,3 +21,10 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Picked at registration; routes the post-login flow. "student" goes to
+    # the wizard at /student; anything else falls through to the existing
+    # surface. Default "professional" via the migration so existing rows
+    # behave as before.
+    selected_persona_kind: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="professional", server_default="professional"
+    )

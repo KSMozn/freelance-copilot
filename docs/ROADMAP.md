@@ -644,6 +644,92 @@ test suite stays green (197/197).
 
 ---
 
+## Phase K — Student persona (wizard-driven CV builder) ✅
+
+A focused alternate surface for university / college students. The full
+freelancer / career-OS app is hidden — students get a single guided wizard
+that captures education, skills, courses, projects, volunteer work, and
+certifications, then renders a downloadable PDF CV. **Persona is picked at
+registration**; users default to "professional" and keep the existing app.
+
+- **Schema (migration `0028_phase_k_student_persona`).**
+  - `users.selected_persona_kind` (varchar 32, default `"professional"`) —
+    drives post-login routing. Index `ix_users_persona_kind`.
+  - `student_profiles` — 1:1 with user (PK = user_id). Carries name,
+    professional email, phone, location, college / degree / major /
+    graduation year / GPA, optional `photo_file_id` → `uploaded_files`,
+    summary, headline, `links` JSONB, `interests` JSONB, wizard progress
+    (`completed_steps` JSONB + `current_step`).
+  - `student_profile_entries` — repeating items discriminated by enum
+    `student_entry_kind` (`course | project | volunteer | certificate |
+    skill | award | extracurricular | language`). Common fields (title,
+    organization, dates, description, url) + kind-specific extras in
+    `details` JSONB. Index `(user_id, kind, sort_order)`.
+  - Seeds the `student` row into `persona_archetypes` so the existing
+    `PersonaService` can instantiate a Student persona with no
+    special-casing.
+
+- **Backend services.**
+  - `StudentProfileService` — profile + entries CRUD + photo upload
+    (dedups via `uploaded_files.sha256`). Single-file service that talks
+    to SQLAlchemy directly (no separate repo layer — the surface is two
+    tables).
+  - `StudentCoachService` — non-blocking inline coaching:
+    - **Email check**: rule-based — flags funky tokens, leading/trailing
+      year-like digits, excessive separators, very short prefixes on
+      free providers; offers `firstname.lastname@…` suggestions when a
+      full name is known.
+    - **Photo check**: LLM vision via the existing `AIProvider`'s
+      `complete_json_with_image` — returns short verdict + issue list.
+    - **Text rewrite**: LLM tightens summaries / project blurbs /
+      volunteer descriptions; never invents achievements, stays ~±15%
+      length. Student previews and accepts/discards.
+  - `StudentCvRenderer` — Jinja2 template (`classic.html`) → HTML for the
+    in-app preview pane and (via WeasyPrint) PDF for the download
+    button. Treats every field as optional — partial profiles still
+    render. WeasyPrint is a soft dependency: missing native libs raise
+    `WeasyPrintUnavailable` and the endpoint returns 503 with a hint.
+  - Backend `Dockerfile` installs the WeasyPrint runtime
+    (cairo / pango / gdk-pixbuf / harfbuzz / libffi + DejaVu fonts) so
+    `/students/cv.pdf` works out of the box in containers.
+
+- **API.** All under `/api/v1/students`.
+  - `GET/PUT /students/profile` — load + per-step upsert (partial
+    payloads; `mark_steps` appends to `completed_steps`).
+  - `POST/GET /students/profile/photo` — upload + fetch.
+  - `GET/POST/PUT/DELETE /students/entries[/{id}]` — repeating items.
+  - `POST /students/coach/email | /photo | /text` — coaching.
+  - `GET /students/cv/preview` → HTML.
+  - `GET /students/cv.pdf` → downloadable PDF.
+
+- **Auth.** `RegisterRequest` and `OtpVerifyRequest` accept
+  `persona_kind ∈ {"professional", "student"}`. New OTP-verified accounts
+  inherit the chosen kind on first creation. `UserRead` surfaces
+  `selected_persona_kind` so the frontend can route appropriately.
+
+- **Frontend.**
+  - `Register` page picks the persona inline (Student vs Working
+    professional). Successful student registration navigates to
+    `/student` instead of `/`.
+  - `StudentWizardPage` (`/student`) — 11-step wizard: basics, education,
+    photo, summary, skills, courses, projects, volunteer, languages,
+    certificates, preview & download. Each step saves independently;
+    returning users land on the step after their last completed one.
+  - Coaching surfaces inline (warning chips for email, vision verdict +
+    issues for photo, side-by-side rewrite suggestion for text). All
+    coaching is advisory — students can keep their original choice.
+  - `StudentGate` (in `App.tsx`) redirects student users from any
+    freelancer-app route back to `/student`. Students never see jobs,
+    proposals, match reports, applications.
+  - CV preview rendered in an iframe via `srcDoc`; download via
+    `/students/cv.pdf` (303 → PDF blob → browser download).
+
+**Exit:** picked Student persona at register → ran through every step on
+the wizard → reviewed inline preview → downloaded a multi-page PDF that
+honoured photo, summary, links, and all section types.
+
+---
+
 ## Phase I — Chrome Extension *(roadmap)*
 
 Separate codebase. Form detection on LinkedIn / Greenhouse / Lever /

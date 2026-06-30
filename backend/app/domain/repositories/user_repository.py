@@ -17,6 +17,7 @@ class UserRepository(Protocol):
         password_hash: str | None,
         full_name: str | None,
         email_verified_at: datetime | None = None,
+        selected_persona_kind: str = "professional",
     ) -> User: ...
 
     async def mark_email_verified(
@@ -24,3 +25,5 @@ class UserRepository(Protocol):
     ) -> None: ...
 
     async def touch_last_login(self, user_id: UUID, at: datetime) -> None: ...
+
+    async def set_persona_kind(self, user_id: UUID, kind: str) -> None: ...

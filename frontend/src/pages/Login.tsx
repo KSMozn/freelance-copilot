@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -238,9 +238,21 @@ export function LoginPage() {
               </p>
               <p className="text-center text-sm text-muted-foreground">
                 No account?{" "}
-                <Link className="text-primary hover:underline" to="/register">
+                <button
+                  type="button"
+                  className="text-primary hover:underline"
+                  onClick={() =>
+                    navigate("/register", {
+                      // Carry what they've already typed so /register
+                      // doesn't make them re-enter it. Password is
+                      // intentionally passed in route state (not query
+                      // string) — never URL-logged.
+                      state: { email, password },
+                    })
+                  }
+                >
                   Register
-                </Link>
+                </button>
               </p>
             </form>
           )}

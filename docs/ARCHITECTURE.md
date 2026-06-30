@@ -485,6 +485,69 @@ Frontend:
   outcomes are editable inline via a `<select>`. One TanStack query
   backs all three sections via the `/activity` bundle endpoint.
 
+## Student persona (Phase K)
+
+A second, intentionally simpler product surface — picked at registration.
+The student picks "I'm a Student" on the Register screen; that writes
+`users.selected_persona_kind = 'student'` and routes the user to a
+dedicated wizard at `/student`. Everything else in this document
+describes the *professional* surface — students never see it.
+
+**Why this exists.** Most students don't have jobs to track, proposals
+to generate, or match reports to analyse. They want a guided way to build
+a first CV. Bolting that onto the professional flow with hidden
+sections would have created two product UXes inside one page. Instead
+the student surface is its own page, its own routes, and its own
+service.
+
+**Data.** Two tables, both keyed by user_id:
+- `student_profiles` — 1:1 with user; carries the wizard's
+  Basics + Education + Photo + Summary + Links payload + wizard progress
+  markers (`completed_steps` JSONB, `current_step`).
+- `student_profile_entries` — repeating items discriminated by enum
+  `student_entry_kind` (`course / project / volunteer / certificate /
+  skill / award / extracurricular / language`). Common columns + a
+  per-kind `details` JSONB; one table beats eight.
+
+The `uploaded_files` registry from Phase D backs the profile photo
+(`photo_file_id` FK, sha256 dedup).
+
+**Services.**
+- `StudentProfileService` — wizard CRUD + photo upload. Speaks
+  SQLAlchemy directly (the surface is small enough that a separate
+  repository layer is ceremony without benefit).
+- `StudentCoachService` — inline non-blocking coaching:
+  - **Email**: pure rules — flags funky tokens, leading/trailing year
+    digits, excessive separators; suggests `firstname.lastname@…` when
+    a full name is known. The student can always override.
+  - **Photo**: LLM vision via the existing `AIProvider.complete_json_with_image`.
+    Returns a short verdict + issues list.
+  - **Text rewrite**: LLM tightens summaries / project blurbs /
+    volunteer descriptions. Never invents achievements, stays within
+    ~15% of original length.
+- `StudentCvRenderer` — Jinja2 template (`classic.html`) for the HTML
+  preview (`/students/cv/preview`) and (via WeasyPrint) for the PDF
+  download (`/students/cv.pdf`). The HTML path always works; the PDF
+  path requires WeasyPrint's native libs and degrades to a clean 503
+  when they're missing. The backend `Dockerfile` installs them so
+  production images can render out of the box.
+
+**Persona archetype.** Migration 0028 seeds a `student` row in
+`persona_archetypes` so the existing `PersonaService` can instantiate a
+Student persona with no special-casing. Scoring weights are set to
+sensible defaults but the student surface doesn't run scoring at all.
+
+**Auth.** `RegisterRequest` and `OtpVerifyRequest` accept
+`persona_kind ∈ {"professional", "student"}`; new accounts inherit the
+choice. `UserRead` exposes `selected_persona_kind` so the frontend can
+route Student users straight to `/student` and `StudentGate` can keep
+them off the professional surface.
+
+**Coaching is always advisory.** Email warnings can be acknowledged and
+ignored; photo issues never block upload; text rewrites are previewed
+and the student picks. The wizard never lets coaching gatekeep
+progress.
+
 ## AI Provider Abstraction
 
 ```python

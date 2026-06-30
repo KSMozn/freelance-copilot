@@ -1,0 +1,33 @@
+# Production frontend: Vite static build served by nginx.
+#
+# Cloud Run expects the container to listen on the PORT env var (it sets
+# it to 8080 by default). nginx:alpine's built-in entrypoint expands
+# ${PORT} in /etc/nginx/templates/*.template via envsubst before booting.
+#
+# Build-time:
+#   VITE_API_BASE_URL controls where the SPA talks to the backend.
+#   Pass it as a --build-arg on Cloud Run deploy / Cloud Build.
+
+# ---------- 1. Build stage ----------
+FROM node:22-alpine AS build
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+COPY . .
+
+# Backend URL injected at build time. Vite inlines VITE_* envs at build.
+ARG VITE_API_BASE_URL=/api/v1
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
+RUN npm run build
+
+# ---------- 2. Runtime stage ----------
+FROM nginx:1.27-alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+
+ENV PORT=8080
+EXPOSE 8080

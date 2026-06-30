@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, PostgresDsn, computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,6 +40,13 @@ class Settings(BaseSettings):
     embedding_provider: Literal["openai", "mock"] = "mock"
     openai_embedding_model: str = "text-embedding-3-small"
 
+    # Blob storage for student photos + ingestion uploads.
+    # `local` writes to `uploads_dir` (good for dev / docker-compose).
+    # `gcs` writes to the GCS bucket `gcs_uploads_bucket` (used by Cloud Run).
+    blob_store: Literal["local", "gcs"] = "local"
+    uploads_dir: str = "var/uploads"
+    gcs_uploads_bucket: str | None = None
+
     github_token: str | None = None
     github_api_base_url: str = "https://api.github.com"
 
@@ -56,35 +63,38 @@ class Settings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def database_url(self) -> str:
-        return str(
-            PostgresDsn.build(
-                scheme="postgresql+asyncpg",
-                username=self.postgres_user,
-                password=self.postgres_password,
-                host=self.postgres_host,
-                port=self.postgres_port,
-                path=self.postgres_db,
-            )
-        )
+        return _build_database_url(self, scheme="postgresql+asyncpg")
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def sync_database_url(self) -> str:
-        return str(
-            PostgresDsn.build(
-                scheme="postgresql+psycopg",
-                username=self.postgres_user,
-                password=self.postgres_password,
-                host=self.postgres_host,
-                port=self.postgres_port,
-                path=self.postgres_db,
-            )
-        )
+        return _build_database_url(self, scheme="postgresql+psycopg")
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+
+def _build_database_url(settings: "Settings", *, scheme: str) -> str:
+    """Build a Postgres DSN that supports both TCP (local docker, etc.) and
+    Unix-socket (Cloud SQL via Cloud Run) connections.
+
+    Cloud Run mounts the Cloud SQL Auth Proxy socket under
+    `/cloudsql/PROJECT:REGION:INSTANCE` when the service is configured with
+    `--add-cloudsql-instances`. Driver convention: pass that path as the
+    `host` query parameter while leaving the URL host empty.
+    """
+    from urllib.parse import quote_plus
+
+    user = quote_plus(settings.postgres_user)
+    pwd = quote_plus(settings.postgres_password)
+    db = settings.postgres_db
+    host = settings.postgres_host
+
+    if host.startswith("/"):
+        return f"{scheme}://{user}:{pwd}@/{db}?host={host}"
+    return f"{scheme}://{user}:{pwd}@{host}:{settings.postgres_port}/{db}"
 
 
 @lru_cache

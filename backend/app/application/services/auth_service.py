@@ -59,6 +59,7 @@ class AuthService:
             created_at=user.created_at,
             email_verified_at=user.email_verified_at,
             last_login_at=user.last_login_at,
+            selected_persona_kind=user.selected_persona_kind,
         )
 
     async def register(self, payload: RegisterRequest) -> AuthResponse:
@@ -69,6 +70,7 @@ class AuthService:
             email=str(payload.email),
             password_hash=hash_password(payload.password),
             full_name=payload.full_name,
+            selected_persona_kind=payload.persona_kind,
         )
         await self._users.touch_last_login(user.id, datetime.now(UTC))
         return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))
@@ -147,6 +149,7 @@ class AuthService:
                 password_hash=None,
                 full_name=payload.full_name,
                 email_verified_at=now,
+                selected_persona_kind=payload.persona_kind,
             )
         elif user.email_verified_at is None:
             await self._users.mark_email_verified(user.id, now)

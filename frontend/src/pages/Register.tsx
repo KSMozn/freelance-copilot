@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,86 +15,379 @@ interface AuthResponse {
   tokens: { access_token: string; refresh_token: string };
 }
 
+interface OtpRequestResponse {
+  sent: boolean;
+  expires_in_minutes: number;
+}
+
+type PersonaKind = "student" | "professional";
+type AuthMode = "password" | "otp";
+type Step = "persona" | "identity" | "code";
+
 export function RegisterPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [password, setPassword] = useState("");
 
-  const mutation = useMutation({
+  // Login passes whatever the user already typed there as route state so
+  // we don't make them re-enter it. Read once on mount; never round-trip.
+  const carried = (location.state as { email?: string; password?: string } | null) ?? {};
+
+  const [step, setStep] = useState<Step>("persona");
+  const [authMode, setAuthMode] = useState<AuthMode>("password");
+  const [personaKind, setPersonaKind] = useState<PersonaKind>("student");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState(carried.email ?? "");
+  const [password, setPassword] = useState(carried.password ?? "");
+  const [code, setCode] = useState("");
+  const [expiresMin, setExpiresMin] = useState(10);
+  // True when we already have email + password from Login — hide those
+  // fields on the identity step and only ask for what's missing (name).
+  const credentialsCarriedOver = Boolean(carried.email && carried.password);
+
+  const redirectAfter = (data: AuthResponse) => {
+    setAuth(data.user, data.tokens.access_token, data.tokens.refresh_token);
+    navigate(data.user.selected_persona_kind === "student" ? "/student" : "/", {
+      replace: true,
+    });
+  };
+
+  const passwordRegister = useMutation({
     mutationFn: async () => {
       const { data } = await api.post<AuthResponse>("/auth/register", {
         email,
         full_name: fullName || null,
         password,
+        persona_kind: personaKind,
+      });
+      return data;
+    },
+    onSuccess: redirectAfter,
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+        ?.data?.detail;
+      toast.error(detail ?? "Could not register");
+    },
+  });
+
+  const requestCode = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<OtpRequestResponse>("/auth/request-code", {
+        email,
+        purpose: "register",
       });
       return data;
     },
     onSuccess: (data) => {
-      setAuth(data.user, data.tokens.access_token, data.tokens.refresh_token);
-      navigate("/", { replace: true });
+      setExpiresMin(data.expires_in_minutes);
+      setStep("code");
     },
     onError: (err: unknown) => {
-      const message =
-        (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-        "Could not register";
-      toast.error(message);
+      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+        ?.data?.detail;
+      toast.error(detail ?? "Could not send code");
     },
   });
 
+  const verifyCode = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<AuthResponse>("/auth/verify-code", {
+        email,
+        code,
+        purpose: "register",
+        full_name: fullName || null,
+        persona_kind: personaKind,
+      });
+      return data;
+    },
+    onSuccess: redirectAfter,
+    onError: (err: unknown) => {
+      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+        ?.data?.detail;
+      toast.error(detail ?? "Invalid code");
+    },
+  });
+
+  const header = HEADERS[step];
+  // Override the identity step's description when credentials are carried
+  // from Login — at that point we're only asking for a name.
+  const description =
+    step === "identity" && credentialsCarriedOver
+      ? "We've got your email and password. Just need a name for your CV."
+      : header.description;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>Start tracking and scoring Upwork jobs.</CardDescription>
+          <ProgressDots step={step} authMode={authMode} />
+          <CardTitle className="mt-4">{header.title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              mutation.mutate();
-            }}
-          >
-            <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          {step === "persona" && (
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <PersonaTile
+                  active={personaKind === "student"}
+                  title="Student"
+                  description="Build your first CV step-by-step with guided coaching."
+                  onClick={() => setPersonaKind("student")}
+                />
+                <PersonaTile
+                  active={personaKind === "professional"}
+                  title="Working professional"
+                  description="Track jobs, score opportunities, generate proposals."
+                  onClick={() => setPersonaKind("professional")}
+                />
+              </div>
+              <Button className="w-full" onClick={() => setStep("identity")}>
+                Continue
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link className="text-primary hover:underline" to="/login">
+                  Sign in
+                </Link>
+              </p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                required
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                required
-                minLength={8}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={mutation.isPending}>
-              {mutation.isPending ? "Creating…" : "Create account"}
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link className="text-primary hover:underline" to="/login">
-                Sign in
-              </Link>
-            </p>
-          </form>
+          )}
+
+          {step === "identity" && (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (authMode === "password") passwordRegister.mutate();
+                else requestCode.mutate();
+              }}
+            >
+              {credentialsCarriedOver && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+                  <div className="font-medium">Using the email + password from sign-in</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {email}
+                    {" · "}
+                    <button
+                      type="button"
+                      className="text-primary hover:underline"
+                      onClick={() => navigate("/login")}
+                    >
+                      change
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="r-name">What should we call you?</Label>
+                <Input
+                  id="r-name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  autoFocus
+                  placeholder="Sara Student"
+                />
+              </div>
+              {!credentialsCarriedOver && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="r-email">Email</Label>
+                    <Input
+                      id="r-email"
+                      type="email"
+                      value={email}
+                      required
+                      autoComplete="email"
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="sara.student@school.edu"
+                    />
+                  </div>
+                  {authMode === "password" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="r-password">Password</Label>
+                      <Input
+                        id="r-password"
+                        type="password"
+                        value={password}
+                        required
+                        minLength={8}
+                        autoComplete="new-password"
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        At least 8 characters.{" "}
+                        <button
+                          type="button"
+                          className="text-primary hover:underline"
+                          onClick={() => setAuthMode("otp")}
+                        >
+                          Use email code instead
+                        </button>
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      We'll send a 6-digit code — no password needed.{" "}
+                      <button
+                        type="button"
+                        className="text-primary hover:underline"
+                        onClick={() => setAuthMode("password")}
+                      >
+                        Use a password instead
+                      </button>
+                    </p>
+                  )}
+                </>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setStep("persona")}
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={
+                    !email ||
+                    (authMode === "password"
+                      ? passwordRegister.isPending || password.length < 8
+                      : requestCode.isPending)
+                  }
+                >
+                  {authMode === "password"
+                    ? passwordRegister.isPending
+                      ? "Creating…"
+                      : "Create account"
+                    : requestCode.isPending
+                      ? "Sending…"
+                      : "Send code"}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {step === "code" && (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                verifyCode.mutate();
+              }}
+            >
+              <div className="space-y-2">
+                <Label htmlFor="r-code">6-digit code sent to {email}</Label>
+                <Input
+                  id="r-code"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  value={code}
+                  required
+                  autoFocus
+                  className="text-center text-2xl tracking-[0.5em] font-mono"
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Expires in {expiresMin} min. Didn't get it?{" "}
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => requestCode.mutate()}
+                    disabled={requestCode.isPending}
+                  >
+                    Resend
+                  </button>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setCode("");
+                    setStep("identity");
+                  }}
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={verifyCode.isPending || code.length !== 6}
+                >
+                  {verifyCode.isPending ? "Verifying…" : "Create account"}
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+const HEADERS: Record<Step, { title: string; description: string }> = {
+  persona: {
+    title: "Welcome — let's set up your account",
+    description: "Pick what fits you best. You can change this later.",
+  },
+  identity: {
+    title: "Tell us who you are",
+    description: "Just a name, email, and password.",
+  },
+  code: {
+    title: "Check your inbox",
+    description: "Enter the 6-digit code to finish creating your account.",
+  },
+};
+
+function ProgressDots({ step, authMode }: { step: Step; authMode: AuthMode }) {
+  // Password skips the "code" step; show 2 dots instead of 3.
+  const order: Step[] =
+    authMode === "password" ? ["persona", "identity"] : ["persona", "identity", "code"];
+  const idx = order.indexOf(step);
+  return (
+    <div className="flex items-center gap-1.5">
+      {order.map((s, i) => (
+        <span
+          key={s}
+          className={
+            "h-1.5 flex-1 rounded-full " + (i <= idx ? "bg-primary" : "bg-muted")
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+function PersonaTile({
+  active,
+  title,
+  description,
+  onClick,
+}: {
+  active: boolean;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        "rounded-lg border p-4 text-left transition-colors " +
+        (active
+          ? "border-primary bg-primary/5 ring-1 ring-primary"
+          : "border-border hover:bg-muted/50")
+      }
+    >
+      <div className="text-base font-semibold">{title}</div>
+      <div className="mt-1 text-sm text-muted-foreground">{description}</div>
+    </button>
   );
 }

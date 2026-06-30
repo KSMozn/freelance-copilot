@@ -62,6 +62,7 @@ from app.core.database import AsyncSessionLocal
 from app.domain.entities.user import User
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
 from app.domain.providers.ai_provider import AIProvider
+from app.domain.providers.blob_store import BlobStore
 from app.domain.providers.email_provider import EmailProvider
 from app.domain.providers.embedding_provider import EmbeddingProvider
 from app.infrastructure.ai.embedding_factory import build_embedding_provider
@@ -120,6 +121,7 @@ from app.infrastructure.db.repositories.sqlalchemy_user_skill_repository import 
 )
 from app.infrastructure.email.factory import build_email_provider
 from app.infrastructure.github.github_client import GithubClient
+from app.infrastructure.storage.factory import build_blob_store
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
@@ -147,6 +149,10 @@ def get_ai_provider(settings: SettingsDep) -> AIProvider:
 
 def get_embedding_provider(settings: SettingsDep) -> EmbeddingProvider:
     return build_embedding_provider(settings)
+
+
+def get_blob_store(settings: SettingsDep) -> BlobStore:
+    return build_blob_store(settings)
 
 
 # --- Phase B: knowledge graph services ------------------------------------

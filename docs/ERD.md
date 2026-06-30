@@ -71,6 +71,7 @@
 | is_superuser      | bool           | default false                                                |
 | email_verified_at | timestamptz NULL | *(Phase A)* set when an OTP is successfully consumed      |
 | last_login_at     | timestamptz NULL | *(Phase A)* touched on every successful auth              |
+| selected_persona_kind | varchar(32) | *(Phase K)* `'professional'` (default) routes to the existing app; `'student'` routes to the wizard at `/student`. Index `ix_users_persona_kind`. |
 | created_at        | timestamptz    |                                                              |
 | updated_at        | timestamptz    |                                                              |
 
@@ -431,6 +432,49 @@ Two new FK columns:
 
 Closes the loop with Phase F: "which version did I send for this
 application?" is one read.
+
+### student_profiles *(Phase K — 1:1 with user)*
+| column            | type           | notes                                                        |
+|-------------------|----------------|--------------------------------------------------------------|
+| user_id           | uuid PK / FK→users.id | cascade on user delete                                |
+| full_name         | text NULL      | wizard "Basics" step                                         |
+| professional_email | text NULL     | separate from auth login email; rule-coached at entry        |
+| phone             | text NULL      |                                                              |
+| location          | text NULL      |                                                              |
+| college           | text NULL      | wizard "Education" step                                      |
+| degree            | text NULL      | e.g. Bachelor of Science                                     |
+| major             | text NULL      |                                                              |
+| graduation_year   | smallint NULL  |                                                              |
+| gpa               | numeric(3,2) NULL |                                                           |
+| photo_file_id     | uuid NULL FK→uploaded_files.id | SET NULL on file delete                      |
+| summary           | text NULL      |                                                              |
+| headline          | text NULL      |                                                              |
+| links             | jsonb          | `{github, linkedin, website, portfolio}` — partial OK        |
+| interests         | jsonb          | list[str]                                                    |
+| completed_steps   | jsonb          | list of step slugs the wizard has saved                      |
+| current_step      | varchar(64) NULL | step to resume on next visit                               |
+| created_at        | timestamptz    |                                                              |
+| updated_at        | timestamptz    |                                                              |
+
+### student_profile_entries *(Phase K — repeating wizard items)*
+| column            | type           | notes                                                        |
+|-------------------|----------------|--------------------------------------------------------------|
+| id                | uuid PK        |                                                              |
+| user_id           | uuid FK→users.id | cascade                                                    |
+| kind              | enum `student_entry_kind` | `course / project / volunteer / certificate / skill / award / extracurricular / language` |
+| title             | text           | required                                                     |
+| organization      | text NULL      | school / employer / issuer                                   |
+| start_date        | date NULL      |                                                              |
+| end_date          | date NULL      |                                                              |
+| is_current        | bool           | default false                                                |
+| description       | text NULL      |                                                              |
+| url               | text NULL      |                                                              |
+| details           | jsonb          | kind-specific extras (e.g. `{tech_stack, proficiency, credits, grade, credential_id}`) |
+| sort_order        | smallint       | default 0                                                    |
+| created_at        | timestamptz    |                                                              |
+| updated_at        | timestamptz    |                                                              |
+
+Index: `ix_student_entries_user_kind (user_id, kind, sort_order)`.
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.

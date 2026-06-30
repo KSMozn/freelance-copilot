@@ -26,6 +26,8 @@ import { RegisterPage } from "@/pages/Register";
 import { RepositoriesPage } from "@/pages/Repositories";
 import { ResumeFormPage } from "@/pages/ResumeForm";
 import { ResumesPage } from "@/pages/Resumes";
+import { StudentWizardPage } from "@/pages/StudentWizard";
+import { useAuthStore } from "@/stores/auth";
 
 export default function App() {
   return (
@@ -34,6 +36,14 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/student"
+            element={
+              <RequireAuth>
+                <StudentWizardPage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/onboarding"
             element={
@@ -45,7 +55,9 @@ export default function App() {
           <Route
             element={
               <RequireAuth>
-                <AppLayout />
+                <StudentGate>
+                  <AppLayout />
+                </StudentGate>
               </RequireAuth>
             }
           >
@@ -76,4 +88,14 @@ export default function App() {
       <Toaster richColors position="top-right" theme="dark" />
     </QueryClientProvider>
   );
+}
+
+// Students never see the freelancer/career-OS surface — they live in the
+// wizard. Anyone else falls through to the existing app.
+function StudentGate({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  if (user?.selected_persona_kind === "student") {
+    return <Navigate to="/student" replace />;
+  }
+  return <>{children}</>;
 }

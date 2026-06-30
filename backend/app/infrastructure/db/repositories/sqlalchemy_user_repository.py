@@ -20,6 +20,7 @@ def _to_domain(row: UserModel) -> DomainUser:
         updated_at=row.updated_at,
         email_verified_at=row.email_verified_at,
         last_login_at=row.last_login_at,
+        selected_persona_kind=row.selected_persona_kind,
     )
 
 
@@ -43,18 +44,27 @@ class SQLAlchemyUserRepository:
         password_hash: str | None,
         full_name: str | None,
         email_verified_at: datetime | None = None,
+        selected_persona_kind: str = "professional",
     ) -> DomainUser:
         row = UserModel(
             email=email,
             password_hash=password_hash,
             full_name=full_name,
             email_verified_at=email_verified_at,
+            selected_persona_kind=selected_persona_kind,
         )
         self._session.add(row)
         await self._session.flush()
         await self._session.refresh(row)
         await self._session.commit()
         return _to_domain(row)
+
+    async def set_persona_kind(self, user_id: UUID, kind: str) -> None:
+        row = await self._session.get(UserModel, user_id)
+        if row is None:
+            return
+        row.selected_persona_kind = kind
+        await self._session.commit()
 
     async def mark_email_verified(
         self, user_id: UUID, verified_at: datetime

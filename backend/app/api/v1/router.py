@@ -25,6 +25,7 @@ from app.api.v1.endpoints import (
     research,
     resume_recommendations,
     resumes,
+    students,
     tracker,
 )
 
@@ -57,3 +58,4 @@ api_router.include_router(outputs.router)
 api_router.include_router(career_fitness.router)
 api_router.include_router(tracker.application_tracker_router)
 api_router.include_router(tracker.tracker_router)
+api_router.include_router(students.router)

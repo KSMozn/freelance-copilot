@@ -15,3 +15,4 @@ class User:
     updated_at: datetime
     email_verified_at: datetime | None = None
     last_login_at: datetime | None = None
+    selected_persona_kind: str = "professional"
