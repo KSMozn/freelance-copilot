@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    admin,
+    admin_auth,
     analyses,
     analytics,
     applications,
@@ -59,3 +61,7 @@ api_router.include_router(career_fitness.router)
 api_router.include_router(tracker.application_tracker_router)
 api_router.include_router(tracker.tracker_router)
 api_router.include_router(students.router)
+# Order matters: /admin/auth before /admin so the auth prefix isn't
+# swallowed by admin.router's CurrentAdmin gate.
+api_router.include_router(admin_auth.router)
+api_router.include_router(admin.router)

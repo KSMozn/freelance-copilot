@@ -17,17 +17,35 @@ in this order on first run:
 """
 from __future__ import annotations
 
-from typing import Annotated
+import time
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 
+from app.application.dto.feedback_dto import (
+    FeedbackRead,
+    GeneralFeedbackCreate,
+    SurveyCreate,
+)
 from app.application.dto.student_dto import (
     CvPreviewResponse,
+    CvTemplateListResponse,
+    CvTemplateRead,
     DraftSummaryResponse,
     EmailCoachRequest,
     EmailCoachResponse,
     PhotoCoachResponse,
+    ProofreadResponse,
     StudentEntryListResponse,
     StudentEntryRead,
     StudentEntryUpsert,
@@ -36,21 +54,54 @@ from app.application.dto.student_dto import (
     TextCoachRequest,
     TextCoachResponse,
 )
+from app.application.services import usage_event_service
+from app.application.services.cv_template_service import CvTemplateService
+from app.application.services.feedback_service import FeedbackService
 from app.application.services.student_coach_service import StudentCoachService
 from app.application.services.student_cv_renderer import (
     StudentCvRenderer,
     WeasyPrintUnavailable,
 )
 from app.application.services.student_profile_service import StudentProfileService
-from app.core.deps import CurrentUser, SessionDep, get_ai_provider, get_blob_store
+from app.core.deps import (
+    CurrentUser,
+    SessionDep,
+    get_ai_provider,
+    get_blob_store,
+    get_email_provider,
+)
 from app.domain.providers.ai_provider import AIProvider
 from app.domain.providers.blob_store import BlobStore
+from app.domain.providers.email_provider import EmailProvider
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
     StudentProfileEntry,
 )
 
 router = APIRouter(prefix="/students", tags=["student"])
+
+
+def _emit(
+    user_id: UUID,
+    kind: str,
+    start: float,
+    *,
+    error: str | None = None,
+    meta: dict[str, Any] | None = None,
+) -> None:
+    """Small helper — fire a usage_event with duration + status. Used by
+    coach + CV endpoints to power the admin activity view.
+    """
+    dt = int((time.perf_counter() - start) * 1000)
+    usage_event_service.fire(
+        user_id=user_id,
+        kind=kind,
+        status="error" if error else "ok",
+        duration_ms=dt,
+        error_message=error,
+        meta=meta or {},
+    )
+
 
 MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_PHOTO_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
@@ -63,6 +114,7 @@ def _profile_to_read(row: StudentProfile, *, photo_url: str | None) -> StudentPr
         professional_email=row.professional_email,
         phone=row.phone,
         location=row.location,
+        date_of_birth=row.date_of_birth,
         college=row.college,
         department=row.department,
         degree=row.degree,
@@ -77,6 +129,7 @@ def _profile_to_read(row: StudentProfile, *, photo_url: str | None) -> StudentPr
         interests=list(row.interests or []),
         completed_steps=list(row.completed_steps or []),
         current_step=row.current_step,
+        cv_template_slug=row.cv_template_slug,
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
@@ -235,6 +288,7 @@ async def coach_email(payload: EmailCoachRequest) -> EmailCoachResponse:
 
 @router.post("/coach/photo", response_model=PhotoCoachResponse)
 async def coach_photo(
+    user: CurrentUser,
     ai: AiDep,
     file: UploadFile = File(...),
 ) -> PhotoCoachResponse:
@@ -250,15 +304,53 @@ async def coach_photo(
             detail="Photo too large.",
         )
     coach = StudentCoachService(ai)
-    return await coach.check_photo(
-        image_bytes=content, mime_type=file.content_type or "image/jpeg"
-    )
+    start = time.perf_counter()
+    try:
+        result = await coach.check_photo(
+            image_bytes=content, mime_type=file.content_type or "image/jpeg"
+        )
+    except Exception as exc:
+        _emit(user.id, "coach.photo", start, error=str(exc))
+        raise
+    _emit(user.id, "coach.photo", start)
+    return result
 
 
 @router.post("/coach/text", response_model=TextCoachResponse)
-async def coach_text(payload: TextCoachRequest, ai: AiDep) -> TextCoachResponse:
+async def coach_text(
+    payload: TextCoachRequest, user: CurrentUser, ai: AiDep
+) -> TextCoachResponse:
     coach = StudentCoachService(ai)
-    return await coach.improve_text(payload)
+    start = time.perf_counter()
+    try:
+        result = await coach.improve_text(payload)
+    except Exception as exc:
+        _emit(user.id, "coach.text", start, error=str(exc))
+        raise
+    _emit(user.id, "coach.text", start, meta={"field": payload.field})
+    return result
+
+
+@router.get("/coach/proofread", response_model=ProofreadResponse)
+async def coach_proofread(
+    user: CurrentUser, svc: StudentSvc, ai: AiDep
+) -> ProofreadResponse:
+    """Final proofreading pass over the whole CV.
+
+    Called from the wizard's Preview step. Returns targeted fixes the
+    student can apply or ignore, one at a time. Never blocks — an empty
+    fixes list is a success.
+    """
+    profile, entries = await svc.load_profile_bundle(user.id)
+    coach = StudentCoachService(ai)
+    start = time.perf_counter()
+    try:
+        result = await coach.proofread(profile=profile, entries=entries)
+    except Exception as exc:
+        _emit(user.id, "coach.proofread", start, error=str(exc))
+        raise
+    _emit(user.id, "coach.proofread", start, meta={"fixes": len(result.fixes)})
+    return result
 
 
 @router.get("/coach/draft-summary", response_model=DraftSummaryResponse)
@@ -273,7 +365,14 @@ async def coach_draft_summary(
     """
     profile, entries = await svc.load_profile_bundle(user.id)
     coach = StudentCoachService(ai)
-    return await coach.draft_summary(profile=profile, entries=entries)
+    start = time.perf_counter()
+    try:
+        result = await coach.draft_summary(profile=profile, entries=entries)
+    except Exception as exc:
+        _emit(user.id, "coach.draft_summary", start, error=str(exc))
+        raise
+    _emit(user.id, "coach.draft_summary", start)
+    return result
 
 
 # ---- CV preview + PDF -------------------------------------------------
@@ -293,33 +392,75 @@ async def _load_photo(svc: StudentProfileService, user_id: UUID) -> tuple[bytes 
     return data, file_row.content_type
 
 
+@router.get("/cv-templates", response_model=CvTemplateListResponse)
+async def list_cv_templates(
+    user: CurrentUser, svc: StudentSvc, session: SessionDep
+) -> CvTemplateListResponse:
+    """Visible templates for the picker + the slug that would render if
+    the student clicked Download right now (resolved from their saved
+    choice, falling back to the first visible)."""
+    tmpl_svc = CvTemplateService(session)
+    visible = await tmpl_svc.list_visible()
+    profile = await svc.get_profile(user.id)
+    default_slug = await tmpl_svc.resolve_slug(
+        requested=None,
+        profile_slug=profile.cv_template_slug if profile else None,
+    )
+    return CvTemplateListResponse(
+        items=[CvTemplateRead.model_validate(t) for t in visible],
+        default_slug=default_slug,
+    )
+
+
 @router.get("/cv/preview", response_model=CvPreviewResponse)
-async def cv_preview(user: CurrentUser, svc: StudentSvc) -> CvPreviewResponse:
+async def cv_preview(
+    user: CurrentUser,
+    svc: StudentSvc,
+    session: SessionDep,
+    template: str | None = Query(default=None, max_length=64),
+) -> CvPreviewResponse:
     profile, entries = await svc.load_profile_bundle(user.id)
     photo_bytes, photo_mime = await _load_photo(svc, user.id)
+    slug = await CvTemplateService(session).resolve_slug(
+        requested=template,
+        profile_slug=profile.cv_template_slug if profile else None,
+    )
     renderer = StudentCvRenderer()
     html = renderer.render_html(
         profile=profile,
         entries=entries,
         photo_bytes=photo_bytes,
         photo_mime=photo_mime,
+        template_slug=slug,
     )
     return CvPreviewResponse(html=html)
 
 
 @router.get("/cv.pdf")
-async def cv_pdf(user: CurrentUser, svc: StudentSvc) -> Response:
+async def cv_pdf(
+    user: CurrentUser,
+    svc: StudentSvc,
+    session: SessionDep,
+    template: str | None = Query(default=None, max_length=64),
+) -> Response:
     profile, entries = await svc.load_profile_bundle(user.id)
     photo_bytes, photo_mime = await _load_photo(svc, user.id)
+    slug = await CvTemplateService(session).resolve_slug(
+        requested=template,
+        profile_slug=profile.cv_template_slug if profile else None,
+    )
     renderer = StudentCvRenderer()
+    start = time.perf_counter()
     try:
         pdf = renderer.render_pdf(
             profile=profile,
             entries=entries,
             photo_bytes=photo_bytes,
             photo_mime=photo_mime,
+            template_slug=slug,
         )
     except WeasyPrintUnavailable as exc:
+        _emit(user.id, "cv.pdf", start, error=str(exc), meta={"template": slug})
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
@@ -327,8 +468,52 @@ async def cv_pdf(user: CurrentUser, svc: StudentSvc) -> Response:
     filename = (profile.full_name if profile and profile.full_name else "cv").replace(
         " ", "_"
     )
+    _emit(
+        user.id,
+        "cv.pdf",
+        start,
+        meta={"size_bytes": len(pdf), "template": slug},
+    )
     return Response(
         content=pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
     )
+
+
+# ---- feedback + post-download survey ----------------------------------
+
+
+def _feedback_service(
+    session: SessionDep,
+    email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+) -> FeedbackService:
+    return FeedbackService(session, email_provider)
+
+
+FeedbackSvc = Annotated[FeedbackService, Depends(_feedback_service)]
+
+
+@router.post("/feedback", response_model=FeedbackRead)
+async def submit_feedback(
+    payload: GeneralFeedbackCreate,
+    user: CurrentUser,
+    svc: FeedbackSvc,
+) -> FeedbackRead:
+    row = await svc.submit_general(user.id, payload.message)
+    return FeedbackRead.model_validate(row)
+
+
+@router.post("/survey", response_model=FeedbackRead)
+async def submit_survey(
+    payload: SurveyCreate,
+    user: CurrentUser,
+    svc: FeedbackSvc,
+) -> FeedbackRead:
+    row = await svc.submit_survey(
+        user.id,
+        rating=payload.rating,
+        comment=payload.comment,
+        template_slug=payload.template_slug,
+    )
+    return FeedbackRead.model_validate(row)

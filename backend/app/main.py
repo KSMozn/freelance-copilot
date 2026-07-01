@@ -17,11 +17,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="Upwork Intelligence Platform",
+        title="Careero API",
         version="0.1.0",
         description=(
-            "AI-powered decision support for freelancers. "
-            "Phase-1 foundation: auth + Jobs CRUD. No automation, no scraping."
+            "Careero is a PersonaArmory product — Your AI Career Intelligence "
+            "Platform. This is the backend API surface."
         ),
         lifespan=lifespan,
     )
@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     async def root() -> dict[str, str]:
-        return {"name": "Upwork Intelligence Platform", "docs": "/docs"}
+        return {"name": "Careero API", "docs": "/docs"}
 
     return app
 

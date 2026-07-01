@@ -21,6 +21,7 @@ export interface StudentProfile {
   professional_email: string | null;
   phone: string | null;
   location: string | null;
+  date_of_birth: string | null;
   college: string | null;
   department: string | null;
   degree: string | null;
@@ -35,8 +36,21 @@ export interface StudentProfile {
   interests: string[];
   completed_steps: string[];
   current_step: string | null;
+  cv_template_slug: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CvTemplate {
+  slug: string;
+  display_name: string;
+  description: string;
+  sort_order: number;
+}
+
+export interface CvTemplateListResponse {
+  items: CvTemplate[];
+  default_slug: string;
 }
 
 export interface StudentProfileUpdate {
@@ -44,6 +58,7 @@ export interface StudentProfileUpdate {
   professional_email?: string | null;
   phone?: string | null;
   location?: string | null;
+  date_of_birth?: string | null;
   college?: string | null;
   department?: string | null;
   degree?: string | null;
@@ -54,6 +69,7 @@ export interface StudentProfileUpdate {
   headline?: string | null;
   links?: StudentLinks;
   interests?: string[];
+  cv_template_slug?: string | null;
   mark_steps?: string[];
   current_step?: string | null;
 }
@@ -121,5 +137,24 @@ export interface DraftSummaryResponse {
   ok: boolean;
   headline: string;
   summary: string;
+  notes: string[];
+}
+
+export type ProofreadCategory = "typo" | "grammar" | "clarity" | "style";
+export type ProofreadField = "summary" | "headline" | "description" | "title";
+
+export interface ProofreadFix {
+  entity_kind: "profile" | "entry";
+  entity_id: string | null;
+  field: ProofreadField;
+  original: string;
+  suggested: string;
+  reason: string;
+  category: ProofreadCategory;
+}
+
+export interface ProofreadResponse {
+  ok: boolean;
+  fixes: ProofreadFix[];
   notes: string[];
 }

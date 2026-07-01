@@ -55,6 +55,8 @@ class StudentProfileUpdate(BaseModel):
     professional_email: EmailStr | None = None
     phone: str | None = Field(default=None, max_length=64)
     location: str | None = Field(default=None, max_length=255)
+    # ISO YYYY-MM-DD. Frontend composes from Day/Month/Year dropdowns.
+    date_of_birth: date | None = None
 
     college: str | None = Field(default=None, max_length=255)
     department: str | None = Field(default=None, max_length=200)
@@ -68,6 +70,12 @@ class StudentProfileUpdate(BaseModel):
     links: StudentLinks | None = None
     interests: list[str] | None = None
 
+    # Selected CV template slug. Frontend writes this when the student
+    # clicks "Set as default" in the Preview step. Validated at render
+    # time via CvTemplateService, not here — an unknown slug just falls
+    # back to the default instead of blocking save.
+    cv_template_slug: str | None = Field(default=None, max_length=64)
+
     mark_steps: list[str] | None = None
     current_step: str | None = Field(default=None, max_length=64)
 
@@ -80,6 +88,7 @@ class StudentProfileRead(BaseModel):
     professional_email: str | None
     phone: str | None
     location: str | None
+    date_of_birth: date | None
     college: str | None
     department: str | None
     degree: str | None
@@ -94,8 +103,29 @@ class StudentProfileRead(BaseModel):
     interests: list[Any]
     completed_steps: list[str]
     current_step: str | None
+    cv_template_slug: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class CvTemplateRead(BaseModel):
+    """Student-facing view of a CV template (picker card).
+
+    Only visible templates are ever exposed through this DTO; the admin
+    equivalent lives on `AdminCvTemplateRead` in `admin_dto`.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    slug: str
+    display_name: str
+    description: str
+    sort_order: int
+
+
+class CvTemplateListResponse(BaseModel):
+    items: list[CvTemplateRead]
+    default_slug: str  # what the renderer will use if no override is passed
 
 
 # ---- entries -----------------------------------------------------------
@@ -194,6 +224,26 @@ class DraftSummaryResponse(BaseModel):
     ok: bool
     headline: str
     summary: str
+    notes: list[str] = Field(default_factory=list)
+
+
+class ProofreadFix(BaseModel):
+    """One targeted proofreading suggestion (typo / grammar / clarity /
+    style). The student sees the diff and clicks Apply or Ignore per fix.
+    """
+
+    entity_kind: Literal["profile", "entry"]
+    entity_id: str | None = None  # entry UUID when entity_kind == "entry"
+    field: Literal["summary", "headline", "description", "title"]
+    original: str
+    suggested: str
+    reason: str
+    category: Literal["typo", "grammar", "clarity", "style"]
+
+
+class ProofreadResponse(BaseModel):
+    ok: bool
+    fixes: list[ProofreadFix] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 

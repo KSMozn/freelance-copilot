@@ -10,6 +10,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Brand-gradient CTA — reserve for the single most important action
+        // per surface (login, download, "Set as default"). Overuse dilutes
+        // the emphasis, per the brand guide.
+        brand:
+          "bg-brand-gradient text-white shadow-lg shadow-primary/20 hover:brightness-110 hover:shadow-primary/30 transition-[filter,box-shadow]",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",

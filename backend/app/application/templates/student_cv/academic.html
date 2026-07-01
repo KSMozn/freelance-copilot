@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ profile.full_name }} — Curriculum Vitae</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 22mm 18mm 22mm;
+    @bottom-center {
+      content: "{{ profile.full_name }} · " counter(page);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 8.5pt;
+      color: #78716c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 11pt;
+    color: #292524;
+    line-height: 1.5;
+    margin: 0;
+  }
+  header {
+    text-align: center;
+    padding-bottom: 6mm;
+    margin-bottom: 6mm;
+    border-bottom: 0.6pt solid #292524;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 24pt;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  header .headline {
+    font-style: italic;
+    color: #57534e;
+    margin-top: 1.5mm;
+    font-size: 11.5pt;
+  }
+  header .contact {
+    margin-top: 3mm;
+    color: #44403c;
+    font-size: 10pt;
+  }
+  header .contact span { margin: 0 3mm; }
+  header .links a {
+    color: #7c2d12;
+    text-decoration: none;
+    margin: 0 3mm;
+    font-size: 10pt;
+  }
+
+  section {
+    margin-bottom: 6mm;
+    page-break-inside: avoid;
+  }
+  section h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #292524;
+    margin: 0 0 3mm 0;
+    padding-bottom: 1mm;
+    border-bottom: 0.4pt solid #a8a29e;
+    font-variant: small-caps;
+    letter-spacing: 0.06em;
+  }
+  .edu-primary { margin-bottom: 3mm; }
+  .edu-primary .school { font-weight: 700; color: #292524; font-size: 11.5pt; }
+  .edu-primary .meta { color: #57534e; font-style: italic; }
+  .entry { margin-bottom: 4mm; }
+  .entry .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4mm;
+  }
+  .entry .title { font-weight: 700; color: #292524; }
+  .entry .org { color: #57534e; font-style: italic; }
+  .entry .dates { color: #78716c; font-size: 10pt; white-space: nowrap; }
+  .entry .desc { margin: 1mm 0 0 0; color: #44403c; text-align: justify; }
+  .entry .tags { margin-top: 1mm; font-size: 10pt; color: #57534e; font-style: italic; }
+  .list-row { color: #44403c; }
+  .list-row span { margin-right: 4mm; }
+  .list-row strong { color: #292524; }
+  a { color: #7c2d12; text-decoration: none; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>{{ profile.full_name }}</h1>
+    {% if profile.headline %}<div class="headline">{{ profile.headline }}</div>{% endif %}
+    <div class="contact">
+      {% if profile.professional_email %}<span>{{ profile.professional_email }}</span>{% endif %}
+      {% if profile.phone %}<span>{{ profile.phone }}</span>{% endif %}
+      {% if profile.location %}<span>{{ profile.location }}</span>{% endif %}
+      {% if profile.date_of_birth %}<span>Born {{ profile.date_of_birth }}</span>{% endif %}
+    </div>
+    {% if profile.links %}
+    <div class="links">
+      {% if profile.links.github %}<a href="{{ profile.links.github }}">GitHub</a>{% endif %}
+      {% if profile.links.linkedin %}<a href="{{ profile.links.linkedin }}">LinkedIn</a>{% endif %}
+      {% if profile.links.website %}<a href="{{ profile.links.website }}">Website</a>{% endif %}
+      {% if profile.links.portfolio %}<a href="{{ profile.links.portfolio }}">Portfolio</a>{% endif %}
+    </div>
+    {% endif %}
+  </header>
+
+  {% if profile.college or profile.degree or profile.major %}
+  <section>
+    <h2>Education</h2>
+    <div class="edu-primary">
+      <div class="school">{{ profile.college or '' }}</div>
+      <div class="meta">
+        {% if profile.degree %}{{ profile.degree }}{% endif %}
+        {% if profile.major %}{% if profile.degree %}, {% endif %}{{ profile.major }}{% endif %}
+        {% if profile.department %}{% if profile.degree or profile.major %}, {% endif %}{{ profile.department }}{% endif %}
+        {% if profile.graduation_year %} · Expected {{ profile.graduation_year }}{% endif %}
+        {% if profile.gpa %} · GPA {{ profile.gpa }}{% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if profile.summary %}
+  <section>
+    <h2>Research Statement</h2>
+    <p style="margin:0;color:#44403c;text-align:justify;">{{ profile.summary }}</p>
+  </section>
+  {% endif %}
+
+  {% for section in sections %}
+    <section>
+      <h2>{{ section.label }}</h2>
+
+      {% if section.kind == 'skill' %}
+        <div class="list-row">
+          {% for item in section.entries %}
+            <span>{{ item.title }}{% if item.details.proficiency %} ({{ item.details.proficiency }}/5){% endif %}{% if not loop.last %};{% endif %}</span>
+          {% endfor %}
+        </div>
+
+      {% elif section.kind == 'language' %}
+        <div class="list-row">
+          {% for item in section.entries %}
+            <span><strong>{{ item.title }}</strong>{% if item.details.proficiency %} ({{ item.details.proficiency }}){% endif %}</span>
+          {% endfor %}
+        </div>
+
+      {% else %}
+        {% for item in section.entries %}
+          <div class="entry">
+            <div class="head">
+              <div>
+                <span class="title">{{ item.title }}</span>
+                {% if item.organization %}<span class="org"> — {{ item.organization }}</span>{% endif %}
+              </div>
+              <div class="dates">
+                {% if item.start_date or item.end_date or item.is_current %}
+                  {{ item.start_date or '' }}
+                  {% if item.is_current %} – Present
+                  {% elif item.end_date %} – {{ item.end_date }}
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+            {% if item.description %}<p class="desc">{{ item.description }}</p>{% endif %}
+            {% if item.details.tech_stack %}
+              <div class="tags">
+                Methods: {% for tech in item.details.tech_stack %}{{ tech }}{% if not loop.last %}, {% endif %}{% endfor %}
+              </div>
+            {% endif %}
+            {% if item.url %}<div class="tags"><a href="{{ item.url }}">{{ item.url }}</a></div>{% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  {% if profile.interests %}
+  <section>
+    <h2>Research Interests</h2>
+    <div class="list-row">
+      {% for interest in profile.interests %}<span>{{ interest }}{% if not loop.last %};{% endif %}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</body>
+</html>

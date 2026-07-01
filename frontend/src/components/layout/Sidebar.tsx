@@ -1,6 +1,7 @@
 import { BarChart3, Briefcase, FileText, FolderGit2, Github, Heart, LayoutDashboard, Sparkles, Settings, UserCog } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -20,8 +21,8 @@ const links = [
 export function Sidebar() {
   return (
     <aside className="hidden w-60 shrink-0 border-r bg-card md:flex md:flex-col">
-      <div className="flex h-14 items-center px-6 font-semibold tracking-tight">
-        Upwork Intel
+      <div className="flex h-14 items-center px-6">
+        <BrandWordmark variant="careero" size={22} />
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {links.map(({ to, label, icon: Icon, end }) => (

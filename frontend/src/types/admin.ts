@@ -1,0 +1,154 @@
+export interface SignupsPoint {
+  day: string;
+  count: number;
+}
+
+export interface WizardFunnel {
+  registered: number;
+  basics: number;
+  education: number;
+  photo: number;
+  skills: number;
+  courses: number;
+  projects: number;
+  volunteer: number;
+  languages: number;
+  certificates: number;
+  summary: number;
+  preview: number;
+  downloaded: number;
+}
+
+export interface EntryKindCount {
+  kind: string;
+  count: number;
+}
+
+export interface UsageKindCount {
+  kind: string;
+  count: number;
+  errors: number;
+}
+
+export interface AdminOverview {
+  users_total: number;
+  users_students: number;
+  users_active_7d: number;
+  signups_today: number;
+  signups_7d: number;
+  signups_30d: number;
+  signups_series: SignupsPoint[];
+  funnel: WizardFunnel;
+  entries_by_kind: EntryKindCount[];
+  usage_by_kind_7d: UsageKindCount[];
+}
+
+export interface AdminUserRow {
+  id: string;
+  email: string;
+  full_name: string | null;
+  persona_kind: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  email_verified: boolean;
+  last_login_at: string | null;
+  created_at: string;
+  wizard_step: string | null;
+  wizard_completed: number;
+}
+
+export interface AdminUserListResponse {
+  items: AdminUserRow[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface AdminStudentSummary {
+  full_name: string | null;
+  professional_email: string | null;
+  phone: string | null;
+  location: string | null;
+  date_of_birth: string | null;
+  college: string | null;
+  department: string | null;
+  degree: string | null;
+  major: string | null;
+  graduation_year: number | null;
+  gpa: string | null;
+  headline: string | null;
+  summary: string | null;
+  links: Record<string, unknown>;
+  interests: unknown[];
+  completed_steps: string[];
+  current_step: string | null;
+  cv_template_slug: string | null;
+  photo_file_id: string | null;
+  entries_count: number;
+  entries_by_kind: Record<string, number>;
+  updated_at: string;
+}
+
+export interface AdminUserDetail {
+  id: string;
+  email: string;
+  full_name: string | null;
+  persona_kind: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  email_verified_at: string | null;
+  last_login_at: string | null;
+  created_at: string;
+  student: AdminStudentSummary | null;
+}
+
+export interface AdminActivityRow {
+  id: string;
+  user_id: string | null;
+  user_email: string | null;
+  kind: string;
+  status: "ok" | "error";
+  duration_ms: number | null;
+  error_message: string | null;
+  meta: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdminActivityResponse {
+  items: AdminActivityRow[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface AdminActionResult {
+  ok: boolean;
+  message: string | null;
+}
+
+export interface AdminImpersonateResponse {
+  target_user_id: string;
+  target_user_email: string;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+export interface AdminCvTemplate {
+  slug: string;
+  display_name: string;
+  description: string;
+  is_visible: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminCvTemplateListResponse {
+  items: AdminCvTemplate[];
+}
+
+export interface AdminCvTemplateUpdate {
+  is_visible?: boolean;
+  sort_order?: number;
+}

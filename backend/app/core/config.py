@@ -53,12 +53,21 @@ class Settings(BaseSettings):
     email_provider: Literal["mock", "resend"] = "mock"
     resend_api_key: str | None = None
     email_from_address: str = "no-reply@example.com"
-    email_from_name: str | None = "Freelance Copilot"
-    app_name: str = "Freelance Copilot"
+    # Rebranded to Careero — students see this in email subjects, from names,
+    # and OTP body headers. PersonaArmory is the parent company (surfaces only
+    # on the admin panel + wizard footer).
+    email_from_name: str | None = "Careero"
+    app_name: str = "Careero"
     otp_expires_minutes: int = 10
     otp_max_attempts: int = 5
     otp_rate_limit_per_15min: int = 3
     frontend_base_url: str = "http://localhost:5173"
+    # Shared secret Cloud Scheduler sends in `X-Task-Secret` when kicking
+    # the daily-report endpoint. Left None in dev so local invocations
+    # skip the check; in prod this is mounted from Secret Manager and
+    # the endpoint 401s on mismatch.
+    report_task_secret: str | None = None
+    admin_base_url: str = "http://localhost:5173"
 
     @computed_field  # type: ignore[prop-decorator]
     @property

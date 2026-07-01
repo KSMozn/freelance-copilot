@@ -73,6 +73,7 @@ class StudentProfile(Base):
     professional_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(64), nullable=True)
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Education
     college: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -107,6 +108,14 @@ class StudentProfile(Base):
         JSONB, nullable=False, default=list
     )
     current_step: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # CV template selection. Slug matches a row in cv_templates + a Jinja
+    # file under templates/student_cv/. Null → resolver falls back to the
+    # first visible template. No FK to cv_templates so admins can delete
+    # templates without student-row constraint headaches.
+    cv_template_slug: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

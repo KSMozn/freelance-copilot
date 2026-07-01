@@ -1,0 +1,8 @@
+New feedback in {app_name}
+
+Submitted {created_at}
+From: {submitter_email}
+
+{message}
+
+Open the admin panel: {admin_url}

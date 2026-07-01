@@ -104,6 +104,10 @@ class AuthService:
             data = decode_token(access_token, "access")
         except jwt.InvalidTokenError as exc:
             raise InvalidCredentialsError("Invalid access token") from exc
+        # Admin tokens live in a separate identity space. Refusing them
+        # here means an admin JWT cannot be replayed against user routes.
+        if data.get("pt") == "admin":
+            raise InvalidCredentialsError("Not a user token")
         user = await self._users.get_by_id(UUID(data["sub"]))
         if user is None:
             raise NotFoundError("User not found")

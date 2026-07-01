@@ -1,0 +1,23 @@
+{app_name} — daily report
+Window: {window_start} → {window_end}
+
+Signups today:        {signups_today}
+Logins today:         {logins_today}
+Downloads today:      {downloads_today}
+Total users:          {total_users}
+
+DOWNLOADS BY TEMPLATE
+{by_template_rows_txt}
+
+Most-used template all-time: {most_used_template_all_time}
+
+WIZARD LEAKAGE
+{started_no_download} student(s) started the wizard but never downloaded a CV.
+
+GENERAL FEEDBACK
+{general_feedback_txt}
+
+POST-DOWNLOAD SURVEYS
+{surveys_txt}
+
+Admin panel: {admin_url}

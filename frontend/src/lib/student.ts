@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import type {
+  CvTemplateListResponse,
   DraftSummaryResponse,
   EmailCoachResponse,
   PhotoCoachResponse,
+  ProofreadResponse,
   StudentEntry,
   StudentEntryUpsert,
   StudentProfile,
@@ -136,6 +138,17 @@ export function useCoachPhoto() {
   });
 }
 
+export function useProofread() {
+  return useMutation({
+    mutationFn: async (): Promise<ProofreadResponse> => {
+      const { data } = await api.get<ProofreadResponse>(
+        "/students/coach/proofread",
+      );
+      return data;
+    },
+  });
+}
+
 export function useDraftSummary() {
   return useMutation({
     mutationFn: async (): Promise<DraftSummaryResponse> => {
@@ -196,12 +209,32 @@ export function useStudentPhotoBlob(photoFileId: string | null | undefined) {
   return url;
 }
 
-export async function fetchCvPreviewHtml(): Promise<string> {
-  const { data } = await api.get<{ html: string }>("/students/cv/preview");
+export async function fetchCvPreviewHtml(template?: string): Promise<string> {
+  const params = template ? { template } : undefined;
+  const { data } = await api.get<{ html: string }>("/students/cv/preview", {
+    params,
+  });
   return data.html;
 }
 
-export async function downloadStudentCv(): Promise<Blob> {
-  const res = await api.get("/students/cv.pdf", { responseType: "blob" });
+export async function downloadStudentCv(template?: string): Promise<Blob> {
+  const params = template ? { template } : undefined;
+  const res = await api.get("/students/cv.pdf", {
+    responseType: "blob",
+    params,
+  });
   return res.data as Blob;
+}
+
+export function useCvTemplates() {
+  return useQuery({
+    queryKey: ["student", "cv-templates"] as const,
+    queryFn: async () => {
+      const { data } = await api.get<CvTemplateListResponse>(
+        "/students/cv-templates",
+      );
+      return data;
+    },
+    staleTime: 60_000,
+  });
 }

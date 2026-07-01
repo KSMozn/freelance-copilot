@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { AuthShell } from "@/components/brand/AuthShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
@@ -88,17 +88,16 @@ export function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>
-            {step === "email" && "We'll send a 6-digit code to your email."}
-            {step === "code" && `Enter the code we sent to ${email}.`}
-            {step === "password" && "Use your password to sign in."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <AuthShell>
+      <div className="mb-6 space-y-1">
+        <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
+        <p className="text-sm text-muted-foreground">
+          {step === "email" && "We'll send a 6-digit code to your email."}
+          {step === "code" && `Enter the code we sent to ${email}.`}
+          {step === "password" && "Use your password to sign in."}
+        </p>
+      </div>
+      <div>
           {step === "email" && (
             <form
               className="space-y-4"
@@ -119,7 +118,13 @@ export function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={requestCode.isPending}>
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                className="w-full"
+                disabled={requestCode.isPending}
+              >
                 {requestCode.isPending ? "Sending…" : "Send code"}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
@@ -176,7 +181,13 @@ export function LoginPage() {
                   onChange={(e) => setFullName(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={verifyCode.isPending || code.length !== 6}>
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                className="w-full"
+                disabled={verifyCode.isPending || code.length !== 6}
+              >
                 {verifyCode.isPending ? "Verifying…" : "Verify & sign in"}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
@@ -224,7 +235,13 @@ export function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={passwordLogin.isPending}>
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                className="w-full"
+                disabled={passwordLogin.isPending}
+              >
                 {passwordLogin.isPending ? "Signing in…" : "Sign in"}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
@@ -256,8 +273,7 @@ export function LoginPage() {
               </p>
             </form>
           )}
-        </CardContent>
-      </Card>
-    </div>
+      </div>
+    </AuthShell>
   );
 }

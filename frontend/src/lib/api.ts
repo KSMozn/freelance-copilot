@@ -1,8 +1,17 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
+import { useAdminAuthStore } from "@/stores/adminAuth";
 import { useAuthStore } from "@/stores/auth";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+
+// Which auth store is authoritative depends on the subdomain the SPA
+// is being served from. Bundle-loaded on `admin.*` -> talk to
+// /admin/auth/*; bundle-loaded on `app.*` -> talk to /auth/*.
+export const isAdminSurface =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "admin.personaarmory.com" ||
+    window.location.hostname.startsWith("admin."));
 
 export const api = axios.create({
   baseURL,
@@ -10,7 +19,9 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = useAuthStore.getState().accessToken;
+  const token = isAdminSurface
+    ? useAdminAuthStore.getState().accessToken
+    : useAuthStore.getState().accessToken;
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -21,6 +32,21 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 let refreshInFlight: Promise<string | null> | null = null;
 
 async function tryRefresh(): Promise<string | null> {
+  if (isAdminSurface) {
+    const refreshToken = useAdminAuthStore.getState().refreshToken;
+    if (!refreshToken) return null;
+    try {
+      const { data } = await axios.post<{ access_token: string; refresh_token: string }>(
+        `${baseURL}/admin/auth/refresh`,
+        { refresh_token: refreshToken },
+      );
+      useAdminAuthStore.getState().setTokens(data.access_token, data.refresh_token);
+      return data.access_token;
+    } catch {
+      useAdminAuthStore.getState().logout();
+      return null;
+    }
+  }
   const refreshToken = useAuthStore.getState().refreshToken;
   if (!refreshToken) return null;
   try {

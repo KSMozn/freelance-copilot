@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ profile.full_name }} — CV</title>
+<style>
+  @page {
+    size: A4;
+    margin: 22mm 24mm 20mm 24mm;
+    @bottom-right {
+      content: "{{ profile.full_name }}  ·  " counter(page);
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 8pt;
+      color: #9ca3af;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 10.5pt;
+    color: #111827;
+    line-height: 1.5;
+    margin: 0;
+  }
+  header {
+    border-bottom: 1px solid #111827;
+    padding-bottom: 4mm;
+    margin-bottom: 6mm;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 24pt;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: #111827;
+  }
+  header .headline {
+    margin-top: 1.5mm;
+    color: #4b5563;
+    font-size: 11pt;
+  }
+  header .contact {
+    margin-top: 3mm;
+    color: #374151;
+    font-size: 9.5pt;
+  }
+  header .contact span { margin-right: 4mm; }
+  header .links a {
+    color: #111827;
+    text-decoration: underline;
+    text-decoration-thickness: 0.3pt;
+    margin-right: 4mm;
+    font-size: 9.5pt;
+  }
+  section { margin-bottom: 6mm; page-break-inside: avoid; }
+  section h2 {
+    font-size: 9pt;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin: 0 0 3mm 0;
+    font-weight: 600;
+  }
+  .edu .school { color: #111827; }
+  .edu .meta { color: #6b7280; font-size: 9.5pt; }
+  .entry { margin-bottom: 3.5mm; }
+  .entry .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4mm;
+  }
+  .entry .title { color: #111827; }
+  .entry .org { color: #4b5563; }
+  .entry .dates { color: #6b7280; font-size: 9.5pt; white-space: nowrap; }
+  .entry .desc { margin: 1mm 0 0 0; color: #374151; }
+  .entry .tags { margin-top: 1mm; font-size: 9pt; color: #6b7280; }
+  .skill-row, .lang-row, .interest-row {
+    color: #374151;
+    font-size: 10pt;
+  }
+  .skill-row span,
+  .interest-row span { margin-right: 3.5mm; }
+  .lang-row span { margin-right: 4mm; }
+  .lang-row strong { color: #111827; font-weight: 600; }
+  a { color: #111827; text-decoration: underline; text-decoration-thickness: 0.3pt; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>{{ profile.full_name }}</h1>
+    {% if profile.headline %}<div class="headline">{{ profile.headline }}</div>{% endif %}
+    <div class="contact">
+      {% if profile.professional_email %}<span>{{ profile.professional_email }}</span>{% endif %}
+      {% if profile.phone %}<span>{{ profile.phone }}</span>{% endif %}
+      {% if profile.location %}<span>{{ profile.location }}</span>{% endif %}
+      {% if profile.date_of_birth %}<span>Born {{ profile.date_of_birth }}</span>{% endif %}
+    </div>
+    {% if profile.links %}
+    <div class="links" style="margin-top: 2mm;">
+      {% if profile.links.github %}<a href="{{ profile.links.github }}">GitHub</a>{% endif %}
+      {% if profile.links.linkedin %}<a href="{{ profile.links.linkedin }}">LinkedIn</a>{% endif %}
+      {% if profile.links.website %}<a href="{{ profile.links.website }}">Website</a>{% endif %}
+      {% if profile.links.portfolio %}<a href="{{ profile.links.portfolio }}">Portfolio</a>{% endif %}
+    </div>
+    {% endif %}
+  </header>
+
+  {% if profile.summary %}
+  <section>
+    <h2>Summary</h2>
+    <p style="margin:0;color:#374151;">{{ profile.summary }}</p>
+  </section>
+  {% endif %}
+
+  {% if profile.college or profile.degree or profile.major %}
+  <section>
+    <h2>Education</h2>
+    <div class="edu">
+      <div class="school">{{ profile.college or '' }}</div>
+      <div class="meta">
+        {% if profile.department %}{{ profile.department }}{% endif %}
+        {% if profile.degree %}{% if profile.department %} · {% endif %}{{ profile.degree }}{% endif %}
+        {% if profile.major %} · {{ profile.major }}{% endif %}
+        {% if profile.graduation_year %} · Expected {{ profile.graduation_year }}{% endif %}
+        {% if profile.gpa %} · GPA {{ profile.gpa }}{% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% for section in sections %}
+    <section>
+      <h2>{{ section.label }}</h2>
+
+      {% if section.kind == 'skill' %}
+        <div class="skill-row">
+          {% for item in section.entries %}
+            <span>{{ item.title }}{% if item.details.proficiency %} ({{ item.details.proficiency }}/5){% endif %}{% if not loop.last %} ·{% endif %}</span>
+          {% endfor %}
+        </div>
+
+      {% elif section.kind == 'language' %}
+        <div class="lang-row">
+          {% for item in section.entries %}
+            <span><strong>{{ item.title }}</strong>{% if item.details.proficiency %} — {{ item.details.proficiency }}{% endif %}</span>
+          {% endfor %}
+        </div>
+
+      {% else %}
+        {% for item in section.entries %}
+          <div class="entry">
+            <div class="head">
+              <div>
+                <span class="title">{{ item.title }}</span>
+                {% if item.organization %}<span class="org"> · {{ item.organization }}</span>{% endif %}
+              </div>
+              <div class="dates">
+                {% if item.start_date or item.end_date or item.is_current %}
+                  {{ item.start_date or '' }}
+                  {% if item.is_current %} – Present
+                  {% elif item.end_date %} – {{ item.end_date }}
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+            {% if item.description %}<p class="desc">{{ item.description }}</p>{% endif %}
+            {% if item.details.tech_stack %}
+              <div class="tags">
+                {% for tech in item.details.tech_stack %}{{ tech }}{% if not loop.last %} · {% endif %}{% endfor %}
+              </div>
+            {% endif %}
+            {% if item.url %}<div class="tags"><a href="{{ item.url }}">{{ item.url }}</a></div>{% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  {% if profile.interests %}
+  <section>
+    <h2>Interests</h2>
+    <div class="interest-row">
+      {% for interest in profile.interests %}<span>{{ interest }}{% if not loop.last %} ·{% endif %}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</body>
+</html>

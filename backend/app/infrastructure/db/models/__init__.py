@@ -1,9 +1,11 @@
+from app.infrastructure.db.models.admin_user import AdminUser
 from app.infrastructure.db.models.application import (
     Application,
     ApplicationHistory,
     ApplicationPortfolio,
 )
 from app.infrastructure.db.models.client import Client
+from app.infrastructure.db.models.cv_template import CvTemplate
 from app.infrastructure.db.models.email_otp_code import EmailOtpCode
 from app.infrastructure.db.models.embedding import Embedding
 from app.infrastructure.db.models.experience import (
@@ -11,6 +13,7 @@ from app.infrastructure.db.models.experience import (
     ExperienceAchievement,
     ExperienceSkill,
 )
+from app.infrastructure.db.models.feedback_entry import FeedbackEntry
 from app.infrastructure.db.models.ingestion import (
     Certificate,
     ContentItem,
@@ -45,22 +48,26 @@ from app.infrastructure.db.models.tracker import (
     InterviewEvent,
     RecruiterInteraction,
 )
+from app.infrastructure.db.models.usage_event import UsageEvent
 from app.infrastructure.db.models.user import User
 from app.infrastructure.db.models.user_skill import UserSkill
 
 __all__ = [
+    "AdminUser",
     "Application",
     "ApplicationHistory",
     "ApplicationPortfolio",
     "Certificate",
     "Client",
     "ContentItem",
+    "CvTemplate",
     "CvUpload",
     "EmailOtpCode",
     "Embedding",
     "Experience",
     "ExperienceAchievement",
     "ExperienceSkill",
+    "FeedbackEntry",
     "FollowUpReminder",
     "InterviewEvent",
     "Job",
@@ -88,6 +95,7 @@ __all__ = [
     "StudentProfileEntry",
     "Tag",
     "UploadedFile",
+    "UsageEvent",
     "User",
     "UserSkill",
 ]

@@ -690,3 +690,66 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def require_superuser(user: CurrentUser) -> User:
+    """LEGACY superuser gate (Phase L.1).
+
+    Superseded by `require_admin_user` — kept in case a caller still
+    references it. New admin endpoints should use `SuperAdmin`.
+    """
+    if not user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Superuser access required",
+        )
+    return user
+
+
+SuperUser = Annotated[User, Depends(require_superuser)]
+
+
+# ---- Admin identity (Phase L.2) --------------------------------------
+# admin_users is a completely separate identity space from users. Admin
+# JWTs carry `pt=admin`. The two gates below enforce that split:
+#   * get_current_user (above) already rejects admin tokens because
+#     `get_admin_user_from_token` refuses to load a user_id if pt=admin.
+#   * require_admin_user rejects user tokens for the same reason.
+
+
+async def get_current_admin(
+    token: Annotated[str | None, Depends(oauth2_scheme)],
+    session: SessionDep,
+) -> "AdminUserEntity":
+    from app.application.services.admin_auth_service import AdminAuthService
+    from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import (
+        SQLAlchemyAdminUserRepository,
+    )
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    svc = AdminAuthService(SQLAlchemyAdminUserRepository(session))
+    try:
+        admin = await svc.get_admin_by_token(token)
+    except (InvalidCredentialsError, NotFoundError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+    if not admin.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin account is disabled",
+        )
+    return admin
+
+
+# Forward-declare — the entity import here would create a cycle otherwise.
+from app.domain.entities.admin_user import AdminUser as AdminUserEntity
+
+CurrentAdmin = Annotated[AdminUserEntity, Depends(get_current_admin)]

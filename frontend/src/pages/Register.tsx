@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { AuthShell } from "@/components/brand/AuthShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
@@ -20,9 +20,13 @@ interface OtpRequestResponse {
   expires_in_minutes: number;
 }
 
-type PersonaKind = "student" | "professional";
 type AuthMode = "password" | "otp";
-type Step = "persona" | "identity" | "code";
+type Step = "identity" | "code";
+
+// Persona is hard-coded to Student for now — only the Student wizard
+// surface is live. Switching back to multi-persona is a UI restore (the
+// backend still accepts persona_kind="professional").
+const PERSONA_KIND = "student";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -33,16 +37,13 @@ export function RegisterPage() {
   // we don't make them re-enter it. Read once on mount; never round-trip.
   const carried = (location.state as { email?: string; password?: string } | null) ?? {};
 
-  const [step, setStep] = useState<Step>("persona");
+  const [step, setStep] = useState<Step>("identity");
   const [authMode, setAuthMode] = useState<AuthMode>("password");
-  const [personaKind, setPersonaKind] = useState<PersonaKind>("student");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState(carried.email ?? "");
   const [password, setPassword] = useState(carried.password ?? "");
   const [code, setCode] = useState("");
   const [expiresMin, setExpiresMin] = useState(10);
-  // True when we already have email + password from Login — hide those
-  // fields on the identity step and only ask for what's missing (name).
   const credentialsCarriedOver = Boolean(carried.email && carried.password);
 
   const redirectAfter = (data: AuthResponse) => {
@@ -58,7 +59,7 @@ export function RegisterPage() {
         email,
         full_name: fullName || null,
         password,
-        persona_kind: personaKind,
+        persona_kind: PERSONA_KIND,
       });
       return data;
     },
@@ -96,7 +97,7 @@ export function RegisterPage() {
         code,
         purpose: "register",
         full_name: fullName || null,
-        persona_kind: personaKind,
+        persona_kind: PERSONA_KIND,
       });
       return data;
     },
@@ -109,50 +110,24 @@ export function RegisterPage() {
   });
 
   const header = HEADERS[step];
-  // Override the identity step's description when credentials are carried
-  // from Login — at that point we're only asking for a name.
   const description =
     step === "identity" && credentialsCarriedOver
       ? "We've got your email and password. Just need a name for your CV."
       : header.description;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <ProgressDots step={step} authMode={authMode} />
-          <CardTitle className="mt-4">{header.title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {step === "persona" && (
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <PersonaTile
-                  active={personaKind === "student"}
-                  title="Student"
-                  description="Build your first CV step-by-step with guided coaching."
-                  onClick={() => setPersonaKind("student")}
-                />
-                <PersonaTile
-                  active={personaKind === "professional"}
-                  title="Working professional"
-                  description="Track jobs, score opportunities, generate proposals."
-                  onClick={() => setPersonaKind("professional")}
-                />
-              </div>
-              <Button className="w-full" onClick={() => setStep("identity")}>
-                Continue
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link className="text-primary hover:underline" to="/login">
-                  Sign in
-                </Link>
-              </p>
-            </div>
-          )}
-
+    <AuthShell
+      title="Join Careero"
+      subtitle="Set up your account in under a minute — one email, and we'll take it from there."
+    >
+      <ProgressDots step={step} authMode={authMode} />
+      <div className="mt-4 mb-6 space-y-1">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          {header.title}
+        </h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <div>
           {step === "identity" && (
             <form
               className="space-y-4"
@@ -240,33 +215,32 @@ export function RegisterPage() {
                   )}
                 </>
               )}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setStep("persona")}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={
-                    !email ||
-                    (authMode === "password"
-                      ? passwordRegister.isPending || password.length < 8
-                      : requestCode.isPending)
-                  }
-                >
-                  {authMode === "password"
-                    ? passwordRegister.isPending
-                      ? "Creating…"
-                      : "Create account"
-                    : requestCode.isPending
-                      ? "Sending…"
-                      : "Send code"}
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                variant="brand"
+                size="lg"
+                className="w-full"
+                disabled={
+                  !email ||
+                  (authMode === "password"
+                    ? passwordRegister.isPending || password.length < 8
+                    : requestCode.isPending)
+                }
+              >
+                {authMode === "password"
+                  ? passwordRegister.isPending
+                    ? "Creating…"
+                    : "Create account"
+                  : requestCode.isPending
+                    ? "Sending…"
+                    : "Send code"}
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link className="text-primary hover:underline" to="/login">
+                  Sign in
+                </Link>
+              </p>
             </form>
           )}
 
@@ -316,6 +290,8 @@ export function RegisterPage() {
                 </Button>
                 <Button
                   type="submit"
+                  variant="brand"
+                  size="lg"
                   className="flex-1"
                   disabled={verifyCode.isPending || code.length !== 6}
                 >
@@ -324,19 +300,14 @@ export function RegisterPage() {
               </div>
             </form>
           )}
-        </CardContent>
-      </Card>
-    </div>
+      </div>
+    </AuthShell>
   );
 }
 
 const HEADERS: Record<Step, { title: string; description: string }> = {
-  persona: {
-    title: "Welcome — let's set up your account",
-    description: "Pick what fits you best. You can change this later.",
-  },
   identity: {
-    title: "Tell us who you are",
+    title: "Create your student account",
     description: "Just a name, email, and password.",
   },
   code: {
@@ -346,9 +317,8 @@ const HEADERS: Record<Step, { title: string; description: string }> = {
 };
 
 function ProgressDots({ step, authMode }: { step: Step; authMode: AuthMode }) {
-  // Password skips the "code" step; show 2 dots instead of 3.
-  const order: Step[] =
-    authMode === "password" ? ["persona", "identity"] : ["persona", "identity", "code"];
+  // Password is a single step; OTP adds the code step.
+  const order: Step[] = authMode === "password" ? ["identity"] : ["identity", "code"];
   const idx = order.indexOf(step);
   return (
     <div className="flex items-center gap-1.5">
@@ -361,33 +331,5 @@ function ProgressDots({ step, authMode }: { step: Step; authMode: AuthMode }) {
         />
       ))}
     </div>
-  );
-}
-
-function PersonaTile({
-  active,
-  title,
-  description,
-  onClick,
-}: {
-  active: boolean;
-  title: string;
-  description: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-lg border p-4 text-left transition-colors " +
-        (active
-          ? "border-primary bg-primary/5 ring-1 ring-primary"
-          : "border-border hover:bg-muted/50")
-      }
-    >
-      <div className="text-base font-semibold">{title}</div>
-      <div className="mt-1 text-sm text-muted-foreground">{description}</div>
-    </button>
   );
 }

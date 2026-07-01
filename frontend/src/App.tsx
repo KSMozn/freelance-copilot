@@ -4,11 +4,13 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AppLayout } from "@/components/layout/AppLayout";
 import { RequireAuth } from "@/components/RequireAuth";
+import { isAdminSurface } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { AnalyticsPage } from "@/pages/Analytics";
 import { ApplicationDetailPage } from "@/pages/ApplicationDetail";
 import { ApplicationsPage } from "@/pages/Applications";
 import { DashboardPage } from "@/pages/Dashboard";
+import { ImpersonateLanding } from "@/pages/ImpersonateLanding";
 import { JobCreatePage } from "@/pages/JobCreate";
 import { JobDetailPage } from "@/pages/JobDetail";
 import { JobImportPage } from "@/pages/JobImport";
@@ -26,67 +28,111 @@ import { RegisterPage } from "@/pages/Register";
 import { RepositoriesPage } from "@/pages/Repositories";
 import { ResumeFormPage } from "@/pages/ResumeForm";
 import { ResumesPage } from "@/pages/Resumes";
+import { StudentFeedbackPage } from "@/pages/StudentFeedback";
 import { StudentWizardPage } from "@/pages/StudentWizard";
+import { AdminActivityPage } from "@/pages/admin/AdminActivity";
+import { AdminLayout } from "@/pages/admin/AdminLayout";
+import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
+import { AdminOverviewPage } from "@/pages/admin/AdminOverview";
+import { AdminTemplatesPage } from "@/pages/admin/AdminTemplatesPage";
+import { AdminUserDetailPage } from "@/pages/admin/AdminUserDetail";
+import { AdminUsersPage } from "@/pages/admin/AdminUsers";
 import { useAuthStore } from "@/stores/auth";
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/student"
-            element={
-              <RequireAuth>
-                <StudentWizardPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/onboarding"
-            element={
-              <RequireAuth>
-                <OnboardingPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            element={
-              <RequireAuth>
-                <StudentGate>
-                  <AppLayout />
-                </StudentGate>
-              </RequireAuth>
-            }
-          >
-            <Route index element={<DashboardPage />} />
-            <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/jobs/new" element={<JobCreatePage />} />
-            <Route path="/jobs/import" element={<JobImportPage />} />
-            <Route path="/jobs/:id" element={<JobDetailPage />} />
-            <Route path="/portfolio" element={<PortfolioPage />} />
-            <Route path="/portfolio/new" element={<PortfolioFormPage />} />
-            <Route path="/portfolio/:id" element={<PortfolioFormPage />} />
-            <Route path="/repositories" element={<RepositoriesPage />} />
-            <Route path="/resumes" element={<ResumesPage />} />
-            <Route path="/resumes/new" element={<ResumeFormPage />} />
-            <Route path="/resumes/:id" element={<ResumeFormPage />} />
-            <Route path="/applications" element={<ApplicationsPage />} />
-            <Route path="/applications/:id" element={<ApplicationDetailPage />} />
-            <Route path="/personas" element={<PersonasPage />} />
-            <Route path="/personas/new" element={<PersonaNewPage />} />
-            <Route path="/sources" element={<SourcesPage />} />
-            <Route path="/career-fitness" element={<CareerFitnessPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/settings" element={<PlaceholderPage title="Settings" phase="Phase 10" />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        {isAdminSurface ? <AdminRoutes /> : <AppRoutes />}
       </BrowserRouter>
       <Toaster richColors position="top-right" theme="dark" />
     </QueryClientProvider>
+  );
+}
+
+// ---- admin.personaarmory.com — admin surface only ---------------------
+
+function AdminRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<AdminLoginPage />} />
+      <Route path="/" element={<AdminLayout />}>
+        <Route index element={<Navigate to="/overview" replace />} />
+        <Route path="overview" element={<AdminOverviewPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="users/:id" element={<AdminUserDetailPage />} />
+        <Route path="templates" element={<AdminTemplatesPage />} />
+        <Route path="activity" element={<AdminActivityPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+// ---- app.personaarmory.com — student + freelancer surface -------------
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/impersonate" element={<ImpersonateLanding />} />
+      <Route
+        path="/student"
+        element={
+          <RequireAuth>
+            <StudentWizardPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/feedback"
+        element={
+          <RequireAuth>
+            <StudentFeedbackPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <RequireAuth>
+            <OnboardingPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        element={
+          <RequireAuth>
+            <StudentGate>
+              <AppLayout />
+            </StudentGate>
+          </RequireAuth>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/jobs/new" element={<JobCreatePage />} />
+        <Route path="/jobs/import" element={<JobImportPage />} />
+        <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/portfolio" element={<PortfolioPage />} />
+        <Route path="/portfolio/new" element={<PortfolioFormPage />} />
+        <Route path="/portfolio/:id" element={<PortfolioFormPage />} />
+        <Route path="/repositories" element={<RepositoriesPage />} />
+        <Route path="/resumes" element={<ResumesPage />} />
+        <Route path="/resumes/new" element={<ResumeFormPage />} />
+        <Route path="/resumes/:id" element={<ResumeFormPage />} />
+        <Route path="/applications" element={<ApplicationsPage />} />
+        <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+        <Route path="/personas" element={<PersonasPage />} />
+        <Route path="/personas/new" element={<PersonaNewPage />} />
+        <Route path="/sources" element={<SourcesPage />} />
+        <Route path="/career-fitness" element={<CareerFitnessPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/settings" element={<PlaceholderPage title="Settings" phase="Phase 10" />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

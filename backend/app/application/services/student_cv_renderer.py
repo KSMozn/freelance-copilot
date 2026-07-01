@@ -41,6 +41,20 @@ class WeasyPrintUnavailable(RuntimeError):
 
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "student_cv"
 
+# Filesystem registry of bundled CV templates. The slug is the source
+# of truth on both API and DB sides — a row in `cv_templates` whose
+# slug isn't in this map is unreachable at render time (the resolver
+# treats it as if it didn't exist). Adding a new template = ship the
+# `.html` file + add a row here + add a seed row in a migration.
+_TEMPLATE_REGISTRY: dict[str, str] = {
+    "classic": "classic.html",
+    "modern": "modern.html",
+    "minimal": "minimal.html",
+    "academic": "academic.html",
+    "creative": "creative.html",
+}
+_DEFAULT_SLUG = "classic"
+
 
 def _load_env() -> Environment:
     return Environment(
@@ -96,6 +110,20 @@ class StudentCvRenderer:
     def __init__(self) -> None:
         self._env = _load_env()
 
+    @staticmethod
+    def list_template_slugs() -> set[str]:
+        """Slugs of every filesystem-backed template.
+
+        The DB-side registry (`cv_templates`) is expected to be a subset
+        of these — anything outside is silently ignored by the resolver.
+        """
+        return set(_TEMPLATE_REGISTRY)
+
+    def _resolve_template_file(self, slug: str | None) -> str:
+        if slug and slug in _TEMPLATE_REGISTRY:
+            return _TEMPLATE_REGISTRY[slug]
+        return _TEMPLATE_REGISTRY[_DEFAULT_SLUG]
+
     def build_context(
         self,
         *,
@@ -136,6 +164,11 @@ class StudentCvRenderer:
                 ),
                 "phone": profile.phone if profile else None,
                 "location": profile.location if profile else None,
+                "date_of_birth": (
+                    profile.date_of_birth.strftime("%d %B %Y")
+                    if profile and profile.date_of_birth
+                    else None
+                ),
                 "college": profile.college if profile else None,
                 "department": profile.department if profile else None,
                 "degree": profile.degree if profile else None,
@@ -160,6 +193,7 @@ class StudentCvRenderer:
         entries: list[StudentProfileEntry],
         photo_bytes: bytes | None = None,
         photo_mime: str | None = None,
+        template_slug: str | None = None,
     ) -> str:
         ctx = self.build_context(
             profile=profile,
@@ -167,7 +201,7 @@ class StudentCvRenderer:
             photo_bytes=photo_bytes,
             photo_mime=photo_mime,
         )
-        template = self._env.get_template("classic.html")
+        template = self._env.get_template(self._resolve_template_file(template_slug))
         return template.render(**ctx)
 
     def render_pdf(
@@ -177,12 +211,14 @@ class StudentCvRenderer:
         entries: list[StudentProfileEntry],
         photo_bytes: bytes | None = None,
         photo_mime: str | None = None,
+        template_slug: str | None = None,
     ) -> bytes:
         html = self.render_html(
             profile=profile,
             entries=entries,
             photo_bytes=photo_bytes,
             photo_mime=photo_mime,
+            template_slug=template_slug,
         )
         try:
             from weasyprint import HTML  # type: ignore[import-not-found]

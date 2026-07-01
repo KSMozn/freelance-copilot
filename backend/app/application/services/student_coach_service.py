@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from typing import Any
 
 from app.application.dto.student_dto import (
     CoachSuggestion,
@@ -28,6 +29,8 @@ from app.application.dto.student_dto import (
     EmailCoachRequest,
     EmailCoachResponse,
     PhotoCoachResponse,
+    ProofreadFix,
+    ProofreadResponse,
     TextCoachRequest,
     TextCoachResponse,
 )
@@ -457,6 +460,131 @@ class StudentCoachService:
             summary=summary.strip(),
             notes=notes,
         )
+
+    async def proofread(
+        self,
+        *,
+        profile: StudentProfile | None,
+        entries: list[StudentProfileEntry],
+    ) -> ProofreadResponse:
+        """Final proofreading pass over the whole CV.
+
+        Reads every prose field (profile summary/headline; entry titles
+        and descriptions) and asks the LLM to surface targeted fixes:
+        typos, grammar, clarity, weak style. Each fix is an atomic
+        suggestion the student can Apply (patches the underlying entity)
+        or Ignore. Never rewrites whole paragraphs; the LLM is told to
+        keep the student's voice.
+        """
+        # Collect all prose fields into one list the LLM can review.
+        items: list[dict[str, Any]] = []
+        if profile:
+            if profile.summary and profile.summary.strip():
+                items.append(
+                    {
+                        "entity_kind": "profile",
+                        "field": "summary",
+                        "text": profile.summary,
+                    }
+                )
+            if profile.headline and profile.headline.strip():
+                items.append(
+                    {
+                        "entity_kind": "profile",
+                        "field": "headline",
+                        "text": profile.headline,
+                    }
+                )
+        for e in entries:
+            if e.title and e.title.strip():
+                items.append(
+                    {
+                        "entity_kind": "entry",
+                        "entity_id": str(e.id),
+                        "field": "title",
+                        "text": e.title,
+                    }
+                )
+            if e.description and e.description.strip():
+                items.append(
+                    {
+                        "entity_kind": "entry",
+                        "entity_id": str(e.id),
+                        "field": "description",
+                        "text": e.description,
+                    }
+                )
+
+        if not items:
+            return ProofreadResponse(
+                ok=False,
+                fixes=[],
+                notes=[
+                    "Nothing to proofread yet — add a summary or a project "
+                    "description first."
+                ],
+            )
+
+        system = (
+            "You are a CV proofreader. Review the student's text fragments "
+            "for typos, grammar errors, unclear phrasing, and weak style. "
+            "Constraints:\n"
+            " - Never invent facts (dates, technologies, employers, "
+            "numbers). If the fragment reads awkwardly but you can't "
+            "improve it truthfully, skip it.\n"
+            " - Keep the student's voice. Prefer minimal edits.\n"
+            " - Do NOT rewrite whole paragraphs.\n"
+            " - Only surface fixes that are unambiguous improvements. "
+            "Empty fixes list is fine — perfect text needs no changes.\n"
+            " - `category` values: 'typo' (spelling), 'grammar' "
+            "(agreement, tense), 'clarity' (unclear phrasing), 'style' "
+            "(weak verbs, passive voice, buzzwords).\n\n"
+            "Return strict JSON: "
+            '{"fixes": [{"entity_kind": "profile"|"entry", "entity_id": '
+            '"<uuid>|null", "field": "summary"|"headline"|"title"|'
+            '"description", "original": "...", "suggested": "...", '
+            '"reason": "one short sentence", "category": "..."}], '
+            '"notes": ["..."]}'
+        )
+        user = (
+            "Fragments to review (each keeps its identifiers so you can "
+            "reference it in the fixes list):\n"
+            + json.dumps(items, ensure_ascii=False, indent=2)
+            + "\n\nReturn the JSON object only."
+        )
+
+        try:
+            raw = await self._ai.complete_json(
+                system_prompt=system, user_prompt=user
+            )
+        except Exception as exc:  # coach is best-effort; never gate the wizard
+            logger.warning("Proofread failed: %s", exc)
+            return ProofreadResponse(
+                ok=False,
+                fixes=[],
+                notes=["AI unavailable — try again in a moment."],
+            )
+
+        data = raw.data or {}
+        raw_fixes = data.get("fixes") or []
+        fixes: list[ProofreadFix] = []
+        for f in raw_fixes:
+            if not isinstance(f, dict):
+                continue
+            try:
+                # Skip fixes where original == suggested (nothing to do).
+                if (f.get("original") or "").strip() == (
+                    f.get("suggested") or ""
+                ).strip():
+                    continue
+                fixes.append(ProofreadFix(**f))
+            except Exception as exc:  # permissive on LLM output; log + drop
+                logger.debug("Dropping malformed proofread fix: %s (%s)", f, exc)
+                continue
+
+        notes_raw = data.get("notes") or []
+        notes = [str(n) for n in notes_raw if isinstance(n, str)]
+        return ProofreadResponse(ok=True, fixes=fixes, notes=notes)
 
     async def improve_text(self, req: TextCoachRequest) -> TextCoachResponse:
         system = (
