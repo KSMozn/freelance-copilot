@@ -921,6 +921,17 @@ function EntryForm({
     typeof entry?.details?.proficiency === "string"
       ? (entry!.details.proficiency as string)
       : "";
+  const initialRoles = Array.isArray(entry?.details?.roles)
+    ? (entry!.details.roles as unknown[]).map(String)
+    : [];
+  const initialFeatures =
+    typeof entry?.details?.features === "string"
+      ? (entry!.details.features as string)
+      : "";
+  const initialHardest =
+    typeof entry?.details?.hardest_part === "string"
+      ? (entry!.details.hardest_part as string)
+      : "";
 
   const [title, setTitle] = useState(entry?.title ?? "");
   const [description, setDescription] = useState(entry?.description ?? "");
@@ -932,6 +943,15 @@ function EntryForm({
   const [proficiency, setProficiency] = useState(initialProficiency);
   const [techStack, setTechStack] = useState<string[]>(initialTechStack);
   const [techInput, setTechInput] = useState("");
+  const [roles, setRoles] = useState<string[]>(initialRoles);
+  const [features, setFeatures] = useState(initialFeatures);
+  const [hardestPart, setHardestPart] = useState(initialHardest);
+  // Auto-open the "Make it stronger" section in edit mode when the
+  // student already filled at least one enhance field, so the values
+  // are visible instead of hidden behind a collapsed toggle.
+  const [showEnhance, setShowEnhance] = useState(
+    Boolean(initialFeatures || initialHardest || (editing && entry?.url)),
+  );
   const [coachSuggestion, setCoachSuggestion] = useState<string | null>(null);
 
   function reset() {
@@ -945,7 +965,23 @@ function EntryForm({
     setProficiency("");
     setTechStack([]);
     setTechInput("");
+    setRoles([]);
+    setFeatures("");
+    setHardestPart("");
+    setShowEnhance(false);
     setCoachSuggestion(null);
+  }
+
+  function toggleRole(role: string) {
+    setRoles((prev) => {
+      if (prev.includes(role)) return prev.filter((r) => r !== role);
+      // "solo" and "team" are mutually exclusive intent — toggling one
+      // clears the other so the narrative doesn't produce nonsense
+      // like "solo as part of a team".
+      if (role === "solo") return [...prev.filter((r) => r !== "team"), "solo"];
+      if (role === "team") return [...prev.filter((r) => r !== "solo"), "team"];
+      return [...prev, role];
+    });
   }
 
   function addTech(t: string) {
@@ -964,7 +1000,12 @@ function EntryForm({
     const details: Record<string, unknown> = {};
     if (kind === "skill" && proficiency) details.proficiency = proficiency;
     if (kind === "language" && proficiency) details.proficiency = proficiency;
-    if (kind === "project" && techStack.length > 0) details.tech_stack = techStack;
+    if (kind === "project") {
+      if (techStack.length > 0) details.tech_stack = techStack;
+      if (roles.length > 0) details.roles = roles;
+      if (features.trim()) details.features = features.trim();
+      if (hardestPart.trim()) details.hardest_part = hardestPart.trim();
+    }
 
     const payload = {
       kind,
@@ -1095,25 +1136,28 @@ function EntryForm({
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Open-source REST API"
+            placeholder="Jobs Web Application"
           />
         </Field>
-        <Field label="Description">
+        <Field label="What does the project do?">
           <Textarea
-            rows={4}
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What did you build? What problem did it solve? What did you learn?"
+            placeholder="Browse job listings and apply online"
           />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Explain it simply in one sentence. Who uses it and what can they do?
+          </p>
         </Field>
-        <Field label="Tech stack">
+        <Field label="Technologies used">
           <div className="space-y-2">
             <Combobox
               value={techInput}
               onChange={setTechInput}
               onBlurCommit={(v) => addTech(v)}
               options={TECH_STACK}
-              placeholder="Type a tech and press Enter…"
+              placeholder="Search a technology and press Enter…"
             />
             {techStack.length > 0 && (
               <div className="flex flex-wrap gap-1">
@@ -1132,13 +1176,58 @@ function EntryForm({
             )}
           </div>
         </Field>
-        <Field label="URL (optional)">
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://github.com/you/project"
-          />
+        <Field label="What did you work on?">
+          <div className="grid grid-cols-2 gap-2">
+            {PROJECT_ROLES.map((r) => (
+              <label
+                key={r.value}
+                className="flex items-center gap-2 rounded-md border bg-background px-2 py-1.5 text-sm hover:bg-muted/40"
+              >
+                <input
+                  type="checkbox"
+                  checked={roles.includes(r.value)}
+                  onChange={() => toggleRole(r.value)}
+                />
+                <span>{r.label}</span>
+              </label>
+            ))}
+          </div>
         </Field>
+        <div>
+          <button
+            type="button"
+            className="text-sm text-primary hover:underline"
+            onClick={() => setShowEnhance((v) => !v)}
+          >
+            {showEnhance ? "Hide extra details" : "Make it stronger (optional)"}
+          </button>
+        </div>
+        {showEnhance && (
+          <div className="space-y-3 rounded-md border border-dashed p-3">
+            <Field label="What features did you build? (optional)">
+              <Textarea
+                rows={2}
+                value={features}
+                onChange={(e) => setFeatures(e.target.value)}
+                placeholder="add tasks, mark them done, group by course"
+              />
+            </Field>
+            <Field label="What was the hardest part? (optional)">
+              <Input
+                value={hardestPart}
+                onChange={(e) => setHardestPart(e.target.value)}
+                placeholder="wiring up the drag-and-drop reordering"
+              />
+            </Field>
+            <Field label="GitHub or demo link (optional)">
+              <Input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://github.com/you/project"
+              />
+            </Field>
+          </div>
+        )}
       </>
     );
   } else if (kind === "volunteer") {
@@ -1299,6 +1388,21 @@ const SINGULAR: Record<StudentEntryKind, string> = {
   award: "award",
   extracurricular: "activity",
 };
+
+// Project-role checkboxes shown under "What did you work on?". Values
+// are the keys the backend narrative composer reads
+// (`_project_role_phrase` in student_cv_renderer.py); labels are what
+// the student sees. "solo" / "team" are treated as mutually-exclusive
+// intent inside `toggleRole`.
+const PROJECT_ROLES: { value: string; label: string }[] = [
+  { value: "frontend", label: "Frontend" },
+  { value: "backend", label: "Backend" },
+  { value: "database", label: "Database" },
+  { value: "ui_design", label: "UI/design" },
+  { value: "testing", label: "Testing/debugging" },
+  { value: "solo", label: "I built it alone" },
+  { value: "team", label: "I worked in a team" },
+];
 
 // ---- Step: Preview -----------------------------------------------------
 

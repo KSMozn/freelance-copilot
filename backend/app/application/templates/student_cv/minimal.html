@@ -164,8 +164,9 @@
                 {% endif %}
               </div>
             </div>
-            {% if item.description %}<p class="desc">{{ item.description }}</p>{% endif %}
-            {% if item.details.tech_stack %}
+            {% set body = item.narrative or item.description %}
+            {% if body %}<p class="desc">{{ body }}</p>{% endif %}
+            {% if item.details.tech_stack and not item.narrative %}
               <div class="tags">
                 {% for tech in item.details.tech_stack %}{{ tech }}{% if not loop.last %} · {% endif %}{% endfor %}
               </div>

@@ -93,7 +93,7 @@ def _photo_data_uri(photo_bytes: bytes | None, mime: str | None) -> str | None:
 
 
 def _entry_to_view(entry: StudentProfileEntry) -> dict[str, Any]:
-    return {
+    view: dict[str, Any] = {
         "id": str(entry.id),
         "title": entry.title,
         "organization": entry.organization,
@@ -104,6 +104,109 @@ def _entry_to_view(entry: StudentProfileEntry) -> dict[str, Any]:
         "url": entry.url,
         "details": dict(entry.details or {}),
     }
+    if entry.kind == "project":
+        # Compose a student-friendly paragraph from the structured
+        # project fields. Falls back to the raw description when no
+        # structured data is present (legacy rows created before the
+        # richer form landed).
+        view["narrative"] = _build_project_narrative(entry)
+    return view
+
+
+# --- Project narrative --------------------------------------------------
+#
+# Given a project entry's structured details (roles, tech, features,
+# hardest_part) plus its plain-text description, compose a short
+# paragraph suitable for a student CV. The composition rules are strict
+# so the output never invents content:
+#
+#   * Every clause comes from data the student actually provided.
+#   * Empty fields are skipped — no placeholder text.
+#   * Roles and tech are formatted as natural English (Oxford comma,
+#     "and" before the last item).
+#
+# Callers should treat the return value as the primary description text
+# for the project. Templates fall back to `item.description` when
+# `item.narrative` is None (legacy row with no structured details).
+
+
+_WORK_ROLE_LABELS: dict[str, str] = {
+    "frontend": "frontend",
+    "backend": "backend",
+    "database": "database",
+    "ui_design": "UI design",
+    "testing": "testing",
+}
+
+
+def _english_join(items: list[str]) -> str:
+    cleaned = [i for i in items if i]
+    if not cleaned:
+        return ""
+    if len(cleaned) == 1:
+        return cleaned[0]
+    if len(cleaned) == 2:
+        return f"{cleaned[0]} and {cleaned[1]}"
+    return ", ".join(cleaned[:-1]) + f", and {cleaned[-1]}"
+
+
+def _project_role_phrase(roles: list[str]) -> str | None:
+    if not roles:
+        return None
+    work_areas = [
+        _WORK_ROLE_LABELS[key]
+        for key in ("frontend", "backend", "database", "ui_design", "testing")
+        if key in roles
+    ]
+    team = "team" in roles
+    solo = "solo" in roles and not team  # "team" wins if both are set
+    if work_areas:
+        base = f"Worked on {_english_join(work_areas)} development"
+        if team:
+            return base + " as part of a team"
+        if solo:
+            return base + " solo"
+        return base
+    # No work area — team/solo alone don't warrant a sentence.
+    return None
+
+
+def _build_project_narrative(entry: StudentProfileEntry) -> str | None:
+    details = dict(entry.details or {})
+    description = (entry.description or "").strip()
+
+    def _str_list(key: str) -> list[str]:
+        raw = details.get(key) or []
+        if not isinstance(raw, list):
+            return []
+        return [str(x) for x in raw if isinstance(x, str) and x.strip()]
+
+    roles = _str_list("roles")
+    tech = _str_list("tech_stack")
+    features = str(details.get("features") or "").strip()
+    hardest = str(details.get("hardest_part") or "").strip()
+
+    sentences: list[str] = []
+    if description:
+        sentences.append(description.rstrip(". "))
+    if features:
+        sentences.append(f"Key features: {features.rstrip('. ')}")
+
+    role_phrase = _project_role_phrase(roles)
+    tech_phrase = _english_join(tech)
+    if role_phrase and tech_phrase:
+        sentences.append(f"{role_phrase} using {tech_phrase}")
+    elif role_phrase:
+        sentences.append(role_phrase)
+    elif tech_phrase:
+        sentences.append(f"Built with {tech_phrase}")
+
+    if hardest:
+        sentences.append(f"The hardest part was {hardest.rstrip('. ')}")
+
+    if not sentences:
+        return None
+    return ". ".join(sentences) + "."
 
 
 class StudentCvRenderer:
