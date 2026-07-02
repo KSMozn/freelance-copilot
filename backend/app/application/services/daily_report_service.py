@@ -226,7 +226,7 @@ class DailyReportService:
                     )
                 )
                 delivered += 1
-            except Exception as exc:  # noqa: BLE001 — capture per-recipient
+            except Exception as exc:
                 errors.append(f"{to}: {exc}")
                 logger.exception("Daily report delivery failed for %s", to)
 

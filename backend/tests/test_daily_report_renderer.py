@@ -11,9 +11,9 @@ import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-please-change-me-32b")
 
-from datetime import UTC, datetime  # noqa: E402
+from datetime import UTC, datetime
 
-from app.application.services.daily_report_service import (  # noqa: E402
+from app.application.services.daily_report_service import (
     DailyReport,
     DailyReportService,
     FeedbackLine,

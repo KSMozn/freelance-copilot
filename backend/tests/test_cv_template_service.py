@@ -29,7 +29,7 @@ class _FakeScalarResult:
     def __init__(self, rows: list[CvTemplate]) -> None:
         self._rows = rows
 
-    def scalars(self) -> "_FakeScalarResult":
+    def scalars(self) -> _FakeScalarResult:
         return self
 
     def all(self) -> list[CvTemplate]:

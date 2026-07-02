@@ -34,10 +34,10 @@ from app.application.services.cv_template_service import CvTemplateService
 from app.application.services.daily_report_service import DailyReportService
 from app.core.config import get_settings
 from app.core.deps import CurrentAdmin, SessionDep, get_email_provider
-from app.domain.providers.email_provider import EmailProvider
-from app.infrastructure.db.models.feedback_entry import FeedbackEntry
 from app.core.security import create_access_token, create_refresh_token
 from app.domain.entities.admin_user import AdminUser as AdminUserEntity
+from app.domain.providers.email_provider import EmailProvider
+from app.infrastructure.db.models.feedback_entry import FeedbackEntry
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
