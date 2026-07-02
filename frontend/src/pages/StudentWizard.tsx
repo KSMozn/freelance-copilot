@@ -826,7 +826,7 @@ function StepEntries({
         </div>
       )}
 
-      <EntryDraftForm kind={kind} />
+      <EntryForm kind={kind} />
 
       <div>
         <Button onClick={() => void onSaved()}>Continue</Button>
@@ -837,6 +837,18 @@ function StepEntries({
 
 function EntryRow({ entry, kind }: { entry: StudentEntry; kind: StudentEntryKind }) {
   const remove = useDeleteStudentEntry();
+  const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <EntryForm
+        kind={kind}
+        entry={entry}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/20 p-3">
       <div className="min-w-0">
@@ -866,31 +878,59 @@ function EntryRow({ entry, kind }: { entry: StudentEntry; kind: StudentEntryKind
           </div>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => void remove.mutateAsync(entry.id)}
-        className="text-xs text-muted-foreground hover:text-destructive"
-      >
-        Remove
-      </button>
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="text-xs text-muted-foreground hover:text-primary"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => void remove.mutateAsync(entry.id)}
+          className="text-xs text-muted-foreground hover:text-destructive"
+        >
+          Remove
+        </button>
+      </div>
     </div>
   );
 }
 
-// Per-kind draft form — small, focused, and uses the right control per
-// field. Most kinds need a title + 1-2 extras; we render exactly that.
-function EntryDraftForm({ kind }: { kind: StudentEntryKind }) {
+// Per-kind entry form — small, focused, and uses the right control per
+// field. Handles both "add new" (no `entry` prop) and "edit existing"
+// (pre-populates from `entry`, calls PUT instead of POST).
+function EntryForm({
+  kind,
+  entry,
+  onCancel,
+}: {
+  kind: StudentEntryKind;
+  entry?: StudentEntry;
+  onCancel?: () => void;
+}) {
   const create = useCreateStudentEntry();
+  const update = useUpdateStudentEntry();
   const coach = useCoachText();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [url, setUrl] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [isCurrent, setIsCurrent] = useState(false);
-  const [proficiency, setProficiency] = useState("");
-  const [techStack, setTechStack] = useState<string[]>([]);
+  const editing = Boolean(entry);
+  const initialTechStack = Array.isArray(entry?.details?.tech_stack)
+    ? (entry!.details.tech_stack as unknown[]).map(String)
+    : [];
+  const initialProficiency =
+    typeof entry?.details?.proficiency === "string"
+      ? (entry!.details.proficiency as string)
+      : "";
+
+  const [title, setTitle] = useState(entry?.title ?? "");
+  const [description, setDescription] = useState(entry?.description ?? "");
+  const [url, setUrl] = useState(entry?.url ?? "");
+  const [organization, setOrganization] = useState(entry?.organization ?? "");
+  const [startDate, setStartDate] = useState(entry?.start_date ?? "");
+  const [endDate, setEndDate] = useState(entry?.end_date ?? "");
+  const [isCurrent, setIsCurrent] = useState(entry?.is_current ?? false);
+  const [proficiency, setProficiency] = useState(initialProficiency);
+  const [techStack, setTechStack] = useState<string[]>(initialTechStack);
   const [techInput, setTechInput] = useState("");
   const [coachSuggestion, setCoachSuggestion] = useState<string | null>(null);
 
@@ -916,7 +956,7 @@ function EntryDraftForm({ kind }: { kind: StudentEntryKind }) {
     setTechInput("");
   }
 
-  async function add() {
+  async function submit() {
     if (!title.trim()) {
       toast.error("Give this entry a title first.");
       return;
@@ -926,7 +966,7 @@ function EntryDraftForm({ kind }: { kind: StudentEntryKind }) {
     if (kind === "language" && proficiency) details.proficiency = proficiency;
     if (kind === "project" && techStack.length > 0) details.tech_stack = techStack;
 
-    await create.mutateAsync({
+    const payload = {
       kind,
       title,
       organization: kind === "volunteer" || kind === "certificate" ? organization || null : null,
@@ -938,8 +978,15 @@ function EntryDraftForm({ kind }: { kind: StudentEntryKind }) {
       is_current: kind === "volunteer" ? isCurrent : false,
       start_date: kind === "volunteer" ? startDate || null : null,
       end_date: kind === "volunteer" && !isCurrent ? endDate || null : null,
-    });
-    reset();
+    };
+
+    if (editing && entry) {
+      await update.mutateAsync({ id: entry.id, payload });
+      onCancel?.();
+    } else {
+      await create.mutateAsync(payload);
+      reset();
+    }
   }
 
   async function tightenWithCoach() {
@@ -1064,7 +1111,7 @@ function EntryDraftForm({ kind }: { kind: StudentEntryKind }) {
             <Combobox
               value={techInput}
               onChange={setTechInput}
-              onBlurCommit={() => addTech(techInput)}
+              onBlurCommit={(v) => addTech(v)}
               options={TECH_STACK}
               placeholder="Type a tech and press Enter…"
             />
@@ -1198,18 +1245,35 @@ function EntryDraftForm({ kind }: { kind: StudentEntryKind }) {
     );
   }
 
+  const busy = editing ? update.isPending : create.isPending;
+  const primaryLabel = editing
+    ? busy
+      ? "Saving…"
+      : "Save changes"
+    : busy
+      ? "Adding…"
+      : `Add ${singular}`;
+
   return (
     <div className="rounded-md border p-4">
-      <div className="mb-3 text-sm font-medium">Add {singular}</div>
+      <div className="mb-3 text-sm font-medium">
+        {editing ? `Edit ${singular}` : `Add ${singular}`}
+      </div>
       <div className="space-y-3">
         {body}
         <div className="flex gap-2">
-          <Button onClick={() => void add()} disabled={create.isPending}>
-            {create.isPending ? "Adding…" : `Add ${singular}`}
+          <Button onClick={() => void submit()} disabled={busy}>
+            {primaryLabel}
           </Button>
-          <Button variant="ghost" onClick={reset}>
-            Clear
-          </Button>
+          {editing ? (
+            <Button variant="ghost" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={reset}>
+              Clear
+            </Button>
+          )}
         </div>
       </div>
     </div>

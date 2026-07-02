@@ -6,7 +6,12 @@ import { cn } from "@/lib/utils";
 interface ComboboxProps {
   value: string;
   onChange: (v: string) => void;
-  onBlurCommit?: () => void;
+  // Called when the user commits their entry — either by clicking a
+  // suggestion, pressing Enter, or blurring the field. Receives the
+  // committed value directly so the parent doesn't race the pending
+  // `onChange` state update (clicking "Python" would otherwise commit
+  // whatever half-typed string the parent had, e.g. "Py").
+  onBlurCommit?: (value: string) => void;
   options: string[];
   placeholder?: string;
   id?: string;
@@ -62,7 +67,7 @@ export function Combobox({
   function pick(v: string) {
     onChange(v);
     setOpen(false);
-    onBlurCommit?.();
+    onBlurCommit?.(v);
   }
 
   return (
@@ -81,7 +86,7 @@ export function Combobox({
           // Defer so a click on a suggestion still registers.
           setTimeout(() => {
             setOpen(false);
-            onBlurCommit?.();
+            onBlurCommit?.(value);
           }, 120);
         }}
         onKeyDown={(e) => {
