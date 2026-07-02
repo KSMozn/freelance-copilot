@@ -2,32 +2,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { AppLayout } from "@/components/layout/AppLayout";
 import { RequireAuth } from "@/components/RequireAuth";
 import { isAdminSurface } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
-import { AnalyticsPage } from "@/pages/Analytics";
-import { ApplicationDetailPage } from "@/pages/ApplicationDetail";
-import { ApplicationsPage } from "@/pages/Applications";
-import { DashboardPage } from "@/pages/Dashboard";
 import { ImpersonateLanding } from "@/pages/ImpersonateLanding";
-import { JobCreatePage } from "@/pages/JobCreate";
-import { JobDetailPage } from "@/pages/JobDetail";
-import { JobImportPage } from "@/pages/JobImport";
-import { JobsPage } from "@/pages/Jobs";
-import { CareerFitnessPage } from "@/pages/CareerFitness";
 import { LoginPage } from "@/pages/Login";
 import { OnboardingPage } from "@/pages/Onboarding";
-import { PersonaNewPage } from "@/pages/PersonaNew";
-import { PersonasPage } from "@/pages/Personas";
-import { PlaceholderPage } from "@/pages/Placeholder";
-import { SourcesPage } from "@/pages/Sources";
-import { PortfolioPage } from "@/pages/Portfolio";
-import { PortfolioFormPage } from "@/pages/PortfolioForm";
 import { RegisterPage } from "@/pages/Register";
-import { RepositoriesPage } from "@/pages/Repositories";
-import { ResumeFormPage } from "@/pages/ResumeForm";
-import { ResumesPage } from "@/pages/Resumes";
 import { StudentFeedbackPage } from "@/pages/StudentFeedback";
 import { StudentWizardPage } from "@/pages/StudentWizard";
 import { AdminActivityPage } from "@/pages/admin/AdminActivity";
@@ -37,7 +18,6 @@ import { AdminOverviewPage } from "@/pages/admin/AdminOverview";
 import { AdminTemplatesPage } from "@/pages/admin/AdminTemplatesPage";
 import { AdminUserDetailPage } from "@/pages/admin/AdminUserDetail";
 import { AdminUsersPage } from "@/pages/admin/AdminUsers";
-import { useAuthStore } from "@/stores/auth";
 
 export default function App() {
   return (
@@ -50,7 +30,7 @@ export default function App() {
   );
 }
 
-// ---- admin.personaarmory.com — admin surface only ---------------------
+// ---- admin.careero.app — admin surface only ---------------------------
 
 function AdminRoutes() {
   return (
@@ -69,7 +49,16 @@ function AdminRoutes() {
   );
 }
 
-// ---- app.personaarmory.com — student + freelancer surface -------------
+// ---- app.careero.app — student CV builder only ------------------------
+//
+// The wider freelance / career-OS surface (jobs, personas, portfolio,
+// applications, analytics, career fitness, etc.) is intentionally *not*
+// mounted here. All that code is still in the repo — the routes are
+// simply not registered. To bring it back, restore the AppLayout branch
+// from git history (see commit 4c18fb7 and earlier).
+//
+// Every authenticated user lands directly in the student wizard;
+// unauthenticated users get bounced to /login.
 
 function AppRoutes() {
   return (
@@ -101,47 +90,16 @@ function AppRoutes() {
           </RequireAuth>
         }
       />
+      {/* Root + any unknown path → wizard for authed users, /login otherwise
+          (RequireAuth handles the auth redirect). */}
       <Route
+        path="*"
         element={
           <RequireAuth>
-            <StudentGate>
-              <AppLayout />
-            </StudentGate>
+            <Navigate to="/student" replace />
           </RequireAuth>
         }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="/jobs" element={<JobsPage />} />
-        <Route path="/jobs/new" element={<JobCreatePage />} />
-        <Route path="/jobs/import" element={<JobImportPage />} />
-        <Route path="/jobs/:id" element={<JobDetailPage />} />
-        <Route path="/portfolio" element={<PortfolioPage />} />
-        <Route path="/portfolio/new" element={<PortfolioFormPage />} />
-        <Route path="/portfolio/:id" element={<PortfolioFormPage />} />
-        <Route path="/repositories" element={<RepositoriesPage />} />
-        <Route path="/resumes" element={<ResumesPage />} />
-        <Route path="/resumes/new" element={<ResumeFormPage />} />
-        <Route path="/resumes/:id" element={<ResumeFormPage />} />
-        <Route path="/applications" element={<ApplicationsPage />} />
-        <Route path="/applications/:id" element={<ApplicationDetailPage />} />
-        <Route path="/personas" element={<PersonasPage />} />
-        <Route path="/personas/new" element={<PersonaNewPage />} />
-        <Route path="/sources" element={<SourcesPage />} />
-        <Route path="/career-fitness" element={<CareerFitnessPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/settings" element={<PlaceholderPage title="Settings" phase="Phase 10" />} />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      />
     </Routes>
   );
-}
-
-// Students never see the freelancer/career-OS surface — they live in the
-// wizard. Anyone else falls through to the existing app.
-function StudentGate({ children }: { children: React.ReactNode }) {
-  const user = useAuthStore((s) => s.user);
-  if (user?.selected_persona_kind === "student") {
-    return <Navigate to="/student" replace />;
-  }
-  return <>{children}</>;
 }

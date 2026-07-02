@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { fetchPhotoDataUri } from "@/lib/photoCache";
+import { useLastProfileStore } from "@/stores/lastProfile";
 import { AboutFooter } from "@/components/brand/AboutFooter";
 import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { CoachWarnings } from "@/components/student/CoachWarnings";
 import { DateOfBirthPicker } from "@/components/student/DateOfBirthPicker";
+import { PhotoPositioner } from "@/components/student/PhotoPositioner";
 import { PostDownloadSurvey } from "@/components/student/PostDownloadSurvey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,6 +107,36 @@ export function StudentWizardPage() {
     }
   }, [profile?.completed_steps?.length]);  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep the /login picker snapshot in sync — name updates and photo
+  // uploads from the wizard propagate into localStorage so the next
+  // visit greets the student with the freshest data. Fire-and-forget:
+  // an error here should never block the wizard.
+  useEffect(() => {
+    const authUser = useAuthStore.getState().user;
+    if (!authUser || !profile) return;
+    useLastProfileStore.getState().remember({
+      email: authUser.email,
+      full_name: profile.full_name ?? authUser.full_name,
+      photo_data_uri: null,
+      photo_offset_x: profile.photo_offset_x,
+      photo_offset_y: profile.photo_offset_y,
+      photo_zoom: profile.photo_zoom,
+    });
+    if (profile.photo_file_id) {
+      void fetchPhotoDataUri().then((uri) => {
+        if (uri) useLastProfileStore.getState().patchPhoto(uri);
+      });
+    } else {
+      useLastProfileStore.getState().patchPhoto(null);
+    }
+  }, [
+    profile?.photo_file_id,
+    profile?.full_name,
+    profile?.photo_offset_x,
+    profile?.photo_offset_y,
+    profile?.photo_zoom,
+  ]);  // eslint-disable-line react-hooks/exhaustive-deps
+
   const step = STEPS[stepIndex];
 
   async function markStepDone(slug: string) {
@@ -125,12 +158,15 @@ export function StudentWizardPage() {
       <header className="border-b border-border/60 bg-background/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
           <BrandWordmark variant="careero" size={22} />
-          <Link
-            to="/feedback"
-            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Send feedback →
-          </Link>
+          <div className="flex items-center gap-4 text-xs">
+            <Link
+              to="/feedback"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Send feedback →
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
       </header>
       <div className="mx-auto max-w-4xl px-4 py-8">
@@ -525,6 +561,7 @@ function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) {
   const { data: profile } = useStudentProfile();
   const upload = useUploadStudentPhoto();
   const coach = useCoachPhoto();
+  const updateProfile = useUpdateStudentProfile();
   const photoUrl = useStudentPhotoBlob(profile?.photo_file_id);
   const [warnings, setWarnings] = useState<CoachWarning[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
@@ -540,6 +577,20 @@ function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) {
     toast.success("Photo saved");
   }
 
+  // Debounce autosave for the crop transform — the positioner fires
+  // `onChange` on every pointer settle and every wheel tick.
+  const saveTransformRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function saveTransform(next: {
+    photo_offset_x: number;
+    photo_offset_y: number;
+    photo_zoom: number;
+  }) {
+    if (saveTransformRef.current) clearTimeout(saveTransformRef.current);
+    saveTransformRef.current = setTimeout(() => {
+      void updateProfile.mutateAsync(next);
+    }, 250);
+  }
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -547,15 +598,19 @@ function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) {
         face to your name. Selfies at odd angles or party photos read as casual.
       </p>
       <div className="flex items-center gap-4">
-        <div className="relative h-28 w-28 overflow-hidden rounded-full ring-1 ring-border">
-          {photoUrl ? (
-            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="grid h-full w-full place-items-center bg-muted text-xs text-muted-foreground">
-              No photo
-            </div>
-          )}
-        </div>
+        {photoUrl ? (
+          <PhotoPositioner
+            photoUrl={photoUrl}
+            offsetX={profile?.photo_offset_x ?? 50}
+            offsetY={profile?.photo_offset_y ?? 50}
+            zoom={profile?.photo_zoom ?? 100}
+            onChange={saveTransform}
+          />
+        ) : (
+          <div className="grid h-28 w-28 place-items-center rounded-full bg-muted text-xs text-muted-foreground ring-1 ring-border">
+            No photo
+          </div>
+        )}
         <label className="cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent">
           {photoUrl ? "Replace photo" : "Upload photo"}
           <input
@@ -1566,3 +1621,28 @@ const LOCATION_LABEL: Record<ProofreadFix["field"], string> = {
   description: "Description",
   title: "Title",
 };
+
+function SignOutButton() {
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
+  const email = useAuthStore((s) => s.user?.email);
+  return (
+    <div className="flex items-center gap-2">
+      {email && (
+        <span className="hidden max-w-[180px] truncate text-muted-foreground md:inline">
+          {email}
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={() => {
+          logout();
+          navigate("/login", { replace: true });
+        }}
+        className="rounded-md border border-border/60 px-2 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}

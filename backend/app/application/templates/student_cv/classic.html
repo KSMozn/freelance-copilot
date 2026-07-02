@@ -34,7 +34,7 @@
     width: 30mm;
     height: 30mm;
     border-radius: 50%;
-    object-fit: cover;
+    background-repeat: no-repeat;
     border: 1px solid #d1d5db;
   }
   header .identity h1 {
@@ -154,7 +154,7 @@
 <body>
   <header>
     {% if photo_data_uri %}
-      <img class="photo" src="{{ photo_data_uri }}" alt="">
+      <div class="photo" style="background-image:url({{ photo_data_uri }});background-position:{{ profile.photo_offset_x }}% {{ profile.photo_offset_y }}%;background-size:{{ profile.photo_zoom }}%;"></div>
     {% endif %}
     <div class="identity">
       <h1>{{ profile.full_name }}</h1>

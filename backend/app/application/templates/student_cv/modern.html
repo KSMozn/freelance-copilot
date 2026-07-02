@@ -41,7 +41,7 @@
     width: 42mm;
     height: 42mm;
     border-radius: 50%;
-    object-fit: cover;
+    background-repeat: no-repeat;
     border: 2px solid #38bdf8;
   }
   aside h3 {
@@ -123,7 +123,7 @@
   <div class="layout">
     <aside>
       {% if photo_data_uri %}
-        <div class="photo-wrap"><img class="photo" src="{{ photo_data_uri }}" alt=""></div>
+        <div class="photo-wrap"><div class="photo" style="background-image:url({{ photo_data_uri }});background-position:{{ profile.photo_offset_x }}% {{ profile.photo_offset_y }}%;background-size:{{ profile.photo_zoom }}%;"></div></div>
       {% endif %}
 
       <h3>Contact</h3>

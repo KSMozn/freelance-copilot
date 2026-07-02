@@ -76,6 +76,13 @@ class StudentProfileUpdate(BaseModel):
     # back to the default instead of blocking save.
     cv_template_slug: str | None = Field(default=None, max_length=64)
 
+    # Photo crop transform (see model docstring). Frontend clamps at
+    # the same bounds; server enforces here so a malicious client
+    # can't scribble outside them.
+    photo_offset_x: int | None = Field(default=None, ge=0, le=100)
+    photo_offset_y: int | None = Field(default=None, ge=0, le=100)
+    photo_zoom: int | None = Field(default=None, ge=100, le=300)
+
     mark_steps: list[str] | None = None
     current_step: str | None = Field(default=None, max_length=64)
 
@@ -97,6 +104,9 @@ class StudentProfileRead(BaseModel):
     gpa: Decimal | None
     photo_file_id: UUID | None
     photo_url: str | None = None
+    photo_offset_x: int
+    photo_offset_y: int
+    photo_zoom: int
     summary: str | None
     headline: str | None
     links: dict[str, Any]

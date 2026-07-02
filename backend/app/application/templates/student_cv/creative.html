@@ -35,7 +35,7 @@
     width: 32mm;
     height: 32mm;
     border-radius: 50%;
-    object-fit: cover;
+    background-repeat: no-repeat;
     border: 2px solid rgba(255,255,255,0.5);
     flex-shrink: 0;
   }
@@ -127,7 +127,7 @@
 <body>
   <div class="band">
     {% if photo_data_uri %}
-      <img class="photo" src="{{ photo_data_uri }}" alt="">
+      <div class="photo" style="background-image:url({{ photo_data_uri }});background-position:{{ profile.photo_offset_x }}% {{ profile.photo_offset_y }}%;background-size:{{ profile.photo_zoom }}%;"></div>
     {% endif %}
     <div>
       <h1>{{ profile.full_name }}</h1>

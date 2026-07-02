@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { useSubmitFeedback } from "@/lib/feedback";
+import { useAuthStore } from "@/stores/auth";
 
 const MIN_LEN = 10;
 
@@ -31,13 +32,14 @@ export function StudentFeedbackPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-8">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between gap-4">
           <Link
             to="/student"
             className="text-xs text-muted-foreground hover:text-foreground"
           >
             ← Back to your CV
           </Link>
+          <SignOutLink />
         </div>
 
         <Card>
@@ -78,5 +80,22 @@ export function StudentFeedbackPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function SignOutLink() {
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        logout();
+        navigate("/login", { replace: true });
+      }}
+      className="text-xs text-muted-foreground hover:text-foreground"
+    >
+      Sign out
+    </button>
   );
 }

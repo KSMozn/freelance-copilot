@@ -5,7 +5,7 @@ steps:
       - -f
       - Dockerfile.prod
       - --build-arg
-      - VITE_API_BASE_URL=https://api.careero.app/api/v1
+      - VITE_API_BASE_URL=https://freelance-copilot-backend-m2juufldmq-ew.a.run.app/api/v1
       - -t
       - europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/frontend:latest
       - .

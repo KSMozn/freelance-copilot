@@ -30,6 +30,9 @@ export interface StudentProfile {
   gpa: string | null;
   photo_file_id: string | null;
   photo_url: string | null;
+  photo_offset_x: number;
+  photo_offset_y: number;
+  photo_zoom: number;
   summary: string | null;
   headline: string | null;
   links: StudentLinks;
@@ -70,6 +73,9 @@ export interface StudentProfileUpdate {
   links?: StudentLinks;
   interests?: string[];
   cv_template_slug?: string | null;
+  photo_offset_x?: number;
+  photo_offset_y?: number;
+  photo_zoom?: number;
   mark_steps?: string[];
   current_step?: string | null;
 }

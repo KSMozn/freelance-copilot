@@ -181,6 +181,12 @@ class StudentCvRenderer:
                 "headline": profile.headline if profile else None,
                 "links": dict(profile.links or {}) if profile else {},
                 "interests": list(profile.interests or []) if profile else [],
+                # Crop transform — matches what the student set in the
+                # wizard. Defaults land at "centered, fitted" so the
+                # empty-profile preview render still looks right.
+                "photo_offset_x": profile.photo_offset_x if profile else 50,
+                "photo_offset_y": profile.photo_offset_y if profile else 50,
+                "photo_zoom": profile.photo_zoom if profile else 100,
             },
             "photo_data_uri": _photo_data_uri(photo_bytes, photo_mime),
             "sections": sections,

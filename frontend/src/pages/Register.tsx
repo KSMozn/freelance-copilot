@@ -7,6 +7,7 @@ import { AuthShell } from "@/components/brand/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLastProfileStore } from "@/stores/lastProfile";
 import { api } from "@/lib/api";
 import { useAuthStore, type AuthUser } from "@/stores/auth";
 
@@ -48,6 +49,16 @@ export function RegisterPage() {
 
   const redirectAfter = (data: AuthResponse) => {
     setAuth(data.user, data.tokens.access_token, data.tokens.refresh_token);
+    // Seed the login picker so the next visit greets them by name.
+    // Photo is filled in later, on the wizard's next mount.
+    useLastProfileStore.getState().remember({
+      email: data.user.email,
+      full_name: data.user.full_name,
+      photo_data_uri: null,
+      photo_offset_x: 50,
+      photo_offset_y: 50,
+      photo_zoom: 100,
+    });
     navigate(data.user.selected_persona_kind === "student" ? "/student" : "/", {
       replace: true,
     });

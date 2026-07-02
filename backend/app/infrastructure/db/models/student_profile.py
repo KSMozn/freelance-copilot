@@ -89,6 +89,19 @@ class StudentProfile(Base):
         ForeignKey("uploaded_files.id", ondelete="SET NULL"),
         nullable=True,
     )
+    # Crop transform applied at display time only — the on-disk bytes
+    # are never modified. Offsets are 0-100 percentages fed into CSS
+    # `background-position`; zoom is 100-300 fed into `background-size`.
+    # Defaults (50/50/100) produce the natural "centered, fitted" crop.
+    photo_offset_x: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=50, server_default="50"
+    )
+    photo_offset_y: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=50, server_default="50"
+    )
+    photo_zoom: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=100, server_default="100"
+    )
 
     # Summary
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
