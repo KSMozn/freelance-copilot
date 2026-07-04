@@ -3,7 +3,29 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAdminAuthStore } from "@/stores/adminAuth";
 import { useAuthStore } from "@/stores/auth";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+// Pick the backend URL from the current frontend host so the same bundle
+// works on all three deploys without a rebuild:
+//   *.careero.app          -> https://api.careero.app/api/v1
+//   *.personaarmory.com    -> https://api.personaarmory.com/api/v1
+//   *.run.app              -> the paired Cloud Run backend URL
+//   anything else (dev)    -> VITE_API_BASE_URL or localhost fallback
+function resolveApiBaseUrl(): string {
+  if (typeof window === "undefined") {
+    return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+  }
+  const host = window.location.hostname;
+  if (host.endsWith("careero.app")) return "https://api.careero.app/api/v1";
+  if (host.endsWith("personaarmory.com")) return "https://api.personaarmory.com/api/v1";
+  if (host.endsWith(".run.app")) {
+    // Frontend service name pattern: freelance-copilot-frontend-<hash>-<region>.a.run.app
+    // Paired backend swaps 'frontend' for 'backend', same hash + region.
+    const backendHost = host.replace("freelance-copilot-frontend", "freelance-copilot-backend");
+    return `https://${backendHost}/api/v1`;
+  }
+  return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+}
+
+const baseURL = resolveApiBaseUrl();
 
 // Which auth store is authoritative depends on the subdomain the SPA
 // is being served from. Bundle-loaded on `admin.*` -> talk to
