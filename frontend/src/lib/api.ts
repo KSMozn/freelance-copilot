@@ -30,10 +30,27 @@ const baseURL = resolveApiBaseUrl();
 // Which auth store is authoritative depends on the subdomain the SPA
 // is being served from. Bundle-loaded on `admin.*` -> talk to
 // /admin/auth/*; bundle-loaded on `app.*` -> talk to /auth/*.
-export const isAdminSurface =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "admin.personaarmory.com" ||
-    window.location.hostname.startsWith("admin."));
+//
+// Escape hatch for the raw Cloud Run URL (where custom-domain hostnames
+// are unavailable): pass `?surface=admin` once, we sticky-store the choice
+// in sessionStorage so subsequent client-side navigations stay in admin
+// mode. `?surface=app` clears it.
+function detectAdminSurface(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  if (host === "admin.personaarmory.com" || host.startsWith("admin.")) return true;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const override = params.get("surface");
+    if (override === "admin") sessionStorage.setItem("surface", "admin");
+    else if (override === "app") sessionStorage.removeItem("surface");
+    return sessionStorage.getItem("surface") === "admin";
+  } catch {
+    return false;
+  }
+}
+
+export const isAdminSurface = detectAdminSurface();
 
 export const api = axios.create({
   baseURL,
