@@ -1,0 +1,26 @@
+Hi {first_name},
+
+You've already created your CV with {app_name}. Now let's turn it into a
+professional LinkedIn profile — step by step.
+
+If you don't have a LinkedIn profile yet, {app_name} can help you create one
+using the information you already added for your CV. We guide you through
+your headline, About section, education, skills, and projects.
+
+Your LinkedIn Profile Journey:
+  1. Headline — Create a strong first impression.
+  2. About — Tell your story and stand out.
+  3. Education — Add your academic background.
+  4. Skills — Highlight your top skills.
+  5. Projects — Showcase what you've built.
+
+Start your LinkedIn profile now:
+{app_url}
+
+It only takes a few minutes.
+
+— {app_name}
+Designed for students starting their career journey.
+
+You're receiving this because you have a {app_name} account. If this isn't
+for you, you can safely ignore this email.

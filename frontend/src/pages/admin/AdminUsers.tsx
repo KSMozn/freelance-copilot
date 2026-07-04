@@ -1,19 +1,59 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { AlertTriangle, Loader2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useAdminUsers } from "@/lib/admin";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import {
+  useAdminEmailTemplates,
+  useAdminSendEmailBulk,
+  useAdminUsers,
+} from "@/lib/admin";
 import { cn } from "@/lib/utils";
+import type {
+  BulkRecipient,
+  SendEmailBulkDryRunResponse,
+  SendEmailBulkResponse,
+} from "@/types/admin";
 
 export function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const size = 25;
   const { data, isLoading } = useAdminUsers({ search, page, size });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / size)) : 1;
+
+  const pageIds = useMemo(() => (data?.items ?? []).map((u) => u.id), [data]);
+  const allSelectedOnPage =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const someSelectedOnPage = pageIds.some((id) => selected.has(id));
+
+  function toggleOne(id: string, checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleAllOnPage(checked: boolean) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of pageIds) {
+        if (checked) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }
 
   return (
     <div className="space-y-4">
@@ -24,7 +64,7 @@ export function AdminUsersPage() {
         </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Input
           placeholder="Search by email or name…"
           value={search}
@@ -34,6 +74,26 @@ export function AdminUsersPage() {
           }}
           className="max-w-sm"
         />
+        {selected.size > 0 && (
+          <div className="ml-auto flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-sm">
+            <span className="font-medium">{selected.size}</span> selected
+            <Button
+              size="sm"
+              variant="brand"
+              onClick={() => setBulkOpen(true)}
+            >
+              <Mail className="h-4 w-4" />
+              Send email…
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelected(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
       </div>
 
       <Card>
@@ -47,6 +107,19 @@ export function AdminUsersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30 text-xs uppercase text-muted-foreground">
+                    <Th>
+                      <input
+                        type="checkbox"
+                        checked={allSelectedOnPage}
+                        ref={(el) => {
+                          if (el)
+                            el.indeterminate =
+                              !allSelectedOnPage && someSelectedOnPage;
+                        }}
+                        onChange={(e) => toggleAllOnPage(e.target.checked)}
+                        aria-label="Select all on this page"
+                      />
+                    </Th>
                     <Th>Email</Th>
                     <Th>Name</Th>
                     <Th>Persona</Th>
@@ -61,6 +134,14 @@ export function AdminUsersPage() {
                 <tbody>
                   {data.items.map((u) => (
                     <tr key={u.id} className="border-b hover:bg-muted/30">
+                      <Td>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(u.id)}
+                          onChange={(e) => toggleOne(u.id, e.target.checked)}
+                          aria-label={`Select ${u.email}`}
+                        />
+                      </Td>
                       <Td>
                         <Link
                           to={`/admin/users/${u.id}`}
@@ -129,6 +210,216 @@ export function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      {bulkOpen && (
+        <BulkEmailModal
+          userIds={Array.from(selected)}
+          onClose={() => setBulkOpen(false)}
+          onSent={() => setSelected(new Set())}
+        />
+      )}
+    </div>
+  );
+}
+
+function BulkEmailModal({
+  userIds,
+  onClose,
+  onSent,
+}: {
+  userIds: string[];
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const { data: templates } = useAdminEmailTemplates();
+  const bulk = useAdminSendEmailBulk();
+  const [templateId, setTemplateId] = useState("");
+  const [recipients, setRecipients] = useState<BulkRecipient[] | null>(null);
+  const [result, setResult] = useState<SendEmailBulkResponse | null>(null);
+
+  const options = (templates ?? []).map((t) => ({ value: t.id, label: t.name }));
+  const chosen = (templates ?? []).find((t) => t.id === templateId) ?? null;
+
+  async function prepare() {
+    if (!templateId || userIds.length === 0) return;
+    try {
+      const res = (await bulk.mutateAsync({
+        userIds,
+        templateId,
+        dryRun: true,
+      })) as SendEmailBulkDryRunResponse;
+      setRecipients(res.recipients);
+    } catch {
+      toast.error("Couldn't prepare recipient list.");
+    }
+  }
+
+  async function submit() {
+    if (!templateId || userIds.length === 0) return;
+    try {
+      const res = (await bulk.mutateAsync({
+        userIds,
+        templateId,
+        dryRun: false,
+      })) as SendEmailBulkResponse;
+      setResult(res);
+      onSent();
+    } catch {
+      toast.error("Bulk send failed.");
+    }
+  }
+
+  const recentCount = recipients?.filter((r) => r.has_recent_send).length ?? 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="text-sm font-semibold">
+            Send email to {userIds.length}{" "}
+            {userIds.length === 1 ? "user" : "users"}
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+        <div className="flex-1 space-y-4 overflow-auto p-4">
+          {result ? (
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="font-medium">{result.sent}</span> sent,{" "}
+                <span className="font-medium">{result.skipped}</span> skipped,{" "}
+                <span className="font-medium">{result.failed.length}</span> failed.
+              </div>
+              {result.failed.length > 0 && (
+                <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-xs">
+                  <div className="mb-1 font-medium">Failures</div>
+                  <ul className="list-disc space-y-0.5 pl-4">
+                    {result.failed.map((f) => (
+                      <li key={f.user_id}>
+                        {f.user_id}: {f.error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label className="text-xs" htmlFor="bulk-tpl">
+                  Template
+                </Label>
+                <Select
+                  id="bulk-tpl"
+                  value={templateId}
+                  onChange={(e) => {
+                    setTemplateId(e.target.value);
+                    setRecipients(null);
+                  }}
+                  options={options}
+                  placeholder={templates ? "Pick a template…" : "Loading…"}
+                />
+                {chosen && (
+                  <p className="text-xs text-muted-foreground">
+                    {chosen.description}
+                    {chosen.audience_hint && (
+                      <>
+                        {" "}
+                        <span className="italic">{chosen.audience_hint}</span>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              {!recipients && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={prepare}
+                  disabled={!templateId || bulk.isPending}
+                >
+                  {bulk.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Prepare recipient list
+                </Button>
+              )}
+
+              {recipients && (
+                <div className="space-y-2">
+                  {recentCount > 0 && (
+                    <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+                      <div>
+                        <span className="font-medium">{recentCount}</span> of
+                        these users received this template in the last 7 days.
+                        Sending again is allowed — just double-check first.
+                      </div>
+                    </div>
+                  )}
+                  <div className="max-h-64 overflow-auto rounded border">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 border-b bg-muted/40">
+                        <tr>
+                          <th className="px-2 py-1.5 text-left font-medium">Email</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Name</th>
+                          <th className="px-2 py-1.5 text-left font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recipients.map((r) => (
+                          <tr key={r.user_id} className="border-b last:border-b-0">
+                            <td className="px-2 py-1.5">{r.email}</td>
+                            <td className="px-2 py-1.5">{r.full_name ?? "—"}</td>
+                            <td className="px-2 py-1.5">
+                              {r.has_recent_send ? (
+                                <span className="inline-flex items-center gap-1 text-amber-600">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Recent send
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+          {result ? (
+            <Button variant="brand" size="sm" onClick={onClose}>
+              Done
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                variant="brand"
+                size="sm"
+                onClick={submit}
+                disabled={!recipients || bulk.isPending}
+              >
+                {bulk.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Send to {recipients?.length ?? 0}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

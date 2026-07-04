@@ -22,17 +22,23 @@ from app.application.dto.admin_dto import (
     AdminStudentSummary,
     AdminUserDetail,
     AdminUserRow,
+    BulkRecipient,
+    EmailPreviewResponse,
     EntryKindCount,
     SignupsPoint,
     UsageKindCount,
     WizardFunnel,
 )
+from app.application.email_templates import EmailTemplateSpec, get_template
+from app.core.config import Settings
+from app.domain.providers.email_provider import EmailMessage
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
     StudentProfileEntry,
 )
 from app.infrastructure.db.models.usage_event import UsageEvent
 from app.infrastructure.db.models.user import User
+from app.infrastructure.email.template_renderer import render
 
 WIZARD_STEPS = (
     "basics",
@@ -392,6 +398,185 @@ class AdminService:
                 )
             )
         return rows, total
+
+    # ---- Templated emails --------------------------------------------
+
+    async def _load_user_bundle(
+        self, user_id: UUID
+    ) -> tuple[User, StudentProfile | None] | None:
+        """Fetch a user + optional student profile in one round-trip."""
+        u = await self._session.get(User, user_id)
+        if u is None:
+            return None
+        p: StudentProfile | None = None
+        if u.selected_persona_kind == "student":
+            p = await self._session.get(StudentProfile, user_id)
+        return u, p
+
+    def _build_template_context(
+        self, user: User, profile: StudentProfile | None, settings: Settings
+    ) -> dict[str, str]:
+        """Populate every placeholder any template might reference.
+
+        `_SafeDict` in the renderer leaves missing keys as literal `{key}`
+        text — populate everything, even fields the first template
+        doesn't use, so future templates just work.
+        """
+        student_name = profile.full_name if profile else None
+        full_name = student_name or user.full_name or user.email
+        first_name = (full_name or "there").strip().split()[0] if full_name else "there"
+        links = (profile.links or {}) if profile else {}
+        return {
+            "first_name": first_name,
+            "full_name": full_name or "",
+            "email": user.email,
+            "app_name": settings.app_name,
+            "app_url": settings.frontend_base_url,
+            "college": (profile.college if profile else "") or "",
+            "major": (profile.major if profile else "") or "",
+            "graduation_year": (
+                str(profile.graduation_year)
+                if profile and profile.graduation_year
+                else ""
+            ),
+            "linkedin_url": (links.get("linkedin") or "") if links else "",
+            "github_url": (links.get("github") or "") if links else "",
+        }
+
+    def _render_email(
+        self,
+        *,
+        template: EmailTemplateSpec,
+        user: User,
+        profile: StudentProfile | None,
+        settings: Settings,
+    ) -> tuple[str, str, str]:
+        """Return (subject, html, text) with placeholders substituted.
+
+        Templates are named `{template.id}.html` / `.txt` in the email
+        templates dir. Subject line goes through the same _SafeDict pass.
+        """
+        ctx = self._build_template_context(user, profile, settings)
+        # Subject uses the same _SafeDict semantics so a stray placeholder
+        # doesn't blow up — reuse render() via a temporary file? No —
+        # simpler: format_map directly. Import kept local to avoid a
+        # rerouted dep.
+        from app.infrastructure.email.template_renderer import _SafeDict
+        subject = template.subject.format_map(_SafeDict(ctx))
+        html = render(f"{template.id}.html", ctx)
+        text = render(f"{template.id}.txt", ctx)
+        return subject, html, text
+
+    async def _most_recent_template_send(
+        self, user_id: UUID, template_id: str, *, within: timedelta
+    ) -> datetime | None:
+        """Look up the audit trail for a matching send inside the window.
+
+        Audit rows written by `_audit(actor, "send_email", user_id,
+        meta={"template": template_id})` in admin.py — we key off those.
+        """
+        since = datetime.now(UTC) - within
+        stmt = (
+            select(UsageEvent.created_at)
+            .where(UsageEvent.kind == "admin.action")
+            .where(UsageEvent.meta.op("->>")("action") == "send_email")
+            .where(UsageEvent.meta.op("->>")("template") == template_id)
+            .where(UsageEvent.meta.op("->>")("target_user_id") == str(user_id))
+            .where(UsageEvent.created_at >= since)
+            .order_by(UsageEvent.created_at.desc())
+            .limit(1)
+        )
+        return (await self._session.execute(stmt)).scalar_one_or_none()
+
+    async def preview_email_for_user(
+        self, *, user_id: UUID, template_id: str, settings: Settings
+    ) -> EmailPreviewResponse | None:
+        """Render the email for admin preview + return the recent-send hint."""
+        template = get_template(template_id)
+        if template is None:
+            return None
+        bundle = await self._load_user_bundle(user_id)
+        if bundle is None:
+            return None
+        user, profile = bundle
+        subject, html, text = self._render_email(
+            template=template, user=user, profile=profile, settings=settings
+        )
+        recent = await self._most_recent_template_send(
+            user_id, template_id, within=timedelta(days=7)
+        )
+        recipient_name = (profile.full_name if profile else None) or user.full_name
+        return EmailPreviewResponse(
+            subject=subject,
+            html=html,
+            text=text,
+            recipient_email=user.email,
+            recipient_name=recipient_name,
+            recent_send_at=recent,
+        )
+
+    async def build_email_message_for_user(
+        self, *, user_id: UUID, template_id: str, settings: Settings
+    ) -> EmailMessage | None:
+        """Build the outgoing message; caller pushes it through the provider."""
+        template = get_template(template_id)
+        if template is None:
+            return None
+        bundle = await self._load_user_bundle(user_id)
+        if bundle is None:
+            return None
+        user, profile = bundle
+        subject, html, text = self._render_email(
+            template=template, user=user, profile=profile, settings=settings
+        )
+        return EmailMessage(
+            to=user.email,
+            subject=subject,
+            html_body=html,
+            text_body=text,
+            tags={"kind": "admin", "template": template_id},
+        )
+
+    async def bulk_dry_run(
+        self, *, user_ids: list[UUID], template_id: str
+    ) -> list[BulkRecipient]:
+        """Preview recipient list with recent-send flag per user."""
+        if get_template(template_id) is None:
+            return []
+        # One round-trip for users.
+        users = (
+            await self._session.execute(
+                select(User).where(User.id.in_(user_ids))
+            )
+        ).scalars().all()
+        by_id: dict[UUID, User] = {u.id: u for u in users}
+        # One round-trip for the audit hits in the last 7 days.
+        since = datetime.now(UTC) - timedelta(days=7)
+        stmt = (
+            select(UsageEvent.meta.op("->>")("target_user_id"))
+            .where(UsageEvent.kind == "admin.action")
+            .where(UsageEvent.meta.op("->>")("action") == "send_email")
+            .where(UsageEvent.meta.op("->>")("template") == template_id)
+            .where(UsageEvent.created_at >= since)
+        )
+        recent_ids = {
+            row for (row,) in (await self._session.execute(stmt)).all() if row
+        }
+        # Preserve requested order; skip unknown ids.
+        out: list[BulkRecipient] = []
+        for uid in user_ids:
+            u = by_id.get(uid)
+            if u is None:
+                continue
+            out.append(
+                BulkRecipient(
+                    user_id=uid,
+                    email=u.email,
+                    full_name=u.full_name,
+                    has_recent_send=str(uid) in recent_ids,
+                )
+            )
+        return out
 
     # ---- Internals ----------------------------------------------------
 

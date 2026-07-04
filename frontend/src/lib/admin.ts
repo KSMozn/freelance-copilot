@@ -11,6 +11,10 @@ import type {
   AdminOverview,
   AdminUserDetail,
   AdminUserListResponse,
+  EmailPreviewResponse,
+  EmailTemplateSpec,
+  SendEmailBulkDryRunResponse,
+  SendEmailBulkResponse,
 } from "@/types/admin";
 
 const OVERVIEW_KEY = ["admin", "overview"] as const;
@@ -173,5 +177,80 @@ export function useUpdateAdminCvTemplate() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CV_TEMPLATES_KEY }),
+  });
+}
+
+// ---- Admin-triggered emails --------------------------------------------
+
+const EMAIL_TEMPLATES_KEY = ["admin", "email-templates"] as const;
+
+export function useAdminEmailTemplates() {
+  return useQuery({
+    queryKey: EMAIL_TEMPLATES_KEY,
+    queryFn: async () => {
+      const { data } = await api.get<EmailTemplateSpec[]>(
+        "/admin/email-templates",
+      );
+      return data;
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function useAdminEmailPreview(
+  userId: string | null,
+  templateId: string | null,
+) {
+  return useQuery({
+    queryKey: ["admin", "email-preview", userId, templateId] as const,
+    enabled: !!userId && !!templateId,
+    queryFn: async () => {
+      const { data } = await api.get<EmailPreviewResponse>(
+        `/admin/users/${userId}/email-preview`,
+        { params: { template_id: templateId } },
+      );
+      return data;
+    },
+  });
+}
+
+export function useAdminSendEmail() {
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      templateId,
+    }: {
+      userId: string;
+      templateId: string;
+    }): Promise<AdminActionResult> => {
+      const { data } = await api.post<AdminActionResult>(
+        `/admin/users/${userId}/send-email`,
+        { template_id: templateId },
+      );
+      return data;
+    },
+  });
+}
+
+export function useAdminSendEmailBulk() {
+  return useMutation({
+    mutationFn: async ({
+      userIds,
+      templateId,
+      dryRun,
+    }: {
+      userIds: string[];
+      templateId: string;
+      dryRun: boolean;
+    }): Promise<SendEmailBulkResponse | SendEmailBulkDryRunResponse> => {
+      const { data } = await api.post<
+        SendEmailBulkResponse | SendEmailBulkDryRunResponse
+      >("/admin/users/send-email-bulk", {
+        user_ids: userIds,
+        template_id: templateId,
+        dry_run: dryRun,
+      });
+      return data;
+    },
   });
 }

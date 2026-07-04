@@ -7,7 +7,7 @@ action.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
@@ -24,20 +24,28 @@ from app.application.dto.admin_dto import (
     AdminUserDeleteRequest,
     AdminUserDetail,
     AdminUserListResponse,
+    BulkFailure,
     DailyReportRequest,
     DailyReportResult,
+    EmailPreviewResponse,
+    SendEmailBulkDryRunResponse,
+    SendEmailBulkRequest,
+    SendEmailBulkResponse,
+    SendEmailRequest,
 )
 from app.application.dto.feedback_dto import FeedbackListResponse, FeedbackRead
+from app.application.email_templates import EmailTemplateSpec, get_template, list_templates
 from app.application.services import usage_event_service
 from app.application.services.admin_service import AdminService
 from app.application.services.cv_template_service import CvTemplateService
 from app.application.services.daily_report_service import DailyReportService
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.core.deps import CurrentAdmin, SessionDep, get_email_provider
 from app.core.security import create_access_token, create_refresh_token
 from app.domain.entities.admin_user import AdminUser as AdminUserEntity
 from app.domain.providers.email_provider import EmailProvider
 from app.infrastructure.db.models.feedback_entry import FeedbackEntry
+from app.infrastructure.email.errors import EmailProviderError
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -98,19 +106,30 @@ async def get_user(user_id: UUID, _: CurrentAdmin, svc: AdminSvc) -> AdminUserDe
 # ---- Actions -----------------------------------------------------------
 
 
-def _audit(actor: AdminUserEntity, action: str, target_id: UUID, ok: bool = True) -> None:
+def _audit(
+    actor: AdminUserEntity,
+    action: str,
+    target_id: UUID,
+    ok: bool = True,
+    extra: dict[str, Any] | None = None,
+) -> None:
     # user_id stays None because admin_users.id can't satisfy the FK to
-    # users.id — the actor identity travels in `meta` instead.
+    # users.id — the actor identity travels in `meta` instead. `extra`
+    # merges into meta so callers can stash action-specific fields
+    # (e.g. `template` for send_email).
+    meta: dict[str, Any] = {
+        "action": action,
+        "target_user_id": str(target_id),
+        "actor_admin_id": str(actor.id),
+        "actor_email": actor.email,
+    }
+    if extra:
+        meta.update(extra)
     usage_event_service.fire(
         user_id=None,
         kind="admin.action",
         status="ok" if ok else "error",
-        meta={
-            "action": action,
-            "target_user_id": str(target_id),
-            "actor_admin_id": str(actor.id),
-            "actor_email": actor.email,
-        },
+        meta=meta,
     )
 
 
@@ -198,6 +217,130 @@ async def delete_user(
     await svc.delete_user(user_id)
     _audit(actor, "delete", user_id)
     return AdminActionResult(message=f"Deleted user {detail.email}")
+
+
+# ---- Admin-triggered emails --------------------------------------------
+
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+@router.get("/email-templates", response_model=list[EmailTemplateSpec])
+async def list_email_templates(_: CurrentAdmin) -> list[EmailTemplateSpec]:
+    return list_templates()
+
+
+@router.get(
+    "/users/{user_id}/email-preview", response_model=EmailPreviewResponse
+)
+async def preview_email(
+    user_id: UUID,
+    _: CurrentAdmin,
+    svc: AdminSvc,
+    settings: SettingsDep,
+    template_id: str = Query(..., min_length=1, max_length=64),
+) -> EmailPreviewResponse:
+    if get_template(template_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown template")
+    preview = await svc.preview_email_for_user(
+        user_id=user_id, template_id=template_id, settings=settings
+    )
+    if preview is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return preview
+
+
+@router.post("/users/{user_id}/send-email", response_model=AdminActionResult)
+async def send_email_to_user(
+    user_id: UUID,
+    payload: SendEmailRequest,
+    actor: CurrentAdmin,
+    svc: AdminSvc,
+    settings: SettingsDep,
+    email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+) -> AdminActionResult:
+    if get_template(payload.template_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown template")
+    message = await svc.build_email_message_for_user(
+        user_id=user_id, template_id=payload.template_id, settings=settings
+    )
+    if message is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        await email_provider.send(message)
+    except EmailProviderError as exc:
+        _audit(
+            actor,
+            "send_email",
+            user_id,
+            ok=False,
+            extra={"template": payload.template_id, "error": str(exc)},
+        )
+        raise HTTPException(status_code=502, detail=f"Email failed: {exc}") from exc
+    _audit(
+        actor,
+        "send_email",
+        user_id,
+        extra={"template": payload.template_id},
+    )
+    return AdminActionResult(message=f"Sent to {message.to}")
+
+
+@router.post(
+    "/users/send-email-bulk",
+    response_model=SendEmailBulkResponse | SendEmailBulkDryRunResponse,
+)
+async def send_email_bulk(
+    payload: SendEmailBulkRequest,
+    actor: CurrentAdmin,
+    svc: AdminSvc,
+    settings: SettingsDep,
+    email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+) -> SendEmailBulkResponse | SendEmailBulkDryRunResponse:
+    if get_template(payload.template_id) is None:
+        raise HTTPException(status_code=404, detail="Unknown template")
+    if payload.dry_run:
+        recipients = await svc.bulk_dry_run(
+            user_ids=payload.user_ids, template_id=payload.template_id
+        )
+        return SendEmailBulkDryRunResponse(
+            template_id=payload.template_id, recipients=recipients
+        )
+    # Real send — best-effort per user; keep going on failures.
+    sent = 0
+    skipped = 0
+    failed: list[BulkFailure] = []
+    for uid in payload.user_ids:
+        message = await svc.build_email_message_for_user(
+            user_id=uid, template_id=payload.template_id, settings=settings
+        )
+        if message is None:
+            skipped += 1
+            continue
+        try:
+            await email_provider.send(message)
+        except EmailProviderError as exc:
+            _audit(
+                actor,
+                "send_email",
+                uid,
+                ok=False,
+                extra={"template": payload.template_id, "error": str(exc)},
+            )
+            failed.append(BulkFailure(user_id=uid, error=str(exc)))
+            continue
+        _audit(
+            actor,
+            "send_email",
+            uid,
+            extra={"template": payload.template_id},
+        )
+        sent += 1
+    return SendEmailBulkResponse(
+        template_id=payload.template_id,
+        sent=sent,
+        skipped=skipped,
+        failed=failed,
+    )
 
 
 # ---- CV templates ------------------------------------------------------

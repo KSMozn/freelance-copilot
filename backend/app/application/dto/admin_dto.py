@@ -240,3 +240,59 @@ class DailyReportResult(BaseModel):
     recipients: int
     delivered: int
     errors: list[str] = Field(default_factory=list)
+
+
+# ---- Admin-triggered emails ---------------------------------------------
+
+
+class EmailPreviewResponse(BaseModel):
+    """What the admin sees before hitting Send.
+
+    `recent_send_at` is the most recent timestamp this template was sent
+    to this user within the last 7 days (from the usage_events audit
+    trail); null means no recent send.
+    """
+
+    subject: str
+    html: str
+    text: str
+    recipient_email: EmailStr
+    recipient_name: str | None = None
+    recent_send_at: datetime | None = None
+
+
+class SendEmailRequest(BaseModel):
+    template_id: str = Field(min_length=1, max_length=64)
+
+
+class SendEmailBulkRequest(BaseModel):
+    user_ids: list[UUID] = Field(min_length=1, max_length=200)
+    template_id: str = Field(min_length=1, max_length=64)
+    # `dry_run=true` returns per-recipient info without sending. `dry_run=false`
+    # actually sends. The frontend calls dry_run first, shows the recipient
+    # list with recent-send warnings, then submits again with dry_run=false.
+    dry_run: bool = False
+
+
+class BulkRecipient(BaseModel):
+    user_id: UUID
+    email: EmailStr
+    full_name: str | None = None
+    has_recent_send: bool = False
+
+
+class SendEmailBulkDryRunResponse(BaseModel):
+    template_id: str
+    recipients: list[BulkRecipient]
+
+
+class BulkFailure(BaseModel):
+    user_id: UUID
+    error: str
+
+
+class SendEmailBulkResponse(BaseModel):
+    template_id: str
+    sent: int
+    skipped: int  # e.g. user has no email or is disabled
+    failed: list[BulkFailure] = Field(default_factory=list)

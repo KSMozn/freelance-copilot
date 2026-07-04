@@ -154,3 +154,46 @@ export interface AdminCvTemplateUpdate {
   is_visible?: boolean;
   sort_order?: number;
 }
+
+// ---- Admin-triggered emails --------------------------------------------
+
+export interface EmailTemplateSpec {
+  id: string;
+  name: string;
+  description: string;
+  subject: string;
+  audience_hint: string | null;
+}
+
+export interface EmailPreviewResponse {
+  subject: string;
+  html: string;
+  text: string;
+  recipient_email: string;
+  recipient_name: string | null;
+  recent_send_at: string | null;
+}
+
+export interface BulkRecipient {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  has_recent_send: boolean;
+}
+
+export interface SendEmailBulkDryRunResponse {
+  template_id: string;
+  recipients: BulkRecipient[];
+}
+
+export interface BulkFailure {
+  user_id: string;
+  error: string;
+}
+
+export interface SendEmailBulkResponse {
+  template_id: string;
+  sent: number;
+  skipped: number;
+  failed: BulkFailure[];
+}

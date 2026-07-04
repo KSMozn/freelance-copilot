@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { AlertTriangle, Loader2, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import {
   useAdminDeleteUser,
   useAdminDisableUser,
+  useAdminEmailPreview,
+  useAdminEmailTemplates,
   useAdminEnableUser,
   useAdminImpersonate,
   useAdminResetWizard,
+  useAdminSendEmail,
   useAdminUser,
 } from "@/lib/admin";
 
@@ -180,6 +186,8 @@ export function AdminUserDetailPage() {
         </CardContent>
       </Card>
 
+      {id && <SendEmailCard userId={id} userEmail={user.email} />}
+
       {confirmingDelete && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardHeader>
@@ -308,6 +316,181 @@ function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
     <div className="grid grid-cols-[110px_1fr] gap-2 border-b py-1.5 last:border-none">
       <div className="text-xs text-muted-foreground">{k}</div>
       <div className={mono ? "font-mono text-xs" : ""}>{v}</div>
+    </div>
+  );
+}
+
+// ---- Send email card + preview modal -----------------------------------
+
+function SendEmailCard({
+  userId,
+  userEmail,
+}: {
+  userId: string;
+  userEmail: string;
+}) {
+  const { data: templates } = useAdminEmailTemplates();
+  const [templateId, setTemplateId] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const options =
+    (templates ?? []).map((t) => ({ value: t.id, label: t.name })) ?? [];
+  const chosen = (templates ?? []).find((t) => t.id === templateId) ?? null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Mail className="h-4 w-4" /> Send templated email
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+          <div className="space-y-1.5">
+            <Label className="text-xs" htmlFor="tpl">Template</Label>
+            <Select
+              id="tpl"
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              options={options}
+              placeholder={templates ? "Pick a template…" : "Loading…"}
+            />
+            {chosen && (
+              <p className="text-xs text-muted-foreground">
+                {chosen.description}
+                {chosen.audience_hint && (
+                  <>
+                    {" "}
+                    <span className="italic">{chosen.audience_hint}</span>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+          <div className="flex items-end">
+            <Button
+              variant="brand"
+              size="sm"
+              onClick={() => setPreviewOpen(true)}
+              disabled={!templateId}
+            >
+              Preview &amp; send
+            </Button>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Will be sent to <span className="font-medium">{userEmail}</span>.
+        </p>
+      </CardContent>
+      {previewOpen && templateId && (
+        <EmailPreviewModal
+          userId={userId}
+          templateId={templateId}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
+    </Card>
+  );
+}
+
+function EmailPreviewModal({
+  userId,
+  templateId,
+  onClose,
+}: {
+  userId: string;
+  templateId: string;
+  onClose: () => void;
+}) {
+  const { data: preview, isLoading, error } = useAdminEmailPreview(userId, templateId);
+  const send = useAdminSendEmail();
+
+  async function submit() {
+    try {
+      await send.mutateAsync({ userId, templateId });
+      toast.success("Email sent.");
+      onClose();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { detail?: string } } })
+        ?.response?.data?.detail;
+      toast.error(msg ?? "Failed to send.");
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border bg-background shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="text-sm font-semibold">Email preview</div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          {isLoading ? (
+            <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Rendering preview…
+            </div>
+          ) : error || !preview ? (
+            <div className="p-6 text-sm text-destructive">Couldn't load preview.</div>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-[110px_1fr] gap-2 text-sm">
+                <div className="text-xs text-muted-foreground">To</div>
+                <div>
+                  {preview.recipient_name && (
+                    <span className="font-medium">
+                      {preview.recipient_name}
+                    </span>
+                  )}{" "}
+                  &lt;{preview.recipient_email}&gt;
+                </div>
+                <div className="text-xs text-muted-foreground">Subject</div>
+                <div className="font-medium">{preview.subject}</div>
+              </div>
+              {preview.recent_send_at && (
+                <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+                  <div>
+                    This template was already sent to this user on{" "}
+                    <span className="font-medium">
+                      {new Date(preview.recent_send_at).toLocaleString()}
+                    </span>
+                    . Sending again is allowed — just double-check first.
+                  </div>
+                </div>
+              )}
+              <iframe
+                title="Email preview"
+                srcDoc={preview.html}
+                sandbox="allow-same-origin"
+                className="h-[520px] w-full rounded border bg-white"
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="brand"
+            size="sm"
+            onClick={submit}
+            disabled={send.isPending || !preview}
+          >
+            {send.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            Send email
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
