@@ -52,6 +52,8 @@ export function AdminUsersPage() {
                     <Th>Persona</Th>
                     <Th>Status</Th>
                     <Th>Wizard</Th>
+                    <Th>LinkedIn</Th>
+                    <Th>GitHub</Th>
                     <Th>Last login</Th>
                     <Th>Joined</Th>
                   </tr>
@@ -87,6 +89,8 @@ export function AdminUsersPage() {
                           "—"
                         )}
                       </Td>
+                      <Td><PresenceBadge value={u.has_linkedin} /></Td>
+                      <Td><PresenceBadge value={u.has_github} /></Td>
                       <Td className="whitespace-nowrap">
                         {u.last_login_at ? fmtRelative(u.last_login_at) : "—"}
                       </Td>
@@ -135,6 +139,21 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={cn("px-3 py-2", className)}>{children}</td>;
+}
+
+function PresenceBadge({ value }: { value: boolean | null }) {
+  if (value === null) return <span className="text-xs text-muted-foreground">—</span>;
+  if (value)
+    return (
+      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
+        Yes
+      </span>
+    );
+  return (
+    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+      No
+    </span>
+  );
 }
 
 function StatusBadge({ active, verified }: { active: boolean; verified: boolean }) {

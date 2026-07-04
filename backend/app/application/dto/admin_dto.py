@@ -86,6 +86,10 @@ class AdminUserRow(BaseModel):
     created_at: datetime
     wizard_step: str | None  # student profile's current_step, if any
     wizard_completed: int  # count of completed_steps
+    # Derived from the CV's links field (entered in the wizard basics step),
+    # NOT from the Career Starter Pack step. `null` for non-students.
+    has_linkedin: bool | None = None
+    has_github: bool | None = None
 
 
 class AdminUserListResponse(BaseModel):

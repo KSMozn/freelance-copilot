@@ -55,6 +55,8 @@ export interface AdminUserRow {
   created_at: string;
   wizard_step: string | null;
   wizard_completed: number;
+  has_linkedin: boolean | null;
+  has_github: boolean | null;
 }
 
 export interface AdminUserListResponse {

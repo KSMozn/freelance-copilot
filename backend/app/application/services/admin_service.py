@@ -229,6 +229,18 @@ class AdminService:
         rows: list[AdminUserRow] = []
         for u in users:
             p = profiles.get(u.id)
+            # Presence checks look at profile.links (populated in the
+            # wizard's basics step), not career_pack, so late-stage clicks
+            # in the Starter Pack don't change what the admin sees.
+            has_linkedin: bool | None
+            has_github: bool | None
+            if u.selected_persona_kind == "student":
+                links = (p.links or {}) if p else {}
+                has_linkedin = bool((links.get("linkedin") or "").strip())
+                has_github = bool((links.get("github") or "").strip())
+            else:
+                has_linkedin = None
+                has_github = None
             rows.append(
                 AdminUserRow(
                     id=u.id,
@@ -242,6 +254,8 @@ class AdminService:
                     created_at=u.created_at,
                     wizard_step=p.current_step if p else None,
                     wizard_completed=len(p.completed_steps or []) if p else 0,
+                    has_linkedin=has_linkedin,
+                    has_github=has_github,
                 )
             )
         return rows, total
