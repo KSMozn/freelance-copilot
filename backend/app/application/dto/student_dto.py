@@ -18,9 +18,10 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
+from urllib.parse import urlparse
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 STUDENT_ENTRY_KINDS = Literal[
     "course",
@@ -37,11 +38,44 @@ STUDENT_ENTRY_KINDS = Literal[
 # ---- profile -----------------------------------------------------------
 
 
+def _normalize_profile_url(value: str | None, *, host_contains: str) -> str | None:
+    """Accept blank/None as 'unset'; otherwise require http(s) + host match + a path.
+
+    Kept lenient: LinkedIn slugs, GitHub sub-paths, trailing '/foo' etc. all
+    pass. Only rejects obvious junk ('not a url'), wrong domains, and non-http
+    schemes — enough to block silly client bugs without whack-a-mole regexes.
+    """
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    parsed = urlparse(stripped)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("URL must start with http:// or https://")
+    host = (parsed.netloc or "").lower()
+    if host_contains not in host:
+        raise ValueError(f"URL must be on {host_contains}")
+    if not parsed.path.strip("/"):
+        raise ValueError("URL must include a profile path")
+    return stripped
+
+
 class StudentLinks(BaseModel):
     github: str | None = None
     linkedin: str | None = None
     website: str | None = None
     portfolio: str | None = None
+
+    @field_validator("linkedin", mode="before")
+    @classmethod
+    def _validate_linkedin(cls, v: str | None) -> str | None:
+        return _normalize_profile_url(v, host_contains="linkedin.com")
+
+    @field_validator("github", mode="before")
+    @classmethod
+    def _validate_github(cls, v: str | None) -> str | None:
+        return _normalize_profile_url(v, host_contains="github.com")
 
 
 class StudentProfileUpdate(BaseModel):

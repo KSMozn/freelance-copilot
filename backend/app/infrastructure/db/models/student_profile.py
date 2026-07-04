@@ -18,6 +18,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
+import sqlalchemy as sa
 from sqlalchemy import (
     Boolean,
     Date,
@@ -114,6 +115,13 @@ class StudentProfile(Base):
     )
     interests: Mapped[list[Any]] = mapped_column(
         JSONB, nullable=False, default=list
+    )
+
+    # Career Starter Pack — generated LinkedIn/GitHub content + review
+    # recommendations. See migration 0036 for schema notes. All keys are
+    # optional; empty dict means the student has not opened either card yet.
+    career_pack: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default=sa.text("'{}'::jsonb")
     )
 
     # Wizard progress

@@ -9,6 +9,7 @@ import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { CoachWarnings } from "@/components/student/CoachWarnings";
 import { DateOfBirthPicker } from "@/components/student/DateOfBirthPicker";
 import { PhotoPositioner } from "@/components/student/PhotoPositioner";
+import { CareerStarterPack } from "@/components/student/CareerStarterPack";
 import { PostDownloadSurvey } from "@/components/student/PostDownloadSurvey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +83,11 @@ const STEPS: StepDef[] = [
     blurb: "We'll draft a headline + summary from what you've shared — edit freely.",
   },
   { slug: "preview", title: "Preview & download", blurb: "Your CV, ready to share." },
+  {
+    slug: "starter-pack",
+    title: "Career Starter Pack",
+    blurb: "Optional next steps to strengthen your internship application.",
+  },
 ];
 
 const KIND_FOR_STEP: Record<string, StudentEntryKind> = {
@@ -279,6 +285,8 @@ function StepBody({
       return <StepSummary onSaved={onSaved} />;
     case "preview":
       return <StepPreview />;
+    case "starter-pack":
+      return <StepStarterPack />;
     default:
       return <StepEntries kind={KIND_FOR_STEP[stepSlug]} onSaved={onSaved} />;
   }
@@ -1709,6 +1717,17 @@ function StepPreview() {
         )}
       </div>
 
+      <AboutFooter className="pt-2" />
+    </div>
+  );
+}
+
+// ---- Step: Career Starter Pack ----------------------------------------
+
+function StepStarterPack() {
+  return (
+    <div className="space-y-4">
+      <CareerStarterPack />
       <AboutFooter className="pt-2" />
     </div>
   );

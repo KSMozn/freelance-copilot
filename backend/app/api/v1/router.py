@@ -8,6 +8,7 @@ from app.api.v1.endpoints import (
     applications,
     auth,
     career_fitness,
+    career_pack,
     certificates,
     confidence,
     content_items,
@@ -61,6 +62,11 @@ api_router.include_router(career_fitness.router)
 api_router.include_router(tracker.application_tracker_router)
 api_router.include_router(tracker.tracker_router)
 api_router.include_router(students.router)
+# Career Starter Pack (post-CV LinkedIn/GitHub cards). Must come AFTER
+# students.router so /students/career-pack doesn't get swallowed by
+# students' wildcard prefix — but since neither uses a wildcard, order
+# is defensive only.
+api_router.include_router(career_pack.router)
 # Order matters: /admin/auth before /admin so the auth prefix isn't
 # swallowed by admin.router's CurrentAdmin gate.
 api_router.include_router(admin_auth.router)
