@@ -161,7 +161,7 @@ export function AdminUsersPage() {
                         <StatusBadge active={u.is_active} verified={u.email_verified} />
                       </Td>
                       <Td>
-                        {u.persona_kind === "student" ? (
+                        {u.wizard_step || u.wizard_completed > 0 ? (
                           <span className="text-xs text-muted-foreground">
                             {u.wizard_completed}/11
                             {u.wizard_step ? ` · ${u.wizard_step}` : ""}

@@ -235,13 +235,15 @@ class AdminService:
         rows: list[AdminUserRow] = []
         for u in users:
             p = profiles.get(u.id)
-            # Presence checks look at profile.links (populated in the
-            # wizard's basics step), not career_pack, so late-stage clicks
-            # in the Starter Pack don't change what the admin sees.
+            # Truth for the student columns is "has a student_profile row",
+            # NOT selected_persona_kind — the persona field defaults to
+            # "professional" for accounts not created through the student
+            # register flow, so gating on it hides real wizard progress
+            # for legacy or admin-seeded users.
             has_linkedin: bool | None
             has_github: bool | None
-            if u.selected_persona_kind == "student":
-                links = (p.links or {}) if p else {}
+            if p is not None:
+                links = p.links or {}
                 has_linkedin = bool((links.get("linkedin") or "").strip())
                 has_github = bool((links.get("github") or "").strip())
             else:
@@ -270,46 +272,47 @@ class AdminService:
         u = await self._session.get(User, user_id)
         if u is None:
             return None
+        # Same truth as list_users: presence of a student_profile row, not
+        # the persona_kind flag (which is stale for many older accounts).
         student: AdminStudentSummary | None = None
-        if u.selected_persona_kind == "student":
-            profile = await self._session.get(StudentProfile, user_id)
-            if profile is not None:
-                # Count entries + break down by kind
-                entry_rows = (
-                    await self._session.execute(
-                        select(
-                            StudentProfileEntry.kind,
-                            func.count(StudentProfileEntry.id),
-                        )
-                        .where(StudentProfileEntry.user_id == user_id)
-                        .group_by(StudentProfileEntry.kind)
+        profile = await self._session.get(StudentProfile, user_id)
+        if profile is not None:
+            # Count entries + break down by kind
+            entry_rows = (
+                await self._session.execute(
+                    select(
+                        StudentProfileEntry.kind,
+                        func.count(StudentProfileEntry.id),
                     )
-                ).all()
-                by_kind = {k: c for (k, c) in entry_rows}
-                student = AdminStudentSummary(
-                    full_name=profile.full_name,
-                    professional_email=profile.professional_email,
-                    phone=profile.phone,
-                    location=profile.location,
-                    date_of_birth=profile.date_of_birth,
-                    college=profile.college,
-                    department=profile.department,
-                    degree=profile.degree,
-                    major=profile.major,
-                    graduation_year=profile.graduation_year,
-                    gpa=str(profile.gpa) if profile.gpa is not None else None,
-                    headline=profile.headline,
-                    summary=profile.summary,
-                    links=dict(profile.links or {}),
-                    interests=list(profile.interests or []),
-                    completed_steps=list(profile.completed_steps or []),
-                    current_step=profile.current_step,
-                    cv_template_slug=profile.cv_template_slug,
-                    photo_file_id=profile.photo_file_id,
-                    entries_count=sum(by_kind.values()),
-                    entries_by_kind=by_kind,
-                    updated_at=profile.updated_at,
+                    .where(StudentProfileEntry.user_id == user_id)
+                    .group_by(StudentProfileEntry.kind)
                 )
+            ).all()
+            by_kind = {k: c for (k, c) in entry_rows}
+            student = AdminStudentSummary(
+                full_name=profile.full_name,
+                professional_email=profile.professional_email,
+                phone=profile.phone,
+                location=profile.location,
+                date_of_birth=profile.date_of_birth,
+                college=profile.college,
+                department=profile.department,
+                degree=profile.degree,
+                major=profile.major,
+                graduation_year=profile.graduation_year,
+                gpa=str(profile.gpa) if profile.gpa is not None else None,
+                headline=profile.headline,
+                summary=profile.summary,
+                links=dict(profile.links or {}),
+                interests=list(profile.interests or []),
+                completed_steps=list(profile.completed_steps or []),
+                current_step=profile.current_step,
+                cv_template_slug=profile.cv_template_slug,
+                photo_file_id=profile.photo_file_id,
+                entries_count=sum(by_kind.values()),
+                entries_by_kind=by_kind,
+                updated_at=profile.updated_at,
+            )
         return AdminUserDetail(
             id=u.id,
             email=u.email,
@@ -408,9 +411,9 @@ class AdminService:
         u = await self._session.get(User, user_id)
         if u is None:
             return None
-        p: StudentProfile | None = None
-        if u.selected_persona_kind == "student":
-            p = await self._session.get(StudentProfile, user_id)
+        # Always try to load — presence of a student_profile row is the
+        # truth for "has CV data", not the persona_kind flag.
+        p = await self._session.get(StudentProfile, user_id)
         return u, p
 
     def _build_template_context(

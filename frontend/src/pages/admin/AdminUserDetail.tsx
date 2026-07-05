@@ -163,7 +163,7 @@ export function AdminUserDetailPage() {
                 toast.error(msg ?? "Failed");
               }
             }}
-            disabled={reset.isPending || user.persona_kind !== "student"}
+            disabled={reset.isPending || !user.student}
           >
             Reset wizard
           </Button>
