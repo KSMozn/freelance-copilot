@@ -345,42 +345,40 @@ function SendEmailCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid gap-2 md:grid-cols-[1fr_auto]">
-          <div className="space-y-1.5">
-            <Label className="text-xs" htmlFor="tpl">Template</Label>
-            <Select
-              id="tpl"
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              options={options}
-              placeholder={templates ? "Pick a template…" : "Loading…"}
-            />
-            {chosen && (
-              <p className="text-xs text-muted-foreground">
-                {chosen.description}
-                {chosen.audience_hint && (
-                  <>
-                    {" "}
-                    <span className="italic">{chosen.audience_hint}</span>
-                  </>
-                )}
-              </p>
-            )}
-          </div>
-          <div className="flex items-end">
-            <Button
-              variant="brand"
-              size="sm"
-              onClick={() => setPreviewOpen(true)}
-              disabled={!templateId}
-            >
-              Preview &amp; send
-            </Button>
-          </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs" htmlFor="tpl">Template</Label>
+          <Select
+            id="tpl"
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+            options={options}
+            placeholder={templates ? "Pick a template…" : "Loading…"}
+          />
+          {chosen && (
+            <p className="text-xs text-muted-foreground">
+              {chosen.description}
+              {chosen.audience_hint && (
+                <>
+                  {" "}
+                  <span className="italic">{chosen.audience_hint}</span>
+                </>
+              )}
+            </p>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Will be sent to <span className="font-medium">{userEmail}</span>.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <p className="text-xs text-muted-foreground">
+            Will be sent to <span className="font-medium">{userEmail}</span>.
+          </p>
+          <Button
+            variant="brand"
+            size="sm"
+            onClick={() => setPreviewOpen(true)}
+            disabled={!templateId}
+          >
+            Preview &amp; send
+          </Button>
+        </div>
       </CardContent>
       {previewOpen && templateId && (
         <EmailPreviewModal
