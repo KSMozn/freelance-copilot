@@ -41,6 +41,7 @@ import {
   CERTIFICATES,
   COURSES,
   DEGREES,
+  loadUniversities,
   LANGUAGE_PROFICIENCIES,
   LANGUAGES,
   MAJORS,
@@ -490,6 +491,23 @@ function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void }) {
     profile?.graduation_year ? String(profile.graduation_year) : "",
   );
 
+  // Seed the university dropdown with the small featured list (with
+  // acronyms), then swap in the merged 10k Hipolabs list once it loads.
+  const [uniOptions, setUniOptions] = useState<string[]>(UNIVERSITIES);
+  const [uniLoaded, setUniLoaded] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void loadUniversities().then((list) => {
+      if (!cancelled) {
+        setUniOptions(list);
+        setUniLoaded(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (!profile) return;
     setUniversity((cur) => cur || profile.college || "");
@@ -534,9 +552,12 @@ function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void }) {
         <Combobox
           value={university}
           onChange={setUniversity}
-          options={UNIVERSITIES}
+          options={uniOptions}
           placeholder="Start typing…"
         />
+        {!uniLoaded && (
+          <p className="text-xs text-muted-foreground">Loading more suggestions…</p>
+        )}
       </div>
       <div className="space-y-2">
         <Label>Faculty / department (optional)</Label>
