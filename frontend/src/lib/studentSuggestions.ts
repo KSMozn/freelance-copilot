@@ -86,18 +86,29 @@ let _loadingUnis: Promise<string[]> | null = null;
 export async function loadUniversities(): Promise<string[]> {
   if (_loadedUnis) return _loadedUnis;
   if (_loadingUnis) return _loadingUnis;
-  _loadingUnis = import("@/data/universities.json").then((mod) => {
-    const raw = (mod as unknown as { default: { universities: { name: string; country: string }[] } }).default.universities;
-    // Dedupe against the featured list by full "Name — Country" match
-    // so acronym-annotated featured entries always win.
-    const featuredKeys = new Set(
+  _loadingUnis = Promise.all([
+    import("@/data/universities.json"),
+    import("@/data/universities-supplementary.json"),
+  ]).then(([hipolabs, supp]) => {
+    type Row = { name: string; country: string };
+    const hipo = (hipolabs as unknown as { default: { universities: Row[] } }).default.universities;
+    const extra = (supp as unknown as { default: { universities: Row[] } }).default.universities;
+    // Featured list wins on collision (keeps acronyms visible).
+    const seen = new Set(
       UNIVERSITIES.map((s) => stripAcronym(s).toLowerCase()),
     );
     const merged: string[] = [...UNIVERSITIES];
-    for (const r of raw) {
+    const push = (r: Row) => {
       const label = `${r.name} — ${r.country}`;
-      if (!featuredKeys.has(label.toLowerCase())) merged.push(label);
-    }
+      const key = label.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(label);
+    };
+    // Supplement first so curated MENA additions land ahead of any
+    // near-duplicate Hipolabs entry that only differs in punctuation.
+    for (const r of extra) push(r);
+    for (const r of hipo) push(r);
     _loadedUnis = merged;
     return merged;
   });

@@ -554,6 +554,7 @@ function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void }) {
           onChange={setUniversity}
           options={uniOptions}
           placeholder="Start typing…"
+          maxResults={25}
         />
         {!uniLoaded && (
           <p className="text-xs text-muted-foreground">Loading more suggestions…</p>
