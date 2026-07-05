@@ -70,7 +70,7 @@ export function AdminUserDetailPage() {
     try {
       await del.mutateAsync({ id, confirmEmail: deleteEmail });
       toast.success("User deleted");
-      navigate("/admin/users");
+      navigate("/users");
     } catch (err) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       toast.error(msg ?? "Could not delete");
@@ -85,7 +85,7 @@ export function AdminUserDetailPage() {
     <div className="space-y-4">
       <div>
         <Link
-          to="/admin/users"
+          to="/users"
           className="text-xs text-muted-foreground hover:text-foreground"
         >
           ← Users

@@ -144,7 +144,7 @@ export function AdminUsersPage() {
                       </Td>
                       <Td>
                         <Link
-                          to={`/admin/users/${u.id}`}
+                          to={`/users/${u.id}`}
                           className="text-primary hover:underline"
                         >
                           {u.email}
