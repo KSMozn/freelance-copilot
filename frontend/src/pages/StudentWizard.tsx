@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { fetchPhotoDataUri } from "@/lib/photoCache";
@@ -102,16 +102,28 @@ const KIND_FOR_STEP: Record<string, StudentEntryKind> = {
 export function StudentWizardPage() {
   const { data: profile, isLoading: profileLoading } = useStudentProfile();
   const updateProfile = useUpdateStudentProfile();
-  const [stepIndex, setStepIndex] = useState(0);
+  const [searchParams] = useSearchParams();
+  // Deep-link support: `?step=<slug>` lands the wizard directly on that
+  // tab (used by admin-triggered email CTAs). Unknown slugs fall through.
+  const requestedStepIndex = useMemo(() => {
+    const slug = searchParams.get("step");
+    if (!slug) return -1;
+    return STEPS.findIndex((s) => s.slug === slug);
+  }, [searchParams]);
+  const [stepIndex, setStepIndex] = useState(() =>
+    requestedStepIndex >= 0 ? requestedStepIndex : 0,
+  );
 
-  // Land returning students on the step after the last one they completed.
+  // Land returning students on the step after the last one they completed —
+  // unless a `?step=` deep-link is present, in which case the URL wins.
   useEffect(() => {
+    if (requestedStepIndex >= 0) return;
     if (profile && profile.completed_steps?.length) {
       const lastCompleted = profile.completed_steps[profile.completed_steps.length - 1];
       const next = STEPS.findIndex((s) => s.slug === lastCompleted);
       if (next >= 0 && next < STEPS.length - 1) setStepIndex(next + 1);
     }
-  }, [profile?.completed_steps?.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.completed_steps?.length, requestedStepIndex]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the /login picker snapshot in sync — name updates and photo
   // uploads from the wizard propagate into localStorage so the next
