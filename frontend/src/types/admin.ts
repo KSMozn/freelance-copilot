@@ -57,6 +57,7 @@ export interface AdminUserRow {
   wizard_completed: number;
   has_linkedin: boolean | null;
   has_github: boolean | null;
+  has_downloaded_cv: boolean | null;
 }
 
 export interface AdminUserListResponse {

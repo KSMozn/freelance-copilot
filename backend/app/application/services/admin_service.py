@@ -224,6 +224,7 @@ class AdminService:
         # Batch-load profile wizard state for the returned page.
         ids = [u.id for u in users]
         profiles: dict[UUID, StudentProfile] = {}
+        downloaded_ids: set[UUID] = set()
         if ids:
             prof_rows = (
                 await self._session.execute(
@@ -231,6 +232,16 @@ class AdminService:
                 )
             ).scalars().all()
             profiles = {p.user_id: p for p in prof_rows}
+            # Distinct users on this page that have a successful cv.pdf event.
+            dl_rows = (
+                await self._session.execute(
+                    select(func.distinct(UsageEvent.user_id))
+                    .where(UsageEvent.user_id.in_(ids))
+                    .where(UsageEvent.kind == "cv.pdf")
+                    .where(UsageEvent.status == "ok")
+                )
+            ).scalars().all()
+            downloaded_ids = {uid for uid in dl_rows if uid is not None}
 
         rows: list[AdminUserRow] = []
         for u in users:
@@ -242,13 +253,16 @@ class AdminService:
             # for legacy or admin-seeded users.
             has_linkedin: bool | None
             has_github: bool | None
+            has_downloaded_cv: bool | None
             if p is not None:
                 links = p.links or {}
                 has_linkedin = bool((links.get("linkedin") or "").strip())
                 has_github = bool((links.get("github") or "").strip())
+                has_downloaded_cv = u.id in downloaded_ids
             else:
                 has_linkedin = None
                 has_github = None
+                has_downloaded_cv = None
             rows.append(
                 AdminUserRow(
                     id=u.id,
@@ -264,6 +278,7 @@ class AdminService:
                     wizard_completed=len(p.completed_steps or []) if p else 0,
                     has_linkedin=has_linkedin,
                     has_github=has_github,
+                    has_downloaded_cv=has_downloaded_cv,
                 )
             )
         return rows, total

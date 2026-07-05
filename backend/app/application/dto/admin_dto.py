@@ -87,9 +87,12 @@ class AdminUserRow(BaseModel):
     wizard_step: str | None  # student profile's current_step, if any
     wizard_completed: int  # count of completed_steps
     # Derived from the CV's links field (entered in the wizard basics step),
-    # NOT from the Career Starter Pack step. `null` for non-students.
+    # NOT from the Career Starter Pack step. `null` if the user has no
+    # student_profile row (no CV wizard progress at all).
     has_linkedin: bool | None = None
     has_github: bool | None = None
+    # True if there's any successful `cv.pdf` usage_event for this user.
+    has_downloaded_cv: bool | None = None
 
 
 class AdminUserListResponse(BaseModel):

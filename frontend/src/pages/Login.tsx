@@ -92,6 +92,10 @@ export function LoginPage() {
         code,
         purpose: "login",
         full_name: fullName || null,
+        // Careero is currently a student-only shell. If the OTP verify
+        // is the first time we've seen this email, the backend creates
+        // the account with this persona. Ignored for existing users.
+        persona_kind: "student",
       });
       return data;
     },

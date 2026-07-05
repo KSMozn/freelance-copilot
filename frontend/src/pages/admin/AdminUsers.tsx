@@ -127,6 +127,7 @@ export function AdminUsersPage() {
                     <Th>Wizard</Th>
                     <Th>LinkedIn</Th>
                     <Th>GitHub</Th>
+                    <Th>Downloaded CV</Th>
                     <Th>Last login</Th>
                     <Th>Joined</Th>
                   </tr>
@@ -172,6 +173,7 @@ export function AdminUsersPage() {
                       </Td>
                       <Td><PresenceBadge value={u.has_linkedin} /></Td>
                       <Td><PresenceBadge value={u.has_github} /></Td>
+                      <Td><PresenceBadge value={u.has_downloaded_cv} /></Td>
                       <Td className="whitespace-nowrap">
                         {u.last_login_at ? fmtRelative(u.last_login_at) : "—"}
                       </Td>

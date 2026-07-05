@@ -74,5 +74,7 @@ class OtpVerifyRequest(BaseModel):
     # Only used on register: optional display name to save on the new user.
     full_name: str | None = Field(default=None, max_length=255)
     # Picked at sign-up — Student goes to the wizard, Professional to the
-    # existing app. Ignored if the account already exists.
-    persona_kind: Literal["professional", "student"] = "professional"
+    # existing app. Ignored if the account already exists. Default is
+    # "student" because Careero currently ships a student-only shell;
+    # revisit if we re-enable the professional surface.
+    persona_kind: Literal["professional", "student"] = "student"
