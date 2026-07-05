@@ -6,9 +6,12 @@ action.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import select
@@ -298,6 +301,13 @@ async def send_email_bulk(
 ) -> SendEmailBulkResponse | SendEmailBulkDryRunResponse:
     if get_template(payload.template_id) is None:
         raise HTTPException(status_code=404, detail="Unknown template")
+    logger.info(
+        "bulk_email requested: template=%s dry_run=%s users=%d actor=%s",
+        payload.template_id,
+        payload.dry_run,
+        len(payload.user_ids),
+        actor.email,
+    )
     if payload.dry_run:
         recipients = await svc.bulk_dry_run(
             user_ids=payload.user_ids, template_id=payload.template_id
@@ -315,6 +325,7 @@ async def send_email_bulk(
         )
         if message is None:
             skipped += 1
+            logger.warning("bulk_email skip: no user/template for %s", uid)
             continue
         try:
             await email_provider.send(message)
@@ -327,6 +338,7 @@ async def send_email_bulk(
                 extra={"template": payload.template_id, "error": str(exc)},
             )
             failed.append(BulkFailure(user_id=uid, error=str(exc)))
+            logger.warning("bulk_email fail: user=%s err=%s", uid, exc)
             continue
         _audit(
             actor,
@@ -335,6 +347,13 @@ async def send_email_bulk(
             extra={"template": payload.template_id},
         )
         sent += 1
+    logger.info(
+        "bulk_email done: template=%s sent=%d skipped=%d failed=%d",
+        payload.template_id,
+        sent,
+        skipped,
+        len(failed),
+    )
     return SendEmailBulkResponse(
         template_id=payload.template_id,
         sent=sent,

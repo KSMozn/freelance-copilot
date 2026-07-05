@@ -263,9 +263,18 @@ function BulkEmailModal({
         dryRun: false,
       })) as SendEmailBulkResponse;
       setResult(res);
+      if (res.sent > 0) {
+        toast.success(`Sent ${res.sent} email${res.sent === 1 ? "" : "s"}.`);
+      } else {
+        toast.error(
+          `0 sent. ${res.skipped} skipped, ${res.failed.length} failed.`,
+        );
+      }
       onSent();
-    } catch {
-      toast.error("Bulk send failed.");
+    } catch (err) {
+      const msg = (err as { response?: { data?: { detail?: string } } })
+        ?.response?.data?.detail;
+      toast.error(msg ?? "Bulk send failed.");
     }
   }
 
@@ -353,6 +362,12 @@ function BulkEmailModal({
 
               {recipients && (
                 <div className="space-y-2">
+                  <div className="rounded-md border border-primary/40 bg-primary/10 p-3 text-xs">
+                    <span className="font-semibold">Preview only —</span>{" "}
+                    nothing has been sent yet. Review the list below, then
+                    click <span className="font-semibold">Send to {recipients.length}</span>{" "}
+                    at the bottom to deliver.
+                  </div>
                   {recentCount > 0 && (
                     <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
                       <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
