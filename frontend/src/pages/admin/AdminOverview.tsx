@@ -215,6 +215,7 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
     ["Summary", funnel.summary],
     ["Preview", funnel.preview],
     ["Downloaded PDF", funnel.downloaded],
+    ["Starter Pack", funnel.starter_pack],
   ];
   const max = Math.max(1, ...steps.map(([, c]) => c));
   return (

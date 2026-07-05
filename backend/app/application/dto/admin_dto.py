@@ -38,6 +38,7 @@ class WizardFunnel(BaseModel):
     certificates: int
     summary: int
     preview: int
+    starter_pack: int = 0
     downloaded: int
 
 

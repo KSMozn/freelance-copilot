@@ -52,6 +52,7 @@ WIZARD_STEPS = (
     "certificates",
     "summary",
     "preview",
+    "starter-pack",
 )
 
 
@@ -196,6 +197,7 @@ class AdminService:
             certificates=counts["certificates"],
             summary=counts["summary"],
             preview=counts["preview"],
+            starter_pack=counts["starter-pack"],
             downloaded=distinct_downloaders,
         )
 

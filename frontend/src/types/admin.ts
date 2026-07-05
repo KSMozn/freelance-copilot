@@ -16,6 +16,7 @@ export interface WizardFunnel {
   certificates: number;
   summary: number;
   preview: number;
+  starter_pack: number;
   downloaded: number;
 }
 

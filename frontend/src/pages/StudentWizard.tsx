@@ -152,6 +152,19 @@ export function StudentWizardPage() {
     });
   }
 
+  // Auto-mark the step done when the student lands on it. Steps like
+  // Preview and Career Starter Pack have no natural save action, so
+  // without this they never make it into completed_steps and the
+  // admin funnel undercounts. `mark_steps` is deduped server-side, so
+  // repeating is harmless — but we still guard on the local set to
+  // avoid an extra PATCH per navigation.
+  useEffect(() => {
+    if (!profile) return;
+    const already = profile.completed_steps ?? [];
+    if (already.includes(step.slug)) return;
+    void markStepDone(step.slug);
+  }, [step.slug, profile?.completed_steps]);  // eslint-disable-line react-hooks/exhaustive-deps
+
   function goNext() {
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   }
