@@ -36,6 +36,34 @@ EMAIL_TEMPLATES: dict[str, EmailTemplateSpec] = {
         subject="Build Your First LinkedIn Profile with {app_name}",
         audience_hint="Best for students without a LinkedIn URL on their CV.",
     ),
+    "cv_incomplete_reminder": EmailTemplateSpec(
+        id="cv_incomplete_reminder",
+        name="Your first CV is almost ready",
+        description=(
+            "Nudges students who started the wizard but haven't finished "
+            "back to complete their CV. Includes a Send Feedback link for "
+            "students who got stuck."
+        ),
+        subject="Your {app_name} CV is almost ready",
+        audience_hint=(
+            "Best for students with wizard progress but who haven't reached "
+            "the Preview step."
+        ),
+    ),
+    "cv_download_reminder": EmailTemplateSpec(
+        id="cv_download_reminder",
+        name="Your CV is ready to download",
+        description=(
+            "Reminds students who finished the wizard but haven't downloaded "
+            "their CV to pick a template and download. Highlights the 5 "
+            "available CV templates."
+        ),
+        subject="Your {app_name} CV is ready to download",
+        audience_hint=(
+            "Best for students who reached the Preview step but haven't "
+            "downloaded a CV (has_downloaded_cv=No)."
+        ),
+    ),
 }
 
 

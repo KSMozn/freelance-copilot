@@ -1,0 +1,33 @@
+Hi {first_name},
+
+Great news — your CV is ready.
+
+You created your CV on {app_name}, but it looks like you haven't
+downloaded it yet.
+
+Your CV is waiting for you, and you can choose the style that fits you
+best. {app_name} gives you 5 different CV templates to choose from:
+
+  * Classic
+  * Modern
+  * Minimal
+  * Academic
+  * Creative
+
+Pick your favorite template, download your CV, and start using it for
+internships, training opportunities, student activities, and job
+applications.
+
+Download your CV now:
+{app_url}
+
+Facing any issue while downloading or choosing a template? Tell us here
+and we'll improve the experience:
+{feedback_url}
+
+Your first professional CV is ready — don't leave it waiting.
+
+— {app_name}
+Helping students build their first professional CV.
+
+You're receiving this because you have a {app_name} account.

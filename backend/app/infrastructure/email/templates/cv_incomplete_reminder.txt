@@ -1,0 +1,22 @@
+Hi {first_name},
+
+You started building your first CV on {app_name}, but it looks like you
+haven't completed it yet.
+
+You're already a few steps away from having a professional CV you can use
+for internships, training opportunities, student activities, and your
+first job applications.
+
+Continue where you stopped and complete your CV today:
+{app_url}
+
+Facing any issue or not sure what to write? We'd love to help. Share your
+feedback or report any problem here:
+{feedback_url}
+
+Your career journey starts with one simple step — finishing your first CV.
+
+— {app_name}
+Helping students build their first professional CV.
+
+You're receiving this because you have a {app_name} account.

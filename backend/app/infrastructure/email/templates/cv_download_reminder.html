@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<!--
+  Template: cv_download_reminder
+  Audience: students who completed the wizard but haven't downloaded a CV.
+  Placeholders used:
+    {first_name}     - the student's first name (falls back to "there")
+    {app_name}       - "Careero" in prod
+    {app_url}        - CTA "Download My CV" link (routes to /student, Preview step)
+    {feedback_url}   - "Send Feedback" link (routes to /feedback)
+  All are single-brace because the renderer uses str.format_map.
+-->
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.06);">
+          <!-- Logo -->
+          <tr>
+            <td style="padding:28px 40px 8px 40px;text-align:center;">
+              <div style="font-size:24px;font-weight:800;color:#5b3fdf;letter-spacing:-0.02em;font-family:Arial,Helvetica,sans-serif;">
+                C+ {app_name}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Hero card -->
+          <tr>
+            <td style="padding:12px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;border-radius:14px;">
+                <tr>
+                  <td style="padding:44px 28px;">
+                    <div style="font-size:28px;line-height:1.15;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
+                      Your CV is ready<br/>
+                      <span style="color:#b39dff;">to download.</span>
+                    </div>
+                    <div style="margin-top:14px;font-size:13px;color:#cbd5e1;">
+                      Choose your favorite template and download your first
+                      professional CV.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Greeting + body copy -->
+          <tr>
+            <td style="padding:28px 40px 0 40px;">
+              <div style="font-size:20px;font-weight:700;color:#0f172a;">
+                Hi {first_name},
+              </div>
+              <div style="margin-top:10px;font-size:15px;font-weight:600;color:#5b3fdf;">
+                Great news &mdash; your CV is ready.
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 40px 0 40px;">
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#334155;">
+                You created your CV on {app_name}, but it looks like you
+                haven't downloaded it yet.
+              </p>
+              <p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#334155;">
+                Your CV is waiting for you, and you can choose the style that
+                fits you best.
+              </p>
+              <p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#334155;">
+                {app_name} gives you <strong>5 different CV templates</strong>
+                to choose from:
+              </p>
+            </td>
+          </tr>
+
+          <!-- Template chips -->
+          <tr>
+            <td style="padding:16px 40px 0 40px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding:4px;">
+                          <div style="display:inline-block;border:1px solid #ddd6fe;background:#f5f3ff;color:#5b3fdf;font-size:12px;font-weight:700;padding:8px 14px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Classic</div>
+                        </td>
+                        <td style="padding:4px;">
+                          <div style="display:inline-block;border:1px solid #ddd6fe;background:#f5f3ff;color:#5b3fdf;font-size:12px;font-weight:700;padding:8px 14px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Modern</div>
+                        </td>
+                        <td style="padding:4px;">
+                          <div style="display:inline-block;border:1px solid #ddd6fe;background:#f5f3ff;color:#5b3fdf;font-size:12px;font-weight:700;padding:8px 14px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Minimal</div>
+                        </td>
+                        <td style="padding:4px;">
+                          <div style="display:inline-block;border:1px solid #ddd6fe;background:#f5f3ff;color:#5b3fdf;font-size:12px;font-weight:700;padding:8px 14px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Academic</div>
+                        </td>
+                        <td style="padding:4px;">
+                          <div style="display:inline-block;border:1px solid #ddd6fe;background:#f5f3ff;color:#5b3fdf;font-size:12px;font-weight:700;padding:8px 14px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">Creative</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body continued -->
+          <tr>
+            <td style="padding:16px 40px 0 40px;">
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#334155;">
+                Pick your favorite template, download your CV, and start using
+                it for internships, training opportunities, student activities,
+                and job applications.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Primary CTA -->
+          <tr>
+            <td style="padding:28px 40px 0 40px;text-align:center;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{app_url}" style="height:48px;v-text-anchor:middle;width:220px;" arcsize="25%" strokecolor="#5b3fdf" fillcolor="#5b3fdf">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">Download My CV</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#5b3fdf" style="background-color:#5b3fdf;border-radius:12px;">
+                    <!-- CTA: Download My CV -> {app_url} -->
+                    <a href="{app_url}" style="display:inline-block;background-color:#5b3fdf;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;line-height:20px;padding:14px 36px;border-radius:12px;font-family:Arial,Helvetica,sans-serif;mso-padding-alt:0;">
+                      <span style="color:#ffffff;">Download My CV</span>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <!-- Feedback card -->
+          <tr>
+            <td style="padding:24px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0;font-size:13px;line-height:1.55;color:#1e3a8a;">
+                      Facing any issue while downloading or choosing a
+                      template? Tell us here and we'll improve the experience.
+                    </p>
+                    <!-- CTA: Send Feedback -> {feedback_url} -->
+                    <a href="{feedback_url}" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#1d4ed8;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">
+                      Send Feedback &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Closing -->
+          <tr>
+            <td style="padding:24px 40px 8px 40px;">
+              <p style="margin:0;font-size:13px;line-height:1.55;color:#64748b;">
+                Your first professional CV is ready &mdash; don't leave it
+                waiting.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0f172a;padding:18px 40px;color:#cbd5e1;font-size:12px;text-align:center;">
+              {app_name} — Helping students build their first professional CV.
+            </td>
+          </tr>
+        </table>
+
+        <div style="max-width:600px;width:100%;margin:16px auto 0;text-align:center;font-size:11px;color:#94a3b8;font-family:Arial,Helvetica,sans-serif;">
+          You're receiving this because you have a {app_name} account.
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -446,12 +446,14 @@ class AdminService:
         full_name = student_name or user.full_name or user.email
         first_name = (full_name or "there").strip().split()[0] if full_name else "there"
         links = (profile.links or {}) if profile else {}
+        app_url = settings.frontend_base_url.rstrip("/")
         return {
             "first_name": first_name,
             "full_name": full_name or "",
             "email": user.email,
             "app_name": settings.app_name,
-            "app_url": settings.frontend_base_url,
+            "app_url": app_url,
+            "feedback_url": f"{app_url}/feedback",
             "college": (profile.college if profile else "") or "",
             "major": (profile.major if profile else "") or "",
             "graduation_year": (
