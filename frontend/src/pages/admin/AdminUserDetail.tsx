@@ -56,11 +56,17 @@ export function AdminUserDetailPage() {
         refresh_token: res.refresh_token,
       };
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      const appOrigin =
-        window.location.hostname === "admin.personaarmory.com"
-          ? "https://app.personaarmory.com"
-          : window.location.origin.replace(/(^https?:\/\/)admin\./, "$1app.");
-      window.location.href = `${appOrigin}/impersonate#p=${encoded}`;
+      // Prefer the app.* origin when we're on a real admin subdomain
+      // (careero.app or the legacy personaarmory.com). On a single-origin
+      // dev setup we stay on the same host — the ?surface=app query param
+      // clears the sticky admin flag so the app bundle takes over and
+      // /impersonate can decode the fragment.
+      const host = window.location.hostname;
+      const isAdminSubdomain = host.startsWith("admin.");
+      const appOrigin = isAdminSubdomain
+        ? window.location.origin.replace(/(^https?:\/\/)admin\./, "$1app.")
+        : window.location.origin;
+      window.location.href = `${appOrigin}/impersonate?surface=app#p=${encoded}`;
     } catch {
       toast.error("Impersonation failed");
     }
