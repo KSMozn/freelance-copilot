@@ -5,15 +5,11 @@
 # from Code Owners" setting, this means Khaled (@KSMozn) MUST approve
 # any PR that changes a sensitive area.
 #
-# The maintainer's approval is required for anything listed below.
-# All other code can be approved by any trusted team reviewer.
-
-# ---- Default fallback --------------------------------------------------
-# Everything not otherwise owned needs at least one team member's review.
-# The maintainer stays on this list so no PR ships without their
-# awareness for the small team stage.
-*                                                                    @KSMozn
-
+# Files NOT listed here can be approved by any trusted reviewer with
+# push access. This keeps day-to-day contributions unblocked while
+# still protecting the areas where a bad change could break production
+# or leak data.
+#
 # ---- Product-critical: CV builder + rendering -------------------------
 /backend/app/application/services/student_cv_renderer.py             @KSMozn
 /backend/app/application/services/student_cv_docx_renderer.py        @KSMozn
