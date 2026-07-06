@@ -163,11 +163,13 @@ deployment**. Khaled must approve these. See §7.
 
 - **Every PR needs at least one approving review** before it can merge. GitHub branch
   protection enforces this.
-- **Khaled must approve** user-facing product changes and anything on the sensitive
-  list above (§6). CODEOWNERS enforces this — `.github/CODEOWNERS` auto-requests his
-  review on those paths.
-- **Small bug fixes and small UI tweaks** can be approved by any trusted team
-  reviewer.
+- **Khaled must approve** any PR touching a path listed in `.github/CODEOWNERS`
+  (CV builder, renderers, AI prompts, email templates, auth, migrations, config,
+  deploy tooling). GitHub auto-requests his review on those paths and blocks the
+  merge until he approves.
+- **PRs that don't touch a CODEOWNERS-listed path** can be approved and merged by
+  any trusted reviewer with push access — you don't need to wait for Khaled on a
+  frontend copy tweak or a docs typo.
 - **Approvals dismiss on new commits.** If you push after approval, the reviewer must
   re-approve. This is intentional — don't route around it.
 - **All review comments must be resolved** before merging. "Resolved" means the author
