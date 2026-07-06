@@ -21,10 +21,10 @@ The linkedin/github URLs stay in the existing `links` JSONB — this
 column is only for generated content and review state.
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
+from alembic import op
 
 revision = "0036_phase_o_career_pack"
 down_revision = "0035_phase_n_photo_transform"

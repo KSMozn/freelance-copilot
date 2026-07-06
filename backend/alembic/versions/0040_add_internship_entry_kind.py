@@ -5,7 +5,6 @@ enum-extension migrations (0037 for career_pack.*, 0039 for cv.docx).
 """
 from alembic import op
 
-
 revision = "0040_add_internship_entry_kind"
 down_revision = "0039_cv_docx_usage_kind"
 branch_labels = None

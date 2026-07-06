@@ -58,6 +58,17 @@ ignore = [
     "RUF046", # unnecessary-cast-to-int — `int(round(x))` is more explicit than `round(x)` in scoring code
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# The DOCX renderer names its locals after the OOXML tag they wrap
+# (`rPr`, `pPr`, `pBdr`, `tcPr`, `tblPr`). Renaming them to snake_case
+# hides the correspondence to the spec, which is the only reason
+# anyone reading this code will ever grep for those tokens. Same for
+# image dimensions (`W`, `H`, `NW`, `NH`) in the photo transform —
+# they mirror the PIL/CSS-cover math and lowercase would just add
+# noise.
+"app/application/services/student_cv_docx_renderer.py" = ["N802", "N806"]
+"tests/test_student_cv_docx_renderer.py" = ["N806"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

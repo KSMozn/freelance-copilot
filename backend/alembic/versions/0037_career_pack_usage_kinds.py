@@ -8,7 +8,6 @@ weren't in the enum.
 """
 from alembic import op
 
-
 revision = "0037_career_pack_usage_kinds"
 down_revision = "0036_phase_o_career_pack"
 branch_labels = None

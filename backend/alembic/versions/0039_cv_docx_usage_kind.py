@@ -7,7 +7,6 @@ the career_pack.* fix in 0037).
 """
 from alembic import op
 
-
 revision = "0039_cv_docx_usage_kind"
 down_revision = "0038_backfill_students"
 branch_labels = None

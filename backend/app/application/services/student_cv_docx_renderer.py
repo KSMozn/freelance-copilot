@@ -37,14 +37,15 @@ from __future__ import annotations
 
 import io
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from docx import Document
 from docx.document import Document as DocxDocument
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
-from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 from docx.table import _Cell
 from docx.text.paragraph import Paragraph

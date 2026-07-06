@@ -6,7 +6,6 @@ returned follow-ups (vague), and how many bullets it produced.
 """
 from alembic import op
 
-
 revision = "0041_coach_internship_usage_kind"
 down_revision = "0040_add_internship_entry_kind"
 branch_labels = None

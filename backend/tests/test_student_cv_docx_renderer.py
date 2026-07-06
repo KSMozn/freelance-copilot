@@ -448,6 +448,7 @@ def test_photo_fills_circle_on_landscape_and_portrait() -> None:
     PNG we produce has no fully-transparent pixel inside its inscribed
     circle (i.e. no visible white gaps)."""
     from PIL import Image
+
     from app.application.services.student_cv_docx_renderer import (
         _make_circular_photo,
     )
