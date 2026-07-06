@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.dto.admin_dto import (
     AdminActivityRow,
+    AdminEntryDetail,
     AdminOverview,
     AdminStudentSummary,
     AdminUserDetail,
@@ -47,6 +48,7 @@ WIZARD_STEPS = (
     "skills",
     "courses",
     "projects",
+    "internships",
     "volunteer",
     "languages",
     "certificates",
@@ -192,6 +194,7 @@ class AdminService:
             skills=counts["skills"],
             courses=counts["courses"],
             projects=counts["projects"],
+            internships=counts["internships"],
             volunteer=counts["volunteer"],
             languages=counts["languages"],
             certificates=counts["certificates"],
@@ -265,11 +268,17 @@ class AdminService:
                 has_linkedin = None
                 has_github = None
                 has_downloaded_cv = None
+            # Prefer the student's wizard name — many students register
+            # via OTP with no name field, then fill their name in the
+            # Basics step, so `users.full_name` stays NULL while
+            # `student_profile.full_name` has the real name. Falling
+            # back to profile matches what the CV / emails show.
+            display_name = (p.full_name if p and p.full_name else u.full_name)
             rows.append(
                 AdminUserRow(
                     id=u.id,
                     email=u.email,
-                    full_name=u.full_name,
+                    full_name=display_name,
                     persona_kind=u.selected_persona_kind,
                     is_active=u.is_active,
                     is_superuser=u.is_superuser,
@@ -284,6 +293,27 @@ class AdminService:
                 )
             )
         return rows, total
+
+    async def list_user_entries(
+        self, user_id: UUID, *, kind: str | None = None
+    ) -> list[AdminEntryDetail]:
+        """Return a user's StudentProfileEntry rows, optionally filtered
+        by kind. Used by the LLM-audit panel on AdminUserDetail so
+        admins can inspect what students typed AND what the LLM
+        produced (details.ai_summary + details.ai_bullets) without
+        impersonating the student.
+        """
+        q = select(StudentProfileEntry).where(
+            StudentProfileEntry.user_id == user_id
+        )
+        if kind:
+            q = q.where(StudentProfileEntry.kind == kind)
+        q = q.order_by(
+            StudentProfileEntry.sort_order,
+            StudentProfileEntry.created_at.desc(),
+        )
+        rows = (await self._session.execute(q)).scalars().all()
+        return [AdminEntryDetail.model_validate(r) for r in rows]
 
     async def get_user_detail(self, user_id: UUID) -> AdminUserDetail | None:
         u = await self._session.get(User, user_id)
@@ -330,10 +360,15 @@ class AdminService:
                 entries_by_kind=by_kind,
                 updated_at=profile.updated_at,
             )
+        # Same fallback as list_users — wizard-supplied name wins over
+        # a NULL users.full_name (common for OTP-registered students).
+        display_name = (
+            profile.full_name if profile and profile.full_name else u.full_name
+        )
         return AdminUserDetail(
             id=u.id,
             email=u.email,
-            full_name=u.full_name,
+            full_name=display_name,
             persona_kind=u.selected_persona_kind,
             is_active=u.is_active,
             is_superuser=u.is_superuser,
@@ -572,6 +607,14 @@ class AdminService:
             )
         ).scalars().all()
         by_id: dict[UUID, User] = {u.id: u for u in users}
+        # One round-trip for student profiles — used to fall back to
+        # the wizard-supplied name when users.full_name is NULL.
+        profile_rows = (
+            await self._session.execute(
+                select(StudentProfile).where(StudentProfile.user_id.in_(user_ids))
+            )
+        ).scalars().all()
+        profile_by_id: dict[UUID, StudentProfile] = {p.user_id: p for p in profile_rows}
         # One round-trip for the audit hits in the last 7 days.
         since = datetime.now(UTC) - timedelta(days=7)
         stmt = (
@@ -590,11 +633,15 @@ class AdminService:
             u = by_id.get(uid)
             if u is None:
                 continue
+            profile = profile_by_id.get(uid)
+            display_name = (
+                profile.full_name if profile and profile.full_name else u.full_name
+            )
             out.append(
                 BulkRecipient(
                     user_id=uid,
                     email=u.email,
-                    full_name=u.full_name,
+                    full_name=display_name,
                     has_recent_send=str(uid) in recent_ids,
                 )
             )

@@ -22,6 +22,7 @@ from app.application.dto.admin_dto import (
     AdminCvTemplateListResponse,
     AdminCvTemplateRead,
     AdminCvTemplateUpdate,
+    AdminEntriesResponse,
     AdminImpersonateResponse,
     AdminOverview,
     AdminUserDeleteRequest,
@@ -104,6 +105,21 @@ async def get_user(user_id: UUID, _: CurrentAdmin, svc: AdminSvc) -> AdminUserDe
     if detail is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return detail
+
+
+@router.get("/users/{user_id}/entries", response_model=AdminEntriesResponse)
+async def get_user_entries(
+    user_id: UUID,
+    _: CurrentAdmin,
+    svc: AdminSvc,
+    kind: str | None = Query(default=None, max_length=32),
+) -> AdminEntriesResponse:
+    """Read-only listing of a user's entries — surfaces raw + AI-
+    generated content on `details` so admins can audit LLM output
+    (internship bullets, project narratives) without impersonating.
+    """
+    items = await svc.list_user_entries(user_id, kind=kind)
+    return AdminEntriesResponse(items=items)
 
 
 # ---- Actions -----------------------------------------------------------

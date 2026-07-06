@@ -16,7 +16,6 @@ would be even less accurate.
 """
 from alembic import op
 
-
 revision = "0038_backfill_students"
 down_revision = "0037_career_pack_usage_kinds"
 branch_labels = None

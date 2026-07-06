@@ -6,6 +6,8 @@ import type {
   CvTemplateListResponse,
   DraftSummaryResponse,
   EmailCoachResponse,
+  InternshipCoachRequest,
+  InternshipCoachResponse,
   PhotoCoachResponse,
   ProofreadResponse,
   StudentEntry,
@@ -163,12 +165,30 @@ export function useDraftSummary() {
 export function useCoachText() {
   return useMutation({
     mutationFn: async (payload: {
-      field: "summary" | "project_description" | "volunteer_description";
+      field:
+        | "summary"
+        | "project_description"
+        | "volunteer_description"
+        | "internship_description";
       text: string;
       context?: Record<string, unknown>;
     }): Promise<TextCoachResponse> => {
       const { data } = await api.post<TextCoachResponse>(
         "/students/coach/text",
+        payload,
+      );
+      return data;
+    },
+  });
+}
+
+export function useImproveInternship() {
+  return useMutation({
+    mutationFn: async (
+      payload: InternshipCoachRequest,
+    ): Promise<InternshipCoachResponse> => {
+      const { data } = await api.post<InternshipCoachResponse>(
+        "/students/coach/internship",
         payload,
       );
       return data;
@@ -220,6 +240,15 @@ export async function fetchCvPreviewHtml(template?: string): Promise<string> {
 export async function downloadStudentCv(template?: string): Promise<Blob> {
   const params = template ? { template } : undefined;
   const res = await api.get("/students/cv.pdf", {
+    responseType: "blob",
+    params,
+  });
+  return res.data as Blob;
+}
+
+export async function downloadStudentCvDocx(template?: string): Promise<Blob> {
+  const params = template ? { template } : undefined;
+  const res = await api.get("/students/cv.docx", {
     responseType: "blob",
     params,
   });

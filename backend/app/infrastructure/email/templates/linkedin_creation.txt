@@ -15,7 +15,7 @@ Your LinkedIn Profile Journey:
   5. Projects — Showcase what you've built.
 
 Start your LinkedIn profile now:
-{app_url}
+{app_url}/student?step=starter-pack
 
 It only takes a few minutes.
 

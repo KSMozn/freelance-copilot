@@ -42,6 +42,7 @@ from app.infrastructure.db.base import Base
 STUDENT_ENTRY_KINDS = (
     "course",
     "project",
+    "internship",
     "volunteer",
     "certificate",
     "skill",

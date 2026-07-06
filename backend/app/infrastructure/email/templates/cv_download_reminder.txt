@@ -19,7 +19,7 @@ internships, training opportunities, student activities, and job
 applications.
 
 Download your CV now:
-{app_url}
+{app_url}/student?step=preview
 
 Facing any issue while downloading or choosing a template? Tell us here
 and we'll improve the experience:
