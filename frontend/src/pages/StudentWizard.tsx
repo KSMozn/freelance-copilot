@@ -181,14 +181,17 @@ export function StudentWizardPage() {
     });
   }
 
-  // Auto-mark the step done when the student lands on it. Steps like
-  // Preview and Career Starter Pack have no natural save action, so
-  // without this they never make it into completed_steps and the
-  // admin funnel undercounts. `mark_steps` is deduped server-side, so
-  // repeating is harmless — but we still guard on the local set to
-  // avoid an extra PATCH per navigation.
+  // Preview and Career Starter Pack are consume-only steps with no save
+  // action, so we auto-mark them done on land — otherwise the admin
+  // funnel undercounts and returning students loop back to Preview
+  // forever. Every other step must go through its own Save & continue
+  // to be marked complete; auto-marking on mere navigation inflates
+  // wizard-completion and lies about data that isn't actually captured
+  // (a real student was landing on impersonation with `completed_steps`
+  // containing all 13 slugs while only their name had been saved).
   useEffect(() => {
     if (!profile) return;
+    if (step.slug !== "preview" && step.slug !== "starter-pack") return;
     const already = profile.completed_steps ?? [];
     if (already.includes(step.slug)) return;
     void markStepDone(step.slug);
