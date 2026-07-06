@@ -1,0 +1,25 @@
+Hi {first_name},
+
+Great news — your CV is now available in DOCX format.
+
+You can now download your CV as a DOCX file from {app_name}, making it
+easier to edit, customize, and reuse whenever you need.
+
+Whether you want to fine-tune your content, update details, or
+personalize your layout later, the DOCX version gives you more
+flexibility.
+
+Download your CV in Word format and keep a flexible version ready for
+updates:
+{app_url}/student?step=preview
+
+Need help or found an issue? Visit the download page or share your
+feedback with us:
+{feedback_url}
+
+Your first professional CV is now easier to edit and update.
+
+— {app_name}
+Helping students build their first professional CV.
+
+You're receiving this because you have a {app_name} account.

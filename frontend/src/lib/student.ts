@@ -226,6 +226,15 @@ export async function downloadStudentCv(template?: string): Promise<Blob> {
   return res.data as Blob;
 }
 
+export async function downloadStudentCvDocx(template?: string): Promise<Blob> {
+  const params = template ? { template } : undefined;
+  const res = await api.get("/students/cv.docx", {
+    responseType: "blob",
+    params,
+  });
+  return res.data as Blob;
+}
+
 export function useCvTemplates() {
   return useQuery({
     queryKey: ["student", "cv-templates"] as const,

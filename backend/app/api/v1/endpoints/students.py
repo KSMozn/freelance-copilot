@@ -58,6 +58,9 @@ from app.application.services import usage_event_service
 from app.application.services.cv_template_service import CvTemplateService
 from app.application.services.feedback_service import FeedbackService
 from app.application.services.student_coach_service import StudentCoachService
+from app.application.services.student_cv_docx_renderer import (
+    StudentCvDocxRenderer,
+)
 from app.application.services.student_cv_renderer import (
     StudentCvRenderer,
     WeasyPrintUnavailable,
@@ -481,6 +484,59 @@ async def cv_pdf(
         content=pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
+    )
+
+
+@router.get("/cv.docx")
+async def cv_docx(
+    user: CurrentUser,
+    svc: StudentSvc,
+    session: SessionDep,
+    template: str | None = Query(default=None, max_length=64),
+) -> Response:
+    """Editable Word (.docx) export. Generated programmatically from
+    the structured profile — no PDF-to-DOCX conversion. Single column,
+    standard fonts, ATS-friendly.
+    """
+    profile, entries = await svc.load_profile_bundle(user.id)
+    photo_bytes, photo_mime = await _load_photo(svc, user.id)
+    slug = await CvTemplateService(session).resolve_slug(
+        requested=template,
+        profile_slug=profile.cv_template_slug if profile else None,
+    )
+    renderer = StudentCvDocxRenderer()
+    start = time.perf_counter()
+    try:
+        docx_bytes = renderer.render_docx(
+            profile=profile,
+            entries=entries,
+            photo_bytes=photo_bytes,
+            photo_mime=photo_mime,
+            template_slug=slug,
+        )
+    except Exception as exc:
+        _emit(user.id, "cv.docx", start, error=str(exc), meta={"template": slug})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not build DOCX",
+        ) from exc
+    filename = (profile.full_name if profile and profile.full_name else "cv").replace(
+        " ", "_"
+    )
+    _emit(
+        user.id,
+        "cv.docx",
+        start,
+        meta={"size_bytes": len(docx_bytes), "template": slug},
+    )
+    return Response(
+        content=docx_bytes,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}_CV.docx"',
+        },
     )
 
 

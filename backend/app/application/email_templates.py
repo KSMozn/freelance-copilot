@@ -64,6 +64,21 @@ EMAIL_TEMPLATES: dict[str, EmailTemplateSpec] = {
             "downloaded a CV (has_downloaded_cv=No)."
         ),
     ),
+    "docx_availability_announcement": EmailTemplateSpec(
+        id="docx_availability_announcement",
+        name="Now available: CV in DOCX",
+        description=(
+            "One-off announcement — the CV can now be downloaded as an "
+            "editable Word (.docx) file alongside the existing PDF. CTA "
+            "opens the download page."
+        ),
+        subject="Your {app_name} CV is now available in DOCX",
+        audience_hint=(
+            "Any student who has used the wizard. Especially valuable for "
+            "students who've already downloaded a PDF and might want an "
+            "editable copy."
+        ),
+    ),
 }
 
 

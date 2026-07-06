@@ -20,6 +20,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   downloadStudentCv,
+  downloadStudentCvDocx,
   fetchCvPreviewHtml,
   useCoachEmail,
   useCoachPhoto,
@@ -1470,7 +1471,11 @@ function StepPreview() {
   const proofread = useProofread();
   const [html, setHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  // null when idle; "pdf" or "docx" while that format is being built.
+  // A single field so the menu can label just the clicked row.
+  const [downloadingFormat, setDownloadingFormat] = useState<
+    "pdf" | "docx" | null
+  >(null);
   // Currently previewed template slug. Not necessarily saved — user
   // must click "Set as default" to persist the choice.
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
@@ -1529,30 +1534,35 @@ function StepPreview() {
     }
   }
 
-  async function download() {
-    setDownloading(true);
+  async function download(format: "pdf" | "docx") {
+    setDownloadingFormat(format);
     try {
-      const blob = await downloadStudentCv(selectedSlug ?? undefined);
+      const blob =
+        format === "pdf"
+          ? await downloadStudentCv(selectedSlug ?? undefined)
+          : await downloadStudentCvDocx(selectedSlug ?? undefined);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       const fname = (profile?.full_name ?? "cv").replace(/\s+/g, "_");
-      a.download = `${fname}.pdf`;
+      a.download = format === "pdf" ? `${fname}.pdf` : `${fname}_CV.docx`;
       a.click();
       URL.revokeObjectURL(url);
       // Prompt for a rating right after a successful download.
       setShowSurvey(true);
     } catch (err) {
       const status = (err as { response?: { status?: number } } | undefined)?.response?.status;
-      if (status === 503) {
+      if (format === "pdf" && status === 503) {
         toast.error(
           "PDF renderer isn't installed in this environment. Rebuild the backend image to install WeasyPrint system deps.",
         );
       } else {
-        toast.error("Could not download PDF");
+        toast.error(
+          format === "pdf" ? "Could not download PDF" : "Could not download DOCX",
+        );
       }
     } finally {
-      setDownloading(false);
+      setDownloadingFormat(null);
     }
   }
 
@@ -1634,14 +1644,10 @@ function StepPreview() {
         >
           {proofread.isPending ? "Proofreading…" : "Proofread with AI"}
         </Button>
-        <Button
-          variant="brand"
-          size="lg"
-          onClick={() => void download()}
-          disabled={downloading}
-        >
-          {downloading ? "Preparing…" : "Download PDF"}
-        </Button>
+        <DownloadCvMenu
+          busyFormat={downloadingFormat}
+          onDownload={(fmt) => void download(fmt)}
+        />
       </div>
 
       {templates.length > 1 && (
@@ -1770,6 +1776,83 @@ function StepPreview() {
 }
 
 // ---- Step: Career Starter Pack ----------------------------------------
+
+function DownloadCvMenu({
+  busyFormat,
+  onDownload,
+}: {
+  busyFormat: "pdf" | "docx" | null;
+  onDownload: (format: "pdf" | "docx") => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside closes the menu — same pattern as Combobox.
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const busy = busyFormat !== null;
+  const label = busy
+    ? busyFormat === "pdf"
+      ? "Preparing PDF…"
+      : "Preparing DOCX…"
+    : "Download CV";
+
+  return (
+    <div ref={rootRef} className="relative">
+      <Button
+        variant="brand"
+        size="lg"
+        onClick={() => setOpen((o) => !o)}
+        disabled={busy}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {label} {!busy && <span aria-hidden className="ml-1">▾</span>}
+      </Button>
+      {open && !busy && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-md border bg-card text-card-foreground shadow-lg"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onDownload("pdf");
+            }}
+            className="block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+          >
+            <div className="font-medium">PDF</div>
+            <div className="text-xs text-muted-foreground">
+              Final, print-ready
+            </div>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onDownload("docx");
+            }}
+            className="block w-full border-t border-border/60 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+          >
+            <div className="font-medium">DOCX</div>
+            <div className="text-xs text-muted-foreground">
+              Editable in Word or Google Docs
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StepStarterPack() {
   return (

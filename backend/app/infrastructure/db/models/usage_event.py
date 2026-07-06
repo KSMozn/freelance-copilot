@@ -30,6 +30,7 @@ USAGE_EVENT_KINDS = (
     "coach.email",
     "cv.preview",
     "cv.pdf",
+    "cv.docx",
     "career_pack.linkedin.generate",
     "career_pack.linkedin.review",
     "career_pack.github.generate",

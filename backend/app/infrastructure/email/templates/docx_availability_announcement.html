@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<!--
+  Template: docx_availability_announcement
+  Audience: existing students, one-off announcement of the DOCX export.
+  Placeholders used:
+    {first_name}     - the student's first name (falls back to "there")
+    {app_name}       - "Careero" in prod
+    {app_url}        - CTA "Download My CV (.DOCX)" (routes to /student?step=preview)
+    {feedback_url}   - "Send Feedback" link (routes to /feedback)
+  All are single-brace because the renderer uses str.format_map.
+-->
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.06);">
+          <tr>
+            <td style="padding:28px 40px 8px 40px;text-align:center;">
+              <div style="font-size:24px;font-weight:800;color:#5b3fdf;letter-spacing:-0.02em;font-family:Arial,Helvetica,sans-serif;">
+                C+ {app_name}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#5b3fdf;border-radius:14px;">
+                <tr>
+                  <td style="padding:44px 32px;">
+                    <div style="font-size:30px;line-height:1.15;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
+                      Now you can<br/>
+                      download your<br/>
+                      CV in
+                      <span style="display:inline-block;background:#7c3aed;color:#ffffff;padding:2px 12px;border-radius:8px;">DOCX.</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 40px 0 40px;">
+              <div style="font-size:20px;font-weight:700;color:#0f172a;">
+                Hi {first_name},
+              </div>
+              <div style="margin-top:10px;font-size:15px;font-weight:600;color:#7c3aed;">
+                Great news &mdash; your CV is now available in DOCX format.
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 40px 0 40px;">
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#334155;">
+                You can now download your CV as a DOCX file from {app_name},
+                making it easier to edit, customize, and reuse whenever you
+                need.
+              </p>
+              <p style="margin:14px 0 0;font-size:15px;line-height:1.6;color:#334155;">
+                Whether you want to fine-tune your content, update details,
+                or personalize your layout later, the DOCX version gives you
+                more flexibility.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:20px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 18px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="52" valign="middle">
+                          <div style="width:44px;height:44px;background:#2563eb;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:20px;line-height:44px;text-align:center;border-radius:8px;">W</div>
+                        </td>
+                        <td valign="middle" style="padding-left:14px;">
+                          <p style="margin:0;font-size:14px;line-height:1.55;color:#1e293b;">
+                            Download your CV in Word format and keep a
+                            flexible version ready for updates.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 40px 0 40px;text-align:center;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{app_url}/student?step=preview" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="25%" strokecolor="#5b3fdf" fillcolor="#5b3fdf">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">Download My CV (.DOCX)</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#5b3fdf" style="background-color:#5b3fdf;border-radius:14px;">
+                    <a href="{app_url}/student?step=preview" style="display:inline-block;background-color:#5b3fdf;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;line-height:20px;padding:16px 40px;border-radius:14px;font-family:Arial,Helvetica,sans-serif;mso-padding-alt:0;">
+                      <span style="color:#ffffff;">⬇  Download My CV (.DOCX)</span>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 18px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="42" valign="top">
+                          <div style="width:34px;height:34px;background:#2563eb;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:16px;line-height:34px;text-align:center;border-radius:999px;">?</div>
+                        </td>
+                        <td valign="top" style="padding-left:12px;">
+                          <p style="margin:0;font-size:13px;line-height:1.55;color:#1e3a8a;">
+                            Need help or found an issue? Visit the download
+                            page or share your feedback with us.
+                          </p>
+                          <a href="{feedback_url}" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#1d4ed8;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">
+                            Send Feedback &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 40px 8px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 20px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="42" valign="middle">
+                          <div style="width:34px;height:34px;background:#7c3aed;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:18px;line-height:34px;text-align:center;border-radius:999px;">✓</div>
+                        </td>
+                        <td valign="middle" style="padding-left:12px;">
+                          <p style="margin:0;font-size:14px;line-height:1.55;color:#1e293b;">
+                            Your first professional CV is now
+                            <span style="color:#7c3aed;font-weight:700;">easier to edit and update.</span>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#0f172a;padding:18px 40px;color:#cbd5e1;font-size:12px;text-align:center;">
+              {app_name} — Helping students build their first professional CV.
+            </td>
+          </tr>
+        </table>
+
+        <div style="max-width:600px;width:100%;margin:16px auto 0;text-align:center;font-size:11px;color:#94a3b8;font-family:Arial,Helvetica,sans-serif;">
+          You're receiving this because you have a {app_name} account.
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
