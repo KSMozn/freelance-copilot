@@ -12,6 +12,7 @@ const KIND_OPTIONS = [
   { value: "coach.proofread", label: "coach.proofread" },
   { value: "coach.photo", label: "coach.photo" },
   { value: "coach.text", label: "coach.text" },
+  { value: "coach.internship", label: "coach.internship" },
   { value: "cv.pdf", label: "cv.pdf" },
   { value: "cv.preview", label: "cv.preview" },
   { value: "admin.action", label: "admin.action" },

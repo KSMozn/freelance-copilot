@@ -18,6 +18,7 @@ import {
   useAdminResetWizard,
   useAdminSendEmail,
   useAdminUser,
+  useAdminUserEntries,
 } from "@/lib/admin";
 
 export function AdminUserDetailPage() {
@@ -188,6 +189,8 @@ export function AdminUserDetailPage() {
 
       {id && <SendEmailCard userId={id} userEmail={user.email} />}
 
+      {id && user.student && <InternshipAuditPanel userId={id} />}
+
       {confirmingDelete && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardHeader>
@@ -276,7 +279,7 @@ export function AdminUserDetailPage() {
               <Row k="GPA" v={user.student.gpa ?? "—"} />
               <Row
                 k="Wizard"
-                v={`${user.student.completed_steps.length}/11 · current: ${user.student.current_step ?? "none"}`}
+                v={`${user.student.completed_steps.length}/13 · current: ${user.student.current_step ?? "none"}`}
               />
               <Row k="Entries" v={user.student.entries_count.toString()} />
               {user.student.headline && <Row k="Headline" v={user.student.headline} />}
@@ -491,4 +494,124 @@ function EmailPreviewModal({
       </div>
     </div>
   );
+}
+
+// ---- Internship audit panel --------------------------------------------
+//
+// Read-only view of the raw student input + LLM-generated summary +
+// bullets. Lets admins spot hallucinated content or empty drafts
+// without impersonating the student.
+
+function InternshipAuditPanel({ userId }: { userId: string }) {
+  const { data, isLoading } = useAdminUserEntries(userId, "internship");
+  const items = data?.items ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Internships (audit)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <div className="text-xs text-muted-foreground">Loading…</div>
+        ) : items.length === 0 ? (
+          <div className="text-xs text-muted-foreground">
+            No internships yet.
+          </div>
+        ) : (
+          items.map((it) => {
+            const d = (it.details ?? {}) as Record<string, unknown>;
+            const aiSummary = (d.ai_summary as string | undefined) ?? "";
+            const aiBullets = (d.ai_bullets as string[] | undefined) ?? [];
+            const responsibilities = (d.responsibilities as string | undefined) ?? "";
+            const achievements = (d.achievements as string | undefined) ?? "";
+            const tools = (d.tools as string[] | undefined) ?? [];
+            const skills = (d.skills_gained as string[] | undefined) ?? [];
+            const field = (d.field as string | undefined) ?? null;
+            const workMode = (d.work_mode as string | undefined) ?? null;
+            const dates = _formatEntryRange(it.start_date, it.end_date, it.is_current);
+            return (
+              <div key={it.id} className="rounded-lg border bg-background p-3 text-sm">
+                <div className="font-medium">
+                  {it.title}
+                  {it.organization ? (
+                    <span className="text-muted-foreground"> @ {it.organization}</span>
+                  ) : null}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {[dates, field, workMode].filter(Boolean).join(" · ")}
+                </div>
+                <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      Raw input
+                    </div>
+                    {responsibilities && (
+                      <div className="mt-1 whitespace-pre-wrap rounded bg-muted/30 p-2 text-xs">
+                        <span className="font-medium">Responsibilities:</span>{" "}
+                        {responsibilities}
+                      </div>
+                    )}
+                    {achievements && (
+                      <div className="mt-1 whitespace-pre-wrap rounded bg-muted/30 p-2 text-xs">
+                        <span className="font-medium">Achievements:</span>{" "}
+                        {achievements}
+                      </div>
+                    )}
+                    {tools.length > 0 && (
+                      <div className="mt-1 text-xs">
+                        <span className="font-medium">Tools:</span> {tools.join(", ")}
+                      </div>
+                    )}
+                    {skills.length > 0 && (
+                      <div className="mt-1 text-xs">
+                        <span className="font-medium">Skills:</span>{" "}
+                        {skills.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      AI output
+                    </div>
+                    {aiSummary ? (
+                      <div className="mt-1 rounded bg-primary/5 p-2 text-xs italic">
+                        {aiSummary}
+                      </div>
+                    ) : (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        No AI summary saved.
+                      </div>
+                    )}
+                    {aiBullets.length > 0 ? (
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+                        {aiBullets.map((b, i) => (
+                          <li key={i}>{b}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        No AI bullets saved.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function _formatEntryRange(
+  start: string | null,
+  end: string | null,
+  isCurrent: boolean,
+): string {
+  const e = isCurrent ? "Present" : end ?? "";
+  const s = start ?? "";
+  if (s && e) return `${s} – ${e}`;
+  return s || e;
 }

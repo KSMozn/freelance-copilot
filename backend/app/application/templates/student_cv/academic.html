@@ -82,6 +82,8 @@
   .entry .dates { color: #78716c; font-size: 10pt; white-space: nowrap; }
   .entry .desc { margin: 1mm 0 0 0; color: #44403c; text-align: justify; }
   .entry .tags { margin-top: 1mm; font-size: 10pt; color: #57534e; font-style: italic; }
+  .entry ul.bullets { margin: 1.5mm 0 0 5mm; padding: 0; color: #44403c; }
+  .entry ul.bullets li { margin-bottom: 0.5mm; line-height: 1.35; }
   .list-row { color: #44403c; }
   .list-row span { margin-right: 4mm; }
   .list-row strong { color: #292524; }
@@ -166,14 +168,24 @@
                 {% endif %}
               </div>
             </div>
-            {% set body = item.narrative or item.description %}
-            {% if body %}<p class="desc">{{ body }}</p>{% endif %}
-            {% if item.details.tech_stack and not item.narrative %}
-              <div class="tags">
-                Methods: {% for tech in item.details.tech_stack %}{{ tech }}{% if not loop.last %}, {% endif %}{% endfor %}
-              </div>
+            {% if section.kind == 'internship' %}
+              {% if item.summary %}<p class="desc"><em>{{ item.summary }}</em></p>{% endif %}
+              {% if item.bullets %}
+                <ul class="bullets">
+                  {% for b in item.bullets %}<li>{{ b }}</li>{% endfor %}
+                </ul>
+              {% endif %}
+              {% if item.url %}<div class="tags"><a href="{{ item.url }}">{{ item.url }}</a></div>{% endif %}
+            {% else %}
+              {% set body = item.narrative or item.description %}
+              {% if body %}<p class="desc">{{ body }}</p>{% endif %}
+              {% if item.details.tech_stack and not item.narrative %}
+                <div class="tags">
+                  Methods: {% for tech in item.details.tech_stack %}{{ tech }}{% if not loop.last %}, {% endif %}{% endfor %}
+                </div>
+              {% endif %}
+              {% if item.url %}<div class="tags"><a href="{{ item.url }}">{{ item.url }}</a></div>{% endif %}
             {% endif %}
-            {% if item.url %}<div class="tags"><a href="{{ item.url }}">{{ item.url }}</a></div>{% endif %}
           </div>
         {% endfor %}
       {% endif %}

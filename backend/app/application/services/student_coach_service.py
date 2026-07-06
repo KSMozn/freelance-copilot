@@ -28,6 +28,8 @@ from app.application.dto.student_dto import (
     DraftSummaryResponse,
     EmailCoachRequest,
     EmailCoachResponse,
+    InternshipCoachRequest,
+    InternshipCoachResponse,
     PhotoCoachResponse,
     ProofreadFix,
     ProofreadResponse,
@@ -621,3 +623,215 @@ class StudentCoachService:
         notes_raw = data.get("notes") or []
         notes = [str(n) for n in notes_raw if isinstance(n, str)]
         return TextCoachResponse(ok=True, rewritten=rewritten, notes=notes)
+
+    # ---- Internship coach ---------------------------------------------
+    #
+    # Converts the student's raw fields (responsibilities / achievements
+    # / tools / skills) into a short professional summary plus 2–4 CV
+    # bullets. If the input is too thin to make useful bullets the
+    # response returns `vague=true` with two follow-up questions instead
+    # of guessing. Honesty rules: the LLM may only surface facts already
+    # in the input — never invent employer details, dates, metrics, or
+    # technologies the student didn't mention.
+
+    async def improve_internship(
+        self, req: InternshipCoachRequest
+    ) -> InternshipCoachResponse:
+        # Cheap pre-flight — if the student typed almost nothing, don't
+        # burn a roundtrip. Return follow-up questions immediately.
+        payload_words = _internship_input_word_count(req)
+        if payload_words < 12 and not req.follow_up_answers:
+            return InternshipCoachResponse(
+                ok=True,
+                vague=True,
+                follow_ups=_INTERNSHIP_FOLLOW_UPS[:2],
+                notes=["Need a few more details before drafting bullets."],
+            )
+
+        system = _INTERNSHIP_COACH_SYSTEM
+        user = _build_internship_user_prompt(req)
+        try:
+            raw = await self._ai.complete_json(
+                system_prompt=system, user_prompt=user
+            )
+        except Exception as exc:  # coach is best-effort; never gate the wizard
+            logger.warning("Internship coach failed: %s", exc)
+            return InternshipCoachResponse(
+                ok=False, notes=["AI unavailable — try again later."]
+            )
+        data = raw.data or {}
+        # LLM may signal vagueness even when we passed the pre-flight —
+        # honour it.
+        if data.get("vague") is True:
+            follow_ups = [
+                str(q) for q in (data.get("follow_ups") or []) if isinstance(q, str)
+            ]
+            if not follow_ups:
+                follow_ups = _INTERNSHIP_FOLLOW_UPS[:2]
+            return InternshipCoachResponse(
+                ok=True, vague=True, follow_ups=follow_ups[:3],
+                notes=["Need a few more details before drafting bullets."],
+            )
+        summary_raw = data.get("summary")
+        summary = summary_raw.strip() if isinstance(summary_raw, str) else None
+        bullets_raw = data.get("bullets") or []
+        bullets = [
+            str(b).strip()
+            for b in bullets_raw
+            if isinstance(b, str) and b.strip()
+        ][:4]
+        if not summary or len(bullets) < 2:
+            # Model returned garbage — treat as vague fallback so the
+            # student sees something actionable.
+            return InternshipCoachResponse(
+                ok=True, vague=True,
+                follow_ups=_INTERNSHIP_FOLLOW_UPS[:2],
+                notes=["Draft didn't come out useful — try adding more detail."],
+            )
+        tools_suggested = [
+            str(t).strip()
+            for t in (data.get("tools_suggested") or [])
+            if isinstance(t, str) and t.strip()
+        ][:12]
+        skills_suggested = [
+            str(s).strip()
+            for s in (data.get("skills_suggested") or [])
+            if isinstance(s, str) and s.strip()
+        ][:12]
+        notes = [
+            str(n) for n in (data.get("notes") or []) if isinstance(n, str)
+        ]
+        return InternshipCoachResponse(
+            ok=True,
+            vague=False,
+            summary=summary,
+            bullets=bullets,
+            tools_suggested=tools_suggested,
+            skills_suggested=skills_suggested,
+            notes=notes,
+        )
+
+
+# --- Internship coach helpers ------------------------------------------
+
+
+_INTERNSHIP_FOLLOW_UPS: tuple[str, ...] = (
+    "What kind of tasks did you actually do day to day?",
+    "Did you use any specific tools, technologies, or platforms?",
+    "Was there a final project, report, presentation, or certificate?",
+    "Did you work with a team, mentor, or supervisor?",
+)
+
+
+_INTERNSHIP_COACH_SYSTEM = """You help students describe their internship experience on a
+professional CV. The student provides raw fields — organization, role,
+what they did, tools they used, skills they gained, achievements. Your
+job is to convert that into ONE short professional summary sentence and
+2–4 ATS-friendly bullet points.
+
+Non-negotiable honesty rules:
+
+* Use ONLY facts the student provided. Never invent employer details,
+  metrics, numbers, timelines, technologies, achievements, deliverables,
+  awards, team sizes, or outcomes that were not mentioned.
+* If the student mentioned a tool by generic name (e.g. "database"),
+  don't upgrade it into a specific brand.
+* Start every bullet with a strong past-tense action verb (Assisted,
+  Built, Tested, Analyzed, Supported, Coordinated, Documented,
+  Designed, Prepared, Presented, Reviewed, …). Never "Responsible for"
+  or "Helped with".
+* Prefer measurable impact when the student provided numbers; otherwise
+  focus on contribution, collaboration, tools, and skills gained.
+* Keep bullets to one line each. ATS-friendly plain text, no emoji.
+* Never exaggerate. If the student said "I made small fixes", say
+  "Contributed to minor fixes", not "Led critical infrastructure".
+
+If the input is too vague to draft honest bullets, return
+`{"vague": true, "follow_ups": ["...", "..."]}` with 1–3 short
+questions the student can answer to give you enough to work with.
+
+Otherwise return strict JSON:
+
+{
+  "vague": false,
+  "summary": "one professional sentence describing the internship overall",
+  "bullets": ["Bullet 1.", "Bullet 2.", "Bullet 3."],
+  "tools_suggested": ["Tool A", "Tool B"],
+  "skills_suggested": ["Skill A", "Skill B"],
+  "notes": []
+}
+
+`tools_suggested` and `skills_suggested` echo back a cleaned list of
+what the student already mentioned — don't add anything they didn't
+mention.
+"""
+
+
+def _internship_input_word_count(req: InternshipCoachRequest) -> int:
+    """Count non-trivial words across responsibilities + achievements +
+    tools + skills + follow-up answers. Used for the pre-flight vague
+    check so we don't call the LLM on essentially empty input."""
+    blob = " ".join(
+        s
+        for s in (
+            req.responsibilities or "",
+            req.achievements or "",
+            " ".join(req.tools or []),
+            " ".join(req.skills_gained or []),
+            " ".join(req.follow_up_answers or []),
+        )
+        if s
+    )
+    return len([w for w in re.split(r"\s+", blob.strip()) if len(w) >= 2])
+
+
+_WORK_MODE_LABELS = {
+    "on_site": "on-site",
+    "remote": "remote",
+    "hybrid": "hybrid",
+}
+
+_INTERNSHIP_FIELD_LABELS = {
+    "software_engineering": "Software Engineering",
+    "data_analysis": "Data Analysis",
+    "marketing": "Marketing",
+    "hr": "HR",
+    "finance": "Finance",
+    "design": "Design",
+    "customer_support": "Customer Support",
+    "other": "Other",
+}
+
+
+def _build_internship_user_prompt(req: InternshipCoachRequest) -> str:
+    """Assemble the LLM user prompt from the student's structured
+    fields. Kept explicit and greppable rather than a giant f-string."""
+    lines: list[str] = []
+    lines.append(f"Organization: {req.organization}")
+    lines.append(f"Role: {req.title}")
+    if req.field_:
+        lines.append(f"Field: {_INTERNSHIP_FIELD_LABELS.get(req.field_, req.field_)}")
+    if req.location:
+        lines.append(f"Location: {req.location}")
+    if req.work_mode:
+        lines.append(f"Work mode: {_WORK_MODE_LABELS.get(req.work_mode, req.work_mode)}")
+    if req.department:
+        lines.append(f"Department / team: {req.department}")
+    if req.responsibilities:
+        lines.append(f"Responsibilities (student's own words):\n{req.responsibilities.strip()}")
+    if req.achievements:
+        lines.append(f"Achievements (student's own words):\n{req.achievements.strip()}")
+    if req.tools:
+        lines.append(f"Tools / technologies: {', '.join(req.tools)}")
+    if req.skills_gained:
+        lines.append(f"Skills gained: {', '.join(req.skills_gained)}")
+    if req.follow_up_answers:
+        lines.append(
+            "Follow-up answers the student added after the first pass:\n"
+            + "\n".join(f"- {a.strip()}" for a in req.follow_up_answers if a.strip())
+        )
+    lines.append(
+        "\nReturn JSON only. If the input is still too thin, set vague=true "
+        "and return follow_ups. Otherwise return summary + 2-4 bullets."
+    )
+    return "\n".join(lines)

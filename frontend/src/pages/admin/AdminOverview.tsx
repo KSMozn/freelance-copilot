@@ -209,6 +209,7 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
     ["Skills", funnel.skills],
     ["Courses", funnel.courses],
     ["Projects", funnel.projects],
+    ["Internships", funnel.internships],
     ["Volunteer", funnel.volunteer],
     ["Languages", funnel.languages],
     ["Certificates", funnel.certificates],

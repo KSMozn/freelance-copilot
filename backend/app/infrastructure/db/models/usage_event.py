@@ -35,6 +35,7 @@ USAGE_EVENT_KINDS = (
     "career_pack.linkedin.review",
     "career_pack.github.generate",
     "career_pack.github.review",
+    "coach.internship",
     "admin.impersonate",
     "admin.action",
     "error",

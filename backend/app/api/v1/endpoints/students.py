@@ -44,6 +44,8 @@ from app.application.dto.student_dto import (
     DraftSummaryResponse,
     EmailCoachRequest,
     EmailCoachResponse,
+    InternshipCoachRequest,
+    InternshipCoachResponse,
     PhotoCoachResponse,
     ProofreadResponse,
     StudentEntryListResponse,
@@ -334,6 +336,40 @@ async def coach_text(
         _emit(user.id, "coach.text", start, error=str(exc))
         raise
     _emit(user.id, "coach.text", start, meta={"field": payload.field})
+    return result
+
+
+@router.post("/coach/internship", response_model=InternshipCoachResponse)
+async def coach_internship(
+    payload: InternshipCoachRequest, user: CurrentUser, ai: AiDep
+) -> InternshipCoachResponse:
+    """Convert raw internship input into a professional summary + 2-4
+    ATS bullets. If the input is too vague, returns follow-up questions
+    instead of guessing.
+    """
+    coach = StudentCoachService(ai)
+    start = time.perf_counter()
+    try:
+        result = await coach.improve_internship(payload)
+    except Exception as exc:
+        _emit(
+            user.id,
+            "coach.internship",
+            start,
+            error=str(exc),
+            meta={"field": payload.field_},
+        )
+        raise
+    _emit(
+        user.id,
+        "coach.internship",
+        start,
+        meta={
+            "field": payload.field_,
+            "vague": result.vague,
+            "bullet_count": len(result.bullets),
+        },
+    )
     return result
 
 

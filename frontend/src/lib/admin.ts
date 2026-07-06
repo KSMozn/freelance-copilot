@@ -7,6 +7,7 @@ import type {
   AdminCvTemplate,
   AdminCvTemplateListResponse,
   AdminCvTemplateUpdate,
+  AdminEntriesResponse,
   AdminImpersonateResponse,
   AdminOverview,
   AdminUserDetail,
@@ -56,6 +57,23 @@ export function useAdminUser(id: string | undefined) {
     enabled: !!id,
     queryFn: async () => {
       const { data } = await api.get<AdminUserDetail>(`/admin/users/${id}`);
+      return data;
+    },
+  });
+}
+
+export function useAdminUserEntries(
+  id: string | undefined,
+  kind?: string,
+) {
+  return useQuery({
+    queryKey: ["admin", "user", id ?? "none", "entries", kind ?? ""] as const,
+    enabled: !!id,
+    queryFn: async () => {
+      const { data } = await api.get<AdminEntriesResponse>(
+        `/admin/users/${id}/entries`,
+        { params: kind ? { kind } : undefined },
+      );
       return data;
     },
   });

@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.dto.admin_dto import (
     AdminActivityRow,
+    AdminEntryDetail,
     AdminOverview,
     AdminStudentSummary,
     AdminUserDetail,
@@ -47,6 +48,7 @@ WIZARD_STEPS = (
     "skills",
     "courses",
     "projects",
+    "internships",
     "volunteer",
     "languages",
     "certificates",
@@ -192,6 +194,7 @@ class AdminService:
             skills=counts["skills"],
             courses=counts["courses"],
             projects=counts["projects"],
+            internships=counts["internships"],
             volunteer=counts["volunteer"],
             languages=counts["languages"],
             certificates=counts["certificates"],
@@ -290,6 +293,27 @@ class AdminService:
                 )
             )
         return rows, total
+
+    async def list_user_entries(
+        self, user_id: UUID, *, kind: str | None = None
+    ) -> list[AdminEntryDetail]:
+        """Return a user's StudentProfileEntry rows, optionally filtered
+        by kind. Used by the LLM-audit panel on AdminUserDetail so
+        admins can inspect what students typed AND what the LLM
+        produced (details.ai_summary + details.ai_bullets) without
+        impersonating the student.
+        """
+        q = select(StudentProfileEntry).where(
+            StudentProfileEntry.user_id == user_id
+        )
+        if kind:
+            q = q.where(StudentProfileEntry.kind == kind)
+        q = q.order_by(
+            StudentProfileEntry.sort_order,
+            StudentProfileEntry.created_at.desc(),
+        )
+        rows = (await self._session.execute(q)).scalars().all()
+        return [AdminEntryDetail.model_validate(r) for r in rows]
 
     async def get_user_detail(self, user_id: UUID) -> AdminUserDetail | None:
         u = await self._session.get(User, user_id)

@@ -164,7 +164,7 @@ export function AdminUsersPage() {
                       <Td>
                         {u.wizard_step || u.wizard_completed > 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            {u.wizard_completed}/12
+                            {u.wizard_completed}/13
                             {u.wizard_step ? ` · ${u.wizard_step}` : ""}
                           </span>
                         ) : (

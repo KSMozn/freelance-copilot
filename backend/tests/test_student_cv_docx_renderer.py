@@ -362,6 +362,85 @@ def test_links_are_real_hyperlinks_with_short_labels() -> None:
         assert "https://amina.dev" in targets
 
 
+def test_internship_ai_bullets_render_verbatim() -> None:
+    """Internships store the LLM-polished summary+bullets on
+    entry.details. The DOCX must render each bullet on its own line
+    (not squash them into a paragraph) so ATS parsers pick them up."""
+    p = _profile()
+    entries = [
+        _entry(
+            kind="internship",
+            title="Software Development Intern",
+            organization="TechNova Solutions",
+            details={
+                "field": "software_engineering",
+                "work_mode": "remote",
+                "responsibilities": "helped test the website, fixed small bugs",
+                "tools": ["GitHub", "VS Code"],
+                "skills_gained": ["debugging", "collaboration"],
+                "ai_summary": (
+                    "Completed a software engineering internship "
+                    "focused on website testing and bug reporting."
+                ),
+                "ai_bullets": [
+                    "Assisted in testing website features and validating flows.",
+                    "Reported bugs and supported the engineering team.",
+                    "Contributed to minor frontend fixes under supervision.",
+                ],
+            },
+            start=date(2024, 5, 1),
+            end=date(2024, 8, 1),
+        ),
+    ]
+    b = StudentCvDocxRenderer().render_docx(
+        profile=p, entries=entries, template_slug="classic"
+    )
+    texts = _paragraph_texts(b)
+    joined = "\n".join(texts)
+    assert "Internships" in joined
+    assert "TechNova Solutions" in joined
+    for bullet in (
+        "Assisted in testing website features",
+        "Reported bugs and supported",
+        "Contributed to minor frontend fixes",
+    ):
+        assert any(bullet in t for t in texts), f"missing bullet: {bullet!r}"
+
+
+def test_internship_deterministic_fallback_when_no_ai_bullets() -> None:
+    """A student who saved an internship without asking the coach
+    should still get usable bullets on their CV — composed from
+    responsibilities/achievements/tools by the deterministic helper."""
+    from app.application.services.student_cv_renderer import (
+        _deterministic_internship_bullets,
+    )
+    from app.infrastructure.db.models.student_profile import (
+        StudentProfileEntry,
+    )
+    e = StudentProfileEntry()
+    e.kind = "internship"
+    e.title = "Marketing Intern"
+    e.organization = "BrightWave Media"
+    e.description = None
+    e.details = {
+        "responsibilities": "I helped with social media campaigns\nI created content ideas",
+        "tools": ["Canva", "Meta Ads Manager"],
+        "skills_gained": ["copywriting"],
+    }
+    bullets = _deterministic_internship_bullets(e)
+    assert 1 <= len(bullets) <= 4
+    # Weak "I helped" → strong "Supported"
+    assert any(b.startswith("Supported") for b in bullets)
+    # Tools bullet composes when raw fields don't already cover them
+    joined = " ".join(bullets)
+    # At least one bullet references the tools or skills
+    assert (
+        "Canva" in joined
+        or "Meta Ads Manager" in joined
+        or "copywriting" in joined
+    )
+
+
 def test_photo_fills_circle_on_landscape_and_portrait() -> None:
     """Regression: at wizard-default zoom (100), landscape *and*
     portrait photos both need to fully cover the circle. Verified by

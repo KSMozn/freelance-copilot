@@ -79,6 +79,20 @@ EMAIL_TEMPLATES: dict[str, EmailTemplateSpec] = {
             "editable copy."
         ),
     ),
+    "internship_availability_announcement": EmailTemplateSpec(
+        id="internship_availability_announcement",
+        name="Now available: Internships section",
+        description=(
+            "One-off announcement — students can now add internships, "
+            "summer training, and practical experience to their CV. "
+            "CTA opens the wizard on the Internships step."
+        ),
+        subject="Add your internship to your {app_name} CV",
+        audience_hint=(
+            "Any student who has used the wizard. Especially valuable "
+            "for students who've completed the CV wizard already."
+        ),
+    ),
 }
 
 

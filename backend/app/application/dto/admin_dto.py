@@ -33,6 +33,7 @@ class WizardFunnel(BaseModel):
     skills: int
     courses: int
     projects: int
+    internships: int = 0
     volunteer: int
     languages: int
     certificates: int
@@ -169,6 +170,36 @@ class AdminActivityResponse(BaseModel):
     total: int
     page: int
     size: int
+
+
+# ---- Read-only entry inspection (for LLM audit) -------------------------
+
+
+class AdminEntryDetail(BaseModel):
+    """One student's StudentProfileEntry, read-only, exposed to admins
+    so they can audit LLM-generated content (e.g. `details.ai_bullets`
+    for internships) without impersonating the student.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    kind: str
+    title: str
+    organization: str | None
+    start_date: date | None
+    end_date: date | None
+    is_current: bool
+    description: str | None
+    url: str | None
+    details: dict[str, Any]
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class AdminEntriesResponse(BaseModel):
+    items: list[AdminEntryDetail]
 
 
 # ---- Actions ------------------------------------------------------------

@@ -586,12 +586,60 @@ def _render_section_entry_block(container: Container, entries: list[dict[str, An
                 p_url.paragraph_format.left_indent = Inches(0.12)
 
 
+def _render_section_internship(
+    container: Container, entries: list[dict[str, Any]], *, style: dict
+) -> None:
+    """Internship blocks are structured differently from projects: each
+    entry has a title/org/date header, an optional 1-line summary, and
+    2–4 bullet points (either LLM-polished or deterministic).
+    """
+    for e in entries:
+        title = (e.get("title") or "").strip()
+        org = (e.get("organization") or "").strip()
+        start = (e.get("start_date") or "").strip() if e.get("start_date") else None
+        end = (
+            "Present"
+            if e.get("is_current")
+            else ((e.get("end_date") or "").strip() if e.get("end_date") else None)
+        )
+        p_head = container.add_paragraph()
+        if title:
+            _new_run(p_head, title, bold=True)
+        head_tail = _joined([org, _joined([start or "", end or ""], sep=" – ")], sep=" · ")
+        if head_tail:
+            _new_run(p_head, f"  — {head_tail}", italic=True, color=_MUTED)
+        _spacing(p_head, before_pt=2, after_pt=1)
+
+        summary = (e.get("summary") or "").strip()
+        if summary:
+            p_sum = container.add_paragraph()
+            _new_run(p_sum, summary, italic=True)
+            _spacing(p_sum, before_pt=0, after_pt=2, line_spacing=1.15)
+
+        bullets = [
+            str(b).strip()
+            for b in (e.get("bullets") or [])
+            if isinstance(b, str) and b.strip()
+        ]
+        for bullet in bullets:
+            p = container.add_paragraph(style="List Bullet")
+            _new_run(p, bullet)
+            _spacing(p, before_pt=0, after_pt=1, line_spacing=1.15)
+
+        url = (e.get("url") or "").strip()
+        if url:
+            p_url = container.add_paragraph()
+            _new_run(p_url, url, italic=True, color=_MUTED)
+            _spacing(p_url, before_pt=0, after_pt=4)
+
+
 _SECTION_RENDERERS: dict[
     str, Callable[[Container, list[dict[str, Any]], Any], None]
 ] = {
     "skill": _render_section_skill,
     "language": _render_section_language,
     "project": _render_section_entry_block,
+    "internship": _render_section_internship,
     "course": _render_section_course,
     "certificate": _render_section_certificate,
     "volunteer": _render_section_entry_block,

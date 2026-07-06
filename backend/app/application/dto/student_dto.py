@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 STUDENT_ENTRY_KINDS = Literal[
     "course",
     "project",
+    "internship",
     "volunteer",
     "certificate",
     "skill",
@@ -248,7 +249,12 @@ class TextCoachRequest(BaseModel):
     the student accept or keep their original.
     """
 
-    field: Literal["summary", "project_description", "volunteer_description"]
+    field: Literal[
+        "summary",
+        "project_description",
+        "volunteer_description",
+        "internship_description",
+    ]
     text: str = Field(min_length=1, max_length=4000)
     context: dict[str, Any] | None = None
 
@@ -256,6 +262,55 @@ class TextCoachRequest(BaseModel):
 class TextCoachResponse(BaseModel):
     ok: bool
     rewritten: str
+    notes: list[str] = Field(default_factory=list)
+
+
+INTERNSHIP_FIELDS = Literal[
+    "software_engineering",
+    "data_analysis",
+    "marketing",
+    "hr",
+    "finance",
+    "design",
+    "customer_support",
+    "other",
+]
+
+
+class InternshipCoachRequest(BaseModel):
+    """Raw fields the student typed into the Internship card. The
+    backend LLM converts these into a short summary + 2–4 ATS-friendly
+    bullets. If the input is too thin to make useful bullets, the
+    response returns `vague=true` with two follow-up questions instead
+    of guessing.
+    """
+
+    organization: str = Field(min_length=1, max_length=200)
+    title: str = Field(min_length=1, max_length=200)
+    field_: INTERNSHIP_FIELDS | None = Field(default=None, alias="field")
+    location: str | None = Field(default=None, max_length=200)
+    work_mode: Literal["on_site", "remote", "hybrid"] | None = None
+    department: str | None = Field(default=None, max_length=200)
+    responsibilities: str | None = Field(default=None, max_length=4000)
+    achievements: str | None = Field(default=None, max_length=4000)
+    tools: list[str] = Field(default_factory=list)
+    skills_gained: list[str] = Field(default_factory=list)
+    # If the previous coach call returned vague=true, the student's
+    # answers get folded back in here so the LLM has more to work with.
+    follow_up_answers: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class InternshipCoachResponse(BaseModel):
+    ok: bool
+    vague: bool = False
+    summary: str | None = None
+    bullets: list[str] = Field(default_factory=list)
+    # LLM's suggested tools + skills — the student can accept or ignore.
+    tools_suggested: list[str] = Field(default_factory=list)
+    skills_suggested: list[str] = Field(default_factory=list)
+    follow_ups: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
 
 

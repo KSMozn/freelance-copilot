@@ -1,12 +1,64 @@
 export type StudentEntryKind =
   | "course"
   | "project"
+  | "internship"
   | "volunteer"
   | "certificate"
   | "skill"
   | "award"
   | "extracurricular"
   | "language";
+
+export type InternshipField =
+  | "software_engineering"
+  | "data_analysis"
+  | "marketing"
+  | "hr"
+  | "finance"
+  | "design"
+  | "customer_support"
+  | "other";
+
+export type InternshipWorkMode = "on_site" | "remote" | "hybrid";
+
+export interface InternshipCoachRequest {
+  organization: string;
+  title: string;
+  field?: InternshipField | null;
+  location?: string | null;
+  work_mode?: InternshipWorkMode | null;
+  department?: string | null;
+  responsibilities?: string | null;
+  achievements?: string | null;
+  tools?: string[];
+  skills_gained?: string[];
+  follow_up_answers?: string[];
+}
+
+export interface InternshipCoachResponse {
+  ok: boolean;
+  vague: boolean;
+  summary?: string | null;
+  bullets: string[];
+  tools_suggested: string[];
+  skills_suggested: string[];
+  follow_ups: string[];
+  notes: string[];
+}
+
+/** Persisted on `StudentEntry.details` for entries with kind === "internship". */
+export interface InternshipDetails {
+  field?: InternshipField | null;
+  location?: string | null;
+  work_mode?: InternshipWorkMode | null;
+  department?: string | null;
+  responsibilities?: string | null;
+  achievements?: string | null;
+  tools?: string[];
+  skills_gained?: string[];
+  ai_summary?: string | null;
+  ai_bullets?: string[];
+}
 
 export interface StudentLinks {
   github?: string | null;

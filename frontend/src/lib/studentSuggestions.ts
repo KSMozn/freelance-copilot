@@ -912,3 +912,156 @@ export const CERTIFICATE_ISSUERS: string[] = [
   "IBM",
   "Meta",
 ];
+
+// -- Internships ----------------------------------------------------------
+
+export const INTERNSHIP_FIELD_OPTIONS: {
+  value:
+    | "software_engineering"
+    | "data_analysis"
+    | "marketing"
+    | "hr"
+    | "finance"
+    | "design"
+    | "customer_support"
+    | "other";
+  label: string;
+}[] = [
+  { value: "software_engineering", label: "Software Engineering" },
+  { value: "data_analysis", label: "Data Analysis" },
+  { value: "marketing", label: "Marketing" },
+  { value: "hr", label: "HR" },
+  { value: "finance", label: "Finance" },
+  { value: "design", label: "Design" },
+  { value: "customer_support", label: "Customer Support" },
+  { value: "other", label: "Other" },
+];
+
+// One-click task templates the student can pin into their
+// Responsibilities textarea after picking an internship field. Each
+// starts with an action verb so the resulting bullet is ATS-friendly.
+//
+// Each field has a pool of ~12 tasks; the UI shows 6 at a time and
+// backfills from the pool as chips get picked. When the pool is
+// exhausted the row goes empty (no synthetic suggestions).
+export const INTERNSHIP_FIELD_TASK_PRESETS: Record<string, string[]> = {
+  software_engineering: [
+    "Assisted in building frontend or backend features.",
+    "Fixed bugs and tested application flows.",
+    "Used GitHub, APIs, databases, or frameworks.",
+    "Collaborated with developers during code reviews.",
+    "Wrote unit tests and validated changes before merging.",
+    "Documented technical decisions in a shared wiki.",
+    "Attended stand-ups and sprint planning meetings.",
+    "Debugged production issues with the on-call engineer.",
+    "Built internal tools that automated a recurring task.",
+    "Read and reviewed pull requests from other interns.",
+    "Learned the deployment pipeline and shipped a change end-to-end.",
+    "Improved page load performance for a specific flow.",
+  ],
+  data_analysis: [
+    "Cleaned and analyzed datasets.",
+    "Created reports or dashboards.",
+    "Used Excel, SQL, Python, Power BI, or Tableau.",
+    "Presented findings to the team.",
+    "Wrote SQL queries to answer business questions.",
+    "Built pivot tables and charts summarising monthly metrics.",
+    "Automated a recurring report using Python or spreadsheets.",
+    "Identified anomalies and flagged them for review.",
+    "Documented data definitions and assumptions.",
+    "Joined data sources from multiple systems.",
+    "A/B-tested a hypothesis and shared the results.",
+    "Validated data quality against source systems.",
+  ],
+  marketing: [
+    "Supported social media campaigns.",
+    "Created content ideas.",
+    "Analyzed engagement metrics.",
+    "Helped prepare campaign reports.",
+    "Drafted copy for email or newsletter sends.",
+    "Scheduled posts across LinkedIn, Instagram, or X.",
+    "Researched competitors and summarised positioning.",
+    "Ran a keyword-research pass for SEO.",
+    "Prepared briefs for designers and video editors.",
+    "Coordinated with influencers or partners.",
+    "Tracked campaign KPIs against targets.",
+    "Reported on ROI for a specific channel.",
+  ],
+  hr: [
+    "Supported recruitment activities.",
+    "Screened CVs.",
+    "Coordinated interviews.",
+    "Helped with employee documentation.",
+    "Scheduled candidate interviews across time zones.",
+    "Drafted job descriptions with the hiring manager.",
+    "Maintained the applicant tracking system (ATS).",
+    "Supported new-joiner onboarding sessions.",
+    "Coordinated employee engagement events.",
+    "Prepared training materials for team workshops.",
+    "Updated policy documents and HR handbooks.",
+    "Analysed hiring funnel metrics.",
+  ],
+  finance: [
+    "Assisted with financial reports.",
+    "Reviewed transactions or invoices.",
+    "Used Excel or accounting tools.",
+    "Supported budgeting or reconciliation tasks.",
+    "Reconciled bank statements against ledger entries.",
+    "Prepared monthly closing schedules.",
+    "Built financial models for scenario analysis.",
+    "Tracked accounts payable and receivable aging.",
+    "Assisted external auditors during audit season.",
+    "Analysed variance between budget and actuals.",
+    "Documented internal controls and processes.",
+    "Prepared cash-flow forecasts for management review.",
+  ],
+  design: [
+    "Created visuals, banners, or UI elements.",
+    "Used tools like Figma, Canva, Photoshop, or Illustrator.",
+    "Supported brand or product design tasks.",
+    "Collaborated with product or marketing teams.",
+    "Iterated on wireframes based on user feedback.",
+    "Built and maintained a component style guide.",
+    "Prototyped interactions in Figma for user testing.",
+    "Designed social-media creatives for campaigns.",
+    "Prepared assets and specs for developer handoff.",
+    "Ran usability tests with 3-5 participants.",
+    "Illustrated icons or spot graphics for the product.",
+    "Audited existing screens for accessibility issues.",
+  ],
+  customer_support: [
+    "Responded to customer inquiries.",
+    "Logged issues and escalated cases.",
+    "Used CRM or ticketing tools.",
+    "Helped improve customer satisfaction.",
+    "Wrote help-center articles for recurring questions.",
+    "Categorised tickets and tagged them for reporting.",
+    "Collaborated with engineering on bug reproductions.",
+    "Analysed CSAT survey responses for patterns.",
+    "Supported live chat during high-volume periods.",
+    "Trained new agents on ticket workflows.",
+    "Reduced average response time on a specific queue.",
+    "Documented internal knowledge-base updates.",
+  ],
+  other: [],
+};
+
+// Action-verb chips shown next to the Responsibilities textarea. Click
+// appends a bullet-shaped template ("Tested — ") that the student can
+// finish in their own words.
+export const INTERNSHIP_ACTION_CHIPS: string[] = [
+  "Tested",
+  "Analyzed",
+  "Built",
+  "Supported",
+  "Presented",
+  "Documented",
+  "Designed",
+  "Coordinated",
+];
+
+export const INTERNSHIP_WORK_MODES: { value: "on_site" | "remote" | "hybrid"; label: string }[] = [
+  { value: "on_site", label: "On-site" },
+  { value: "remote", label: "Remote" },
+  { value: "hybrid", label: "Hybrid" },
+];

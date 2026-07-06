@@ -71,6 +71,7 @@ _SECTION_ORDER: tuple[tuple[str, str], ...] = (
     ("skill", "Skills"),
     ("language", "Languages"),
     ("project", "Projects"),
+    ("internship", "Internships"),
     ("course", "Relevant Coursework"),
     ("certificate", "Certificates"),
     ("volunteer", "Volunteer Experience"),
@@ -110,7 +111,154 @@ def _entry_to_view(entry: StudentProfileEntry) -> dict[str, Any]:
         # structured data is present (legacy rows created before the
         # richer form landed).
         view["narrative"] = _build_project_narrative(entry)
+    elif entry.kind == "internship":
+        # Internships render as a short summary + 2-4 bullets. Prefer
+        # the LLM output persisted in `details.ai_bullets`; fall back to
+        # a deterministic composer from responsibilities/achievements
+        # so students who never clicked "Improve with AI" still get
+        # something usable on their CV.
+        details = view["details"]
+        ai_summary = (details.get("ai_summary") or "").strip()
+        ai_bullets = [
+            str(b).strip()
+            for b in (details.get("ai_bullets") or [])
+            if isinstance(b, str) and b.strip()
+        ]
+        if ai_bullets:
+            view["summary"] = ai_summary or None
+            view["bullets"] = ai_bullets[:6]
+        else:
+            view["summary"] = None
+            view["bullets"] = _deterministic_internship_bullets(entry)
     return view
+
+
+# --- Internship deterministic fallback -----------------------------------
+#
+# Used when a student saved an internship without asking the coach to
+# polish it. Emits up to 4 bullets from responsibilities/achievements/
+# tools/skills using an action-verb rewrite lookup. Never invents.
+
+
+_INTERNSHIP_ACTION_STARTER = "Contributed to"  # used when raw input lacks a verb
+
+
+def _split_bullet_lines(raw: str | None) -> list[str]:
+    """Split multi-line student input into candidate bullet lines.
+    Preserves order, drops empties, trims markdown bullets ("- ", "* ")."""
+    if not raw:
+        return []
+    out: list[str] = []
+    for line in raw.splitlines():
+        cleaned = line.strip().lstrip("*•-–— \t").strip()
+        if not cleaned:
+            continue
+        out.append(cleaned)
+    return out
+
+
+_ACTION_VERB_PREFIXES: tuple[str, ...] = (
+    "assisted",
+    "built",
+    "tested",
+    "analyzed",
+    "supported",
+    "coordinated",
+    "documented",
+    "designed",
+    "prepared",
+    "presented",
+    "reviewed",
+    "developed",
+    "created",
+    "conducted",
+    "collaborated",
+    "researched",
+    "improved",
+    "delivered",
+    "led",
+)
+
+
+def _polish_internship_line(line: str) -> str:
+    """Tighten a raw student-typed line into a bullet-shaped sentence.
+    Strips first-person ("I ", "I've "), leading weak verbs ("helped
+    with", "was responsible for"), and adds a period. Cheap, no LLM."""
+    text = line.strip()
+    lower = text.lower()
+    # First-person → drop
+    for prefix in ("i've ", "i have ", "i was ", "i am ", "i ", "we "):
+        if lower.startswith(prefix):
+            text = text[len(prefix):].strip()
+            lower = text.lower()
+            break
+    # Weak phrasing → replace
+    weak_map = (
+        ("was responsible for ", "Managed "),
+        ("responsible for ", "Managed "),
+        ("helped with ", "Supported "),
+        ("helped to ", "Supported "),
+        ("helped ", "Supported "),
+        ("learned about ", "Studied "),
+        ("learned ", "Studied "),
+        ("worked on ", "Contributed to "),
+    )
+    for weak, strong in weak_map:
+        if lower.startswith(weak):
+            text = strong + text[len(weak):]
+            lower = text.lower()
+            break
+    # Uppercase first letter
+    if text:
+        text = text[0].upper() + text[1:]
+    # Ensure the sentence starts with an action verb — if not, prepend
+    # a neutral one so the bullet still reads as a bullet.
+    first_word = text.split(" ", 1)[0].rstrip(",.:;").lower() if text else ""
+    if first_word and not any(
+        first_word.startswith(v) for v in _ACTION_VERB_PREFIXES
+    ):
+        text = f"{_INTERNSHIP_ACTION_STARTER} {text[0].lower() + text[1:]}"
+    if text and not text.endswith((".", "!", "?")):
+        text = text + "."
+    return text
+
+
+def _deterministic_internship_bullets(
+    entry: StudentProfileEntry,
+) -> list[str]:
+    details = dict(entry.details or {})
+    bullets: list[str] = []
+
+    for line in _split_bullet_lines(details.get("responsibilities")):
+        bullets.append(_polish_internship_line(line))
+        if len(bullets) >= 4:
+            return bullets
+
+    for line in _split_bullet_lines(details.get("achievements")):
+        bullets.append(_polish_internship_line(line))
+        if len(bullets) >= 4:
+            return bullets
+
+    tools = [str(t).strip() for t in (details.get("tools") or []) if str(t).strip()]
+    if tools and len(bullets) < 4:
+        bullets.append(
+            f"Used {_english_join(tools[:5])} while contributing to the team's work."
+        )
+
+    skills = [
+        str(s).strip()
+        for s in (details.get("skills_gained") or [])
+        if str(s).strip()
+    ]
+    if skills and len(bullets) < 4:
+        bullets.append(
+            f"Developed skills in {_english_join(skills[:5])} through hands-on tasks."
+        )
+
+    if not bullets and (entry.description or "").strip():
+        bullets.append(_polish_internship_line(entry.description.strip()))
+
+    return bullets[:4]
 
 
 # --- Project narrative --------------------------------------------------

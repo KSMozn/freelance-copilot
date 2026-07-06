@@ -11,6 +11,7 @@ export interface WizardFunnel {
   skills: number;
   courses: number;
   projects: number;
+  internships: number;
   volunteer: number;
   languages: number;
   certificates: number;
@@ -18,6 +19,26 @@ export interface WizardFunnel {
   preview: number;
   starter_pack: number;
   downloaded: number;
+}
+
+export interface AdminEntryDetail {
+  id: string;
+  kind: string;
+  title: string;
+  organization: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_current: boolean;
+  description: string | null;
+  url: string | null;
+  details: Record<string, unknown>;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminEntriesResponse {
+  items: AdminEntryDetail[];
 }
 
 export interface EntryKindCount {
