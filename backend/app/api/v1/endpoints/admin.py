@@ -13,7 +13,7 @@ from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 
 from app.application.dto.admin_dto import (
@@ -43,10 +43,14 @@ from app.application.services import usage_event_service
 from app.application.services.admin_service import AdminService
 from app.application.services.cv_template_service import CvTemplateService
 from app.application.services.daily_report_service import DailyReportService
+from app.application.services.student_cv_docx_renderer import StudentCvDocxRenderer
+from app.application.services.student_cv_renderer import StudentCvRenderer, WeasyPrintUnavailable
+from app.application.services.student_profile_service import StudentProfileService
 from app.core.config import Settings, get_settings
-from app.core.deps import CurrentAdmin, SessionDep, get_email_provider
+from app.core.deps import CurrentAdmin, SessionDep, get_blob_store, get_email_provider
 from app.core.security import create_access_token, create_refresh_token
 from app.domain.entities.admin_user import AdminUser as AdminUserEntity
+from app.domain.providers.blob_store import BlobStore
 from app.domain.providers.email_provider import EmailProvider
 from app.infrastructure.db.models.feedback_entry import FeedbackEntry
 from app.infrastructure.db.models.user import User
@@ -121,6 +125,146 @@ async def get_user_entries(
     """
     items = await svc.list_user_entries(user_id, kind=kind)
     return AdminEntriesResponse(items=items)
+
+
+# ---- CV preview / download (as admin) ----------------------------------
+
+
+async def _load_target_photo(
+    svc: StudentProfileService, user_id: UUID
+) -> tuple[bytes | None, str | None]:
+    payload = await svc.get_photo(user_id)
+    if payload is None:
+        return None, None
+    file_row, data = payload
+    return data, file_row.content_type
+
+
+def _cv_filename(profile_full_name: str | None) -> str:
+    return (profile_full_name or "cv").replace(" ", "_")
+
+
+@router.get("/users/{user_id}/cv/preview")
+async def preview_user_cv_html(
+    user_id: UUID,
+    actor: CurrentAdmin,
+    session: SessionDep,
+    blobs: Annotated[BlobStore, Depends(get_blob_store)],
+    template: str | None = Query(default=None, max_length=64),
+) -> dict[str, str]:
+    """HTML preview of a user's CV as it would render for them.
+
+    No impersonation, no side effects on the user's session. Used by the
+    admin user-detail page's Preview CV card. Audit event fires so we
+    know an admin looked.
+    """
+    student_svc = StudentProfileService(session, blobs)
+    profile, entries = await student_svc.load_profile_bundle(user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile")
+    photo_bytes, photo_mime = await _load_target_photo(student_svc, user_id)
+    slug = await CvTemplateService(session).resolve_slug(
+        requested=template,
+        profile_slug=profile.cv_template_slug,
+    )
+    html = StudentCvRenderer().render_html(
+        profile=profile,
+        entries=entries,
+        photo_bytes=photo_bytes,
+        photo_mime=photo_mime,
+        template_slug=slug,
+    )
+    _audit(actor, "preview_cv", user_id, extra={"template": slug})
+    return {"html": html, "template_slug": slug}
+
+
+@router.get("/users/{user_id}/cv.pdf")
+async def download_user_cv_pdf(
+    user_id: UUID,
+    actor: CurrentAdmin,
+    session: SessionDep,
+    blobs: Annotated[BlobStore, Depends(get_blob_store)],
+    template: str | None = Query(default=None, max_length=64),
+) -> Response:
+    student_svc = StudentProfileService(session, blobs)
+    profile, entries = await student_svc.load_profile_bundle(user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile")
+    photo_bytes, photo_mime = await _load_target_photo(student_svc, user_id)
+    slug = await CvTemplateService(session).resolve_slug(
+        requested=template,
+        profile_slug=profile.cv_template_slug,
+    )
+    try:
+        pdf = StudentCvRenderer().render_pdf(
+            profile=profile,
+            entries=entries,
+            photo_bytes=photo_bytes,
+            photo_mime=photo_mime,
+            template_slug=slug,
+        )
+    except WeasyPrintUnavailable as exc:
+        _audit(actor, "download_cv_pdf", user_id, ok=False, extra={"template": slug})
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    filename = _cv_filename(profile.full_name)
+    _audit(
+        actor,
+        "download_cv_pdf",
+        user_id,
+        extra={"template": slug, "size_bytes": len(pdf)},
+    )
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
+    )
+
+
+@router.get("/users/{user_id}/cv.docx")
+async def download_user_cv_docx(
+    user_id: UUID,
+    actor: CurrentAdmin,
+    session: SessionDep,
+    blobs: Annotated[BlobStore, Depends(get_blob_store)],
+    template: str | None = Query(default=None, max_length=64),
+) -> Response:
+    student_svc = StudentProfileService(session, blobs)
+    profile, entries = await student_svc.load_profile_bundle(user_id)
+    if profile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No profile")
+    photo_bytes, photo_mime = await _load_target_photo(student_svc, user_id)
+    slug = await CvTemplateService(session).resolve_slug(
+        requested=template,
+        profile_slug=profile.cv_template_slug,
+    )
+    try:
+        docx_bytes = StudentCvDocxRenderer().render_docx(
+            profile=profile,
+            entries=entries,
+            photo_bytes=photo_bytes,
+            photo_mime=photo_mime,
+            template_slug=slug,
+        )
+    except Exception as exc:
+        _audit(actor, "download_cv_docx", user_id, ok=False, extra={"template": slug})
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not build DOCX",
+        ) from exc
+    filename = _cv_filename(profile.full_name)
+    _audit(
+        actor,
+        "download_cv_docx",
+        user_id,
+        extra={"template": slug, "size_bytes": len(docx_bytes)},
+    )
+    return Response(
+        content=docx_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{filename}_CV.docx"'},
+    )
 
 
 # ---- Actions -----------------------------------------------------------

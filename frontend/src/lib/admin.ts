@@ -200,6 +200,52 @@ export function useUpdateAdminCvTemplate() {
   });
 }
 
+// ---- Admin CV preview / download --------------------------------------
+
+interface AdminCvPreview {
+  html: string;
+  template_slug: string;
+}
+
+export function useAdminUserCvPreview(
+  userId: string | undefined,
+  templateSlug?: string,
+) {
+  return useQuery({
+    queryKey: ["admin", "user", userId ?? "none", "cv-preview", templateSlug ?? ""] as const,
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await api.get<AdminCvPreview>(
+        `/admin/users/${userId}/cv/preview`,
+        { params: templateSlug ? { template: templateSlug } : undefined },
+      );
+      return data;
+    },
+  });
+}
+
+export async function downloadAdminUserCvPdf(
+  userId: string,
+  templateSlug?: string,
+): Promise<Blob> {
+  const res = await api.get(`/admin/users/${userId}/cv.pdf`, {
+    responseType: "blob",
+    params: templateSlug ? { template: templateSlug } : undefined,
+  });
+  return res.data as Blob;
+}
+
+export async function downloadAdminUserCvDocx(
+  userId: string,
+  templateSlug?: string,
+): Promise<Blob> {
+  const res = await api.get(`/admin/users/${userId}/cv.docx`, {
+    responseType: "blob",
+    params: templateSlug ? { template: templateSlug } : undefined,
+  });
+  return res.data as Blob;
+}
+
 // ---- Feedback triage ---------------------------------------------------
 
 const FEEDBACK_KEY = (
