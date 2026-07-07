@@ -21,8 +21,11 @@ import type {
 } from "@/types/admin";
 
 const OVERVIEW_KEY = ["admin", "overview"] as const;
-const USERS_KEY = (search: string | undefined, page: number) =>
-  ["admin", "users", search ?? "", page] as const;
+const USERS_KEY = (
+  search: string | undefined,
+  page: number,
+  stuckAt?: string,
+) => ["admin", "users", search ?? "", stuckAt ?? "", page] as const;
 const USER_KEY = (id: string) => ["admin", "user", id] as const;
 const ACTIVITY_KEY = (kind: string | undefined, status: string | undefined, page: number) =>
   ["admin", "activity", kind ?? "", status ?? "", page] as const;
@@ -37,13 +40,19 @@ export function useAdminOverview() {
   });
 }
 
-export function useAdminUsers(params: { search?: string; page: number; size?: number }) {
+export function useAdminUsers(params: {
+  search?: string;
+  page: number;
+  size?: number;
+  stuckAt?: string;
+}) {
   return useQuery({
-    queryKey: USERS_KEY(params.search, params.page),
+    queryKey: USERS_KEY(params.search, params.page, params.stuckAt),
     queryFn: async () => {
       const { data } = await api.get<AdminUserListResponse>("/admin/users", {
         params: {
           search: params.search || undefined,
+          stuck_at: params.stuckAt || undefined,
           page: params.page,
           size: params.size ?? 25,
         },

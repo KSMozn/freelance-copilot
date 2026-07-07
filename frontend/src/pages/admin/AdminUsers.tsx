@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { AlertTriangle, Loader2, Mail } from "lucide-react";
 
@@ -20,11 +20,36 @@ import type {
   SendEmailBulkResponse,
 } from "@/types/admin";
 
+const STUCK_AT_LABELS: Record<string, string> = {
+  registered: "Registered but no wizard progress",
+  basics: "Stuck at Basics",
+  education: "Stuck at Education",
+  photo: "Stuck at Photo",
+  skills: "Stuck at Skills",
+  courses: "Stuck at Courses",
+  projects: "Stuck at Projects",
+  internships: "Stuck at Internships",
+  volunteer: "Stuck at Volunteer",
+  languages: "Stuck at Languages",
+  certificates: "Stuck at Certificates",
+  summary: "Stuck at Summary",
+  preview: "Stuck at Preview",
+  "starter-pack": "Reached Starter Pack",
+};
+
 export function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const size = 25;
-  const { data, isLoading } = useAdminUsers({ search, page, size });
+  const [params, setParams] = useSearchParams();
+  const stuckAt = params.get("stuck_at");
+  const stuckAtLabel = stuckAt ? STUCK_AT_LABELS[stuckAt] ?? stuckAt : null;
+  const { data, isLoading } = useAdminUsers({
+    search,
+    page,
+    size,
+    stuckAt: stuckAt ?? undefined,
+  });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
 
@@ -74,6 +99,24 @@ export function AdminUsersPage() {
           }}
           className="max-w-sm"
         />
+        {stuckAtLabel && (
+          <div className="flex items-center gap-1 rounded-full border bg-primary/10 px-3 py-1 text-xs text-primary">
+            <span className="font-medium">{stuckAtLabel}</span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = new URLSearchParams(params);
+                next.delete("stuck_at");
+                setParams(next, { replace: true });
+                setPage(1);
+              }}
+              className="ml-1 rounded-full px-1 text-primary/70 hover:bg-primary/20 hover:text-primary"
+              aria-label="Clear funnel filter"
+            >
+              ×
+            </button>
+          </div>
+        )}
         {selected.size > 0 && (
           <div className="ml-auto flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="font-medium">{selected.size}</span> selected

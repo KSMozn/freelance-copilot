@@ -98,10 +98,13 @@ async def list_users(
     _: CurrentAdmin,
     svc: AdminSvc,
     search: str | None = Query(default=None),
+    stuck_at: str | None = Query(default=None, max_length=32),
     page: int = Query(default=1, ge=1),
     size: int = Query(default=25, ge=1, le=200),
 ) -> AdminUserListResponse:
-    items, total = await svc.list_users(search=search, page=page, size=size)
+    items, total = await svc.list_users(
+        search=search, page=page, size=size, stuck_at=stuck_at
+    )
     return AdminUserListResponse(items=items, total=total, page=page, size=size)
 
 
