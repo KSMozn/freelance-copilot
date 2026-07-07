@@ -207,8 +207,21 @@ class AdminService:
     # ---- Users --------------------------------------------------------
 
     async def list_users(
-        self, *, search: str | None, page: int, size: int
+        self,
+        *,
+        search: str | None,
+        page: int,
+        size: int,
+        stuck_at: str | None = None,
     ) -> tuple[list[AdminUserRow], int]:
+        """List users with optional email/name search + funnel drill-down.
+
+        `stuck_at` filters to the cohort that reached step X but hasn't
+        completed the next one — the drill-down target from the Overview
+        funnel bars. Special value ``"registered"`` returns users with no
+        wizard progress at all (no student_profile row or empty
+        completed_steps). Unknown slugs are ignored.
+        """
         q = select(User)
         if search:
             like = f"%{search.strip().lower()}%"
@@ -218,6 +231,30 @@ class AdminService:
                     func.lower(func.coalesce(User.full_name, "")).like(like),
                 )
             )
+        if stuck_at == "registered":
+            # Everyone who has NOT completed the basics step yet: either
+            # no student_profile row, or one with no completed_steps.
+            no_progress = ~select(StudentProfile.user_id).where(
+                StudentProfile.user_id == User.id,
+                func.jsonb_array_length(StudentProfile.completed_steps) > 0,
+            ).exists()
+            q = q.where(no_progress)
+        elif stuck_at in WIZARD_STEPS:
+            idx = WIZARD_STEPS.index(stuck_at)
+            next_slug = (
+                WIZARD_STEPS[idx + 1] if idx + 1 < len(WIZARD_STEPS) else None
+            )
+            reached = select(StudentProfile.user_id).where(
+                StudentProfile.user_id == User.id,
+                StudentProfile.completed_steps.op("?")(stuck_at),
+            )
+            if next_slug is None:
+                q = q.where(reached.exists())
+            else:
+                still_stuck = reached.where(
+                    ~StudentProfile.completed_steps.op("?")(next_slug)
+                )
+                q = q.where(still_stuck.exists())
         # Total
         total = await self._scalar(
             select(func.count()).select_from(q.subquery())

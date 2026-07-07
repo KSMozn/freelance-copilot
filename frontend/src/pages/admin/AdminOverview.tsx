@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { useAdminOverview } from "@/lib/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminOverview, SignupsPoint, WizardFunnel } from "@/types/admin";
@@ -201,34 +203,41 @@ function SignupsChart({ series }: { series: SignupsPoint[] }) {
 }
 
 function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
-  const steps: [string, number][] = [
-    ["Registered", funnel.registered],
-    ["Basics", funnel.basics],
-    ["Education", funnel.education],
-    ["Photo", funnel.photo],
-    ["Skills", funnel.skills],
-    ["Courses", funnel.courses],
-    ["Projects", funnel.projects],
-    ["Internships", funnel.internships],
-    ["Volunteer", funnel.volunteer],
-    ["Languages", funnel.languages],
-    ["Certificates", funnel.certificates],
-    ["Summary", funnel.summary],
-    ["Preview", funnel.preview],
-    ["Downloaded PDF", funnel.downloaded],
-    ["Starter Pack", funnel.starter_pack],
+  // Third tuple element = the `stuck_at` slug to pass to /users. `null`
+  // means the row isn't clickable (Downloaded PDF is an event counter,
+  // not a wizard step, so drilling into "users stuck between preview and
+  // downloaded" wouldn't map to a coherent cohort).
+  const steps: [string, number, string | null][] = [
+    ["Registered", funnel.registered, "registered"],
+    ["Basics", funnel.basics, "basics"],
+    ["Education", funnel.education, "education"],
+    ["Photo", funnel.photo, "photo"],
+    ["Skills", funnel.skills, "skills"],
+    ["Courses", funnel.courses, "courses"],
+    ["Projects", funnel.projects, "projects"],
+    ["Internships", funnel.internships, "internships"],
+    ["Volunteer", funnel.volunteer, "volunteer"],
+    ["Languages", funnel.languages, "languages"],
+    ["Certificates", funnel.certificates, "certificates"],
+    ["Summary", funnel.summary, "summary"],
+    ["Preview", funnel.preview, "preview"],
+    ["Downloaded PDF", funnel.downloaded, null],
+    ["Starter Pack", funnel.starter_pack, "starter-pack"],
   ];
   const max = Math.max(1, ...steps.map(([, c]) => c));
   return (
     <div className="space-y-1.5">
-      {steps.map(([label, count], i) => {
+      {steps.map(([label, count, slug], i) => {
         const pct = (count / max) * 100;
         const dropoff =
           i > 0 && steps[i - 1][1] > 0
             ? Math.round(100 - (count / steps[i - 1][1]) * 100)
             : null;
-        return (
-          <div key={label} className="grid grid-cols-[130px_1fr_60px] items-center gap-2">
+        const to = slug ? `/users?stuck_at=${slug}` : null;
+        const rowClass =
+          "grid grid-cols-[130px_1fr_60px] items-center gap-2 rounded transition-colors";
+        const body = (
+          <>
             <div className="text-xs text-muted-foreground">{label}</div>
             <div className="relative h-4 rounded bg-muted">
               <div
@@ -244,6 +253,20 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
                 </span>
               )}
             </div>
+          </>
+        );
+        return to ? (
+          <Link
+            key={label}
+            to={to}
+            className={`${rowClass} px-1 -mx-1 hover:bg-muted/40`}
+            title={`View users stuck at ${label}`}
+          >
+            {body}
+          </Link>
+        ) : (
+          <div key={label} className={rowClass}>
+            {body}
           </div>
         );
       })}
