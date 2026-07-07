@@ -36,6 +36,7 @@ from app.application.dto.admin_dto import (
     EmailPreviewResponse,
     LlmCallRow,
     LlmCallsResponse,
+    LlmSpendSummary,
     SendEmailBulkDryRunResponse,
     SendEmailBulkRequest,
     SendEmailBulkResponse,
@@ -201,14 +202,16 @@ async def list_llm_calls(
     _: CurrentAdmin,
     session: SessionDep,
     model: str | None = Query(default=None, max_length=120),
-    since_days: int = Query(default=7, ge=1, le=90),
+    user_id: UUID | None = Query(default=None),
+    since_days: int = Query(default=30, ge=1, le=90),
     limit: int = Query(default=200, ge=1, le=1000),
 ) -> LlmCallsResponse:
-    """Per-call breakdown backing the Overview "LLM spend" drill-down.
+    """Per-call breakdown backing the LLM spend drill-down cards.
 
     Reads the same rows the aggregation counts (`usage_events` with
-    `meta.prompt_tokens`), optionally filtered to one model. Joins to
-    users for the recipient email so the operator sees who ran what.
+    `meta.prompt_tokens`), optionally filtered by model and/or by
+    user_id. Joins to users for the recipient email so the operator
+    sees who ran what. Default window is 30 days.
     """
     since = datetime.now(tz=UTC) - timedelta(days=since_days)
     stmt = (
@@ -219,6 +222,8 @@ async def list_llm_calls(
     )
     if model:
         stmt = stmt.where(UsageEvent.meta.op("->>")("model") == model)
+    if user_id is not None:
+        stmt = stmt.where(UsageEvent.user_id == user_id)
     stmt = stmt.limit(limit)
     events = (await session.execute(stmt)).scalars().all()
 
@@ -266,6 +271,21 @@ async def list_llm_calls(
 
 def _int_or_zero(v: object) -> int:
     return int(v) if isinstance(v, int | float) else 0
+
+
+@router.get("/users/{user_id}/llm-spend", response_model=LlmSpendSummary)
+async def get_user_llm_spend(
+    user_id: UUID,
+    _: CurrentAdmin,
+    svc: AdminSvc,
+    since_days: int = Query(default=30, ge=1, le=90),
+) -> LlmSpendSummary:
+    """User-scoped LLM spend for the admin user-detail card.
+
+    Mirror of the Overview LLM spend card, but scoped to one user's
+    coach/career_pack calls in the last N days (default 30).
+    """
+    return await svc.compute_user_llm_spend(user_id, since_days=since_days)
 
 
 # ---- CV preview / download (as admin) ----------------------------------

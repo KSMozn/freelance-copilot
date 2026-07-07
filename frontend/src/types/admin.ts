@@ -101,7 +101,7 @@ export interface AdminOverview {
   funnel: WizardFunnel;
   entries_by_kind: EntryKindCount[];
   usage_by_kind_7d: UsageKindCount[];
-  llm_spend_7d: LlmSpendSummary;
+  llm_spend_30d: LlmSpendSummary;
 }
 
 export interface AdminUserRow {
