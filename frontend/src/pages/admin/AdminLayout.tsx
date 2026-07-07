@@ -27,6 +27,7 @@ export function AdminLayout() {
           <SideLink to="/overview" label="Overview" />
           <SideLink to="/users" label="Users" />
           <SideLink to="/feedback" label="Feedback" />
+          <SideLink to="/emails" label="Emails" />
           <SideLink to="/templates" label="Templates" />
           <SideLink to="/activity" label="Activity" />
         </nav>
