@@ -54,6 +54,32 @@ class UsageKindCount(BaseModel):
     errors: int
 
 
+class LlmSpendByModel(BaseModel):
+    """One model's tokens + estimated USD spend over the window."""
+
+    model: str
+    calls: int
+    prompt_tokens: int
+    completion_tokens: int
+    cost_usd: float
+
+
+class LlmSpendSummary(BaseModel):
+    """Aggregated LLM usage over the last 7 days.
+
+    Populated from `usage_events.meta` (`prompt_tokens`, `completion_tokens`,
+    `cost_usd`, `model`) that emit sites write after each provider call.
+    Any row missing those fields (legacy or non-LLM events) is ignored,
+    so this rolls in only real coach/career_pack spend.
+    """
+
+    total_calls: int
+    total_prompt_tokens: int
+    total_completion_tokens: int
+    total_cost_usd: float
+    by_model: list[LlmSpendByModel]
+
+
 class AdminOverview(BaseModel):
     users_total: int
     users_students: int
@@ -65,6 +91,7 @@ class AdminOverview(BaseModel):
     funnel: WizardFunnel
     entries_by_kind: list[EntryKindCount]
     usage_by_kind_7d: list[UsageKindCount]
+    llm_spend_7d: LlmSpendSummary
 
 
 # ---- Users --------------------------------------------------------------

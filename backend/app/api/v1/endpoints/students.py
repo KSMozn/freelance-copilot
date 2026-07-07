@@ -59,6 +59,7 @@ from app.application.dto.student_dto import (
 from app.application.services import usage_event_service
 from app.application.services.cv_template_service import CvTemplateService
 from app.application.services.feedback_service import FeedbackService
+from app.application.services.llm_cost import usage_meta as _usage_meta
 from app.application.services.student_coach_service import StudentCoachService
 from app.application.services.student_cv_docx_renderer import (
     StudentCvDocxRenderer,
@@ -93,18 +94,33 @@ def _emit(
     *,
     error: str | None = None,
     meta: dict[str, Any] | None = None,
+    coach: Any | None = None,
 ) -> None:
     """Small helper — fire a usage_event with duration + status. Used by
     coach + CV endpoints to power the admin activity view.
+
+    Pass `coach=<StudentCoachService | CareerPackService>` to also log
+    the token usage + estimated cost of the most recent LLM call the
+    service performed. Silently no-ops if the service didn't call an
+    LLM (e.g. `check_email` is pure rules).
     """
     dt = int((time.perf_counter() - start) * 1000)
+    final_meta: dict[str, Any] = dict(meta or {})
+    if coach is not None:
+        final_meta.update(
+            _usage_meta(
+                usage=getattr(coach, "last_usage", None),
+                model=getattr(coach, "last_model", None),
+                provider=getattr(coach, "last_provider", None),
+            )
+        )
     usage_event_service.fire(
         user_id=user_id,
         kind=kind,
         status="error" if error else "ok",
         duration_ms=dt,
         error_message=error,
-        meta=meta or {},
+        meta=final_meta,
     )
 
 
@@ -318,9 +334,9 @@ async def coach_photo(
             image_bytes=content, mime_type=file.content_type or "image/jpeg"
         )
     except Exception as exc:
-        _emit(user.id, "coach.photo", start, error=str(exc))
+        _emit(user.id, "coach.photo", start, error=str(exc), coach=coach)
         raise
-    _emit(user.id, "coach.photo", start)
+    _emit(user.id, "coach.photo", start, coach=coach)
     return result
 
 
@@ -333,9 +349,15 @@ async def coach_text(
     try:
         result = await coach.improve_text(payload)
     except Exception as exc:
-        _emit(user.id, "coach.text", start, error=str(exc))
+        _emit(user.id, "coach.text", start, error=str(exc), coach=coach)
         raise
-    _emit(user.id, "coach.text", start, meta={"field": payload.field})
+    _emit(
+        user.id,
+        "coach.text",
+        start,
+        meta={"field": payload.field},
+        coach=coach,
+    )
     return result
 
 
@@ -358,6 +380,7 @@ async def coach_internship(
             start,
             error=str(exc),
             meta={"field": payload.field_},
+            coach=coach,
         )
         raise
     _emit(
@@ -369,6 +392,7 @@ async def coach_internship(
             "vague": result.vague,
             "bullet_count": len(result.bullets),
         },
+        coach=coach,
     )
     return result
 
@@ -389,9 +413,15 @@ async def coach_proofread(
     try:
         result = await coach.proofread(profile=profile, entries=entries)
     except Exception as exc:
-        _emit(user.id, "coach.proofread", start, error=str(exc))
+        _emit(user.id, "coach.proofread", start, error=str(exc), coach=coach)
         raise
-    _emit(user.id, "coach.proofread", start, meta={"fixes": len(result.fixes)})
+    _emit(
+        user.id,
+        "coach.proofread",
+        start,
+        meta={"fixes": len(result.fixes)},
+        coach=coach,
+    )
     return result
 
 
@@ -411,9 +441,9 @@ async def coach_draft_summary(
     try:
         result = await coach.draft_summary(profile=profile, entries=entries)
     except Exception as exc:
-        _emit(user.id, "coach.draft_summary", start, error=str(exc))
+        _emit(user.id, "coach.draft_summary", start, error=str(exc), coach=coach)
         raise
-    _emit(user.id, "coach.draft_summary", start)
+    _emit(user.id, "coach.draft_summary", start, coach=coach)
     return result
 
 

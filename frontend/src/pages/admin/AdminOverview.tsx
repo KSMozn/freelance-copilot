@@ -2,7 +2,12 @@ import { Link } from "react-router-dom";
 
 import { useAdminOverview } from "@/lib/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { AdminOverview, SignupsPoint, WizardFunnel } from "@/types/admin";
+import type {
+  AdminOverview,
+  LlmSpendSummary,
+  SignupsPoint,
+  WizardFunnel,
+} from "@/types/admin";
 
 export function AdminOverviewPage() {
   const { data, isLoading, isError } = useAdminOverview();
@@ -105,6 +110,14 @@ export function AdminOverviewPage() {
               </CardContent>
             </Card>
           </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>LLM spend (last 7 days)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LlmSpendCard summary={data.llm_spend_7d} />
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
@@ -270,6 +283,86 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function LlmSpendCard({ summary }: { summary: LlmSpendSummary }) {
+  if (summary.total_calls === 0) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        No LLM calls recorded in the last 7 days.
+      </div>
+    );
+  }
+  const totalTokens =
+    summary.total_prompt_tokens + summary.total_completion_tokens;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Calls" value={summary.total_calls.toLocaleString()} />
+        <Stat label="Total tokens" value={totalTokens.toLocaleString()} />
+        <Stat
+          label="Prompt / completion"
+          value={`${summary.total_prompt_tokens.toLocaleString()} / ${summary.total_completion_tokens.toLocaleString()}`}
+          small
+        />
+        <Stat
+          label="Est. cost"
+          value={`$${summary.total_cost_usd.toFixed(4)}`}
+        />
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-xs text-muted-foreground">
+            <th className="py-1 text-left font-normal">Model</th>
+            <th className="py-1 text-right font-normal">Calls</th>
+            <th className="py-1 text-right font-normal">Prompt tok</th>
+            <th className="py-1 text-right font-normal">Completion tok</th>
+            <th className="py-1 text-right font-normal">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          {summary.by_model.map((m) => (
+            <tr key={m.model} className="border-b last:border-none">
+              <td className="py-2 font-mono text-xs">{m.model}</td>
+              <td className="py-2 text-right tabular-nums">
+                {m.calls.toLocaleString()}
+              </td>
+              <td className="py-2 text-right tabular-nums">
+                {m.prompt_tokens.toLocaleString()}
+              </td>
+              <td className="py-2 text-right tabular-nums">
+                {m.completion_tokens.toLocaleString()}
+              </td>
+              <td className="py-2 text-right tabular-nums">
+                ${m.cost_usd.toFixed(4)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  small,
+}: {
+  label: string;
+  value: string;
+  small?: boolean;
+}) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-3">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className={small ? "text-sm font-medium tabular-nums" : "text-lg font-semibold tabular-nums"}>
+        {value}
+      </div>
     </div>
   );
 }

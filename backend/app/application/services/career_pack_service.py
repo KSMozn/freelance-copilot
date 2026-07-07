@@ -36,7 +36,7 @@ from app.application.dto.career_pack_dto import (
     LinkedInReview,
 )
 from app.application.services.student_coach_service import _summarise_for_prompt
-from app.domain.providers.ai_provider import AIProvider
+from app.domain.providers.ai_provider import AIProvider, AIRawResponse
 from app.infrastructure.ai.errors import AIProviderError
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
@@ -204,6 +204,17 @@ class CareerPackService:
         self._session = session
         self._ai = ai_provider
         self._gh_timeout = github_http_timeout_s
+        # Populated after each provider call so the endpoint can log
+        # token usage + estimated cost into usage_events.meta.
+        self.last_usage: dict[str, int] | None = None
+        self.last_model: str | None = None
+        self.last_provider: str | None = None
+
+    def _capture(self, raw: AIRawResponse) -> AIRawResponse:
+        self.last_usage = raw.usage
+        self.last_model = raw.model
+        self.last_provider = raw.provider
+        return raw
 
     # ---------- Read ----------
 
@@ -459,7 +470,9 @@ class CareerPackService:
         fallback,
     ):
         try:
-            raw = await self._ai.complete_json(system_prompt=system, user_prompt=user)
+            raw = self._capture(
+                await self._ai.complete_json(system_prompt=system, user_prompt=user)
+            )
         except AIProviderError as exc:
             logger.warning("AI provider failed for career pack: %s", exc)
             raise CareerPackError(
