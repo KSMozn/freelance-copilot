@@ -123,4 +123,18 @@ class OpenAIProvider:
         if not isinstance(data, dict):
             raise AIProviderParseError("OpenAI response JSON was not an object")
 
-        return AIRawResponse(data=data, provider=self.name, model=self.model)
+        # Response `usage` shape: {prompt_tokens, completion_tokens, total_tokens}.
+        # Every OpenAI-compatible provider (Groq, Together, OpenAI itself)
+        # returns this — if a future provider omits it, callers get None
+        # and just log without token counts.
+        raw_usage = body.get("usage")
+        usage: dict[str, int] | None = None
+        if isinstance(raw_usage, dict):
+            usage = {
+                k: int(v)
+                for k, v in raw_usage.items()
+                if k in {"prompt_tokens", "completion_tokens", "total_tokens"}
+                and isinstance(v, int | float)
+            }
+
+        return AIRawResponse(data=data, provider=self.name, model=self.model, usage=usage)

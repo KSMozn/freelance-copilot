@@ -52,6 +52,22 @@ export interface UsageKindCount {
   errors: number;
 }
 
+export interface LlmSpendByModel {
+  model: string;
+  calls: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  cost_usd: number;
+}
+
+export interface LlmSpendSummary {
+  total_calls: number;
+  total_prompt_tokens: number;
+  total_completion_tokens: number;
+  total_cost_usd: number;
+  by_model: LlmSpendByModel[];
+}
+
 export interface AdminOverview {
   users_total: number;
   users_students: number;
@@ -63,6 +79,7 @@ export interface AdminOverview {
   funnel: WizardFunnel;
   entries_by_kind: EntryKindCount[];
   usage_by_kind_7d: UsageKindCount[];
+  llm_spend_7d: LlmSpendSummary;
 }
 
 export interface AdminUserRow {

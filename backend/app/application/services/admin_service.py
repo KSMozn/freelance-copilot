@@ -13,7 +13,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import case, delete, func, or_, select
+from sqlalchemy import Integer, Numeric, case, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.dto.admin_dto import (
@@ -26,6 +26,8 @@ from app.application.dto.admin_dto import (
     BulkRecipient,
     EmailPreviewResponse,
     EntryKindCount,
+    LlmSpendByModel,
+    LlmSpendSummary,
     SignupsPoint,
     UsageKindCount,
     WizardFunnel,
@@ -146,6 +148,8 @@ class AdminService:
             for (k, t, e) in usage_rows
         ]
 
+        llm_spend_7d = await self._compute_llm_spend(week_ago)
+
         return AdminOverview(
             users_total=users_total,
             users_students=users_students,
@@ -157,6 +161,79 @@ class AdminService:
             funnel=funnel,
             entries_by_kind=entries_by_kind,
             usage_by_kind_7d=usage_by_kind_7d,
+            llm_spend_7d=llm_spend_7d,
+        )
+
+    async def _compute_llm_spend(self, since: datetime) -> LlmSpendSummary:
+        """Aggregate token usage + estimated USD cost from usage_events.
+
+        Only events that carry `meta.prompt_tokens` count — legacy or
+        non-LLM rows are ignored. Numeric fields inside JSONB come back
+        as strings from Postgres; we cast + fall back to 0 on missing
+        keys so the query never blows up on a partially-populated row.
+
+        Uses a subquery to materialize the JSONB-extraction expressions
+        once — putting them directly in GROUP BY vs. SELECT produced two
+        separate parameter placeholders under asyncpg + Postgres refused
+        to recognize them as the same expression.
+        """
+        inner = (
+            select(
+                func.coalesce(
+                    UsageEvent.meta.op("->>")("model"), "unknown"
+                ).label("model"),
+                func.coalesce(
+                    func.cast(
+                        UsageEvent.meta.op("->>")("prompt_tokens"), Integer
+                    ),
+                    0,
+                ).label("pt"),
+                func.coalesce(
+                    func.cast(
+                        UsageEvent.meta.op("->>")("completion_tokens"), Integer
+                    ),
+                    0,
+                ).label("ct"),
+                func.coalesce(
+                    func.cast(
+                        UsageEvent.meta.op("->>")("cost_usd"), Numeric(12, 6)
+                    ),
+                    0,
+                ).label("cost"),
+            )
+            .where(UsageEvent.created_at >= since)
+            .where(UsageEvent.meta.op("?")("prompt_tokens"))
+            .subquery()
+        )
+        stmt = (
+            select(
+                inner.c.model,
+                func.count().label("calls"),
+                func.sum(inner.c.pt).label("prompt_tokens"),
+                func.sum(inner.c.ct).label("completion_tokens"),
+                func.sum(inner.c.cost).label("cost_usd"),
+            )
+            .group_by(inner.c.model)
+            .order_by(func.sum(inner.c.cost).desc())
+        )
+        rows = (await self._session.execute(stmt)).all()
+
+        by_model = [
+            LlmSpendByModel(
+                model=str(m),
+                calls=int(calls or 0),
+                prompt_tokens=int(pt or 0),
+                completion_tokens=int(ct or 0),
+                cost_usd=float(cost or 0),
+            )
+            for (m, calls, pt, ct, cost) in rows
+        ]
+        return LlmSpendSummary(
+            total_calls=sum(m.calls for m in by_model),
+            total_prompt_tokens=sum(m.prompt_tokens for m in by_model),
+            total_completion_tokens=sum(m.completion_tokens for m in by_model),
+            total_cost_usd=round(sum(m.cost_usd for m in by_model), 4),
+            by_model=by_model,
         )
 
     async def _compute_funnel(self, users_total: int) -> WizardFunnel:

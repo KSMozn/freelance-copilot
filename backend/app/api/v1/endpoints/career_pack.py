@@ -26,6 +26,7 @@ from app.application.services.career_pack_service import (
     CareerPackError,
     CareerPackService,
 )
+from app.application.services.llm_cost import usage_meta as _usage_meta
 from app.application.services.student_profile_service import StudentProfileService
 from app.application.services.text_extraction import (
     TextExtractionError,
@@ -51,15 +52,24 @@ StudentSvc = Annotated[StudentProfileService, Depends(_student_svc)]
 AiDep = Annotated[AIProvider, Depends(get_ai_provider)]
 
 
-def _emit(user_id, name: str, start: float, meta=None, error=None) -> None:
+def _emit(user_id, name: str, start: float, meta=None, error=None, career=None) -> None:
     latency_ms = int((time.perf_counter() - start) * 1000)
+    final_meta = dict(meta or {})
+    if career is not None:
+        final_meta.update(
+            _usage_meta(
+                usage=getattr(career, "last_usage", None),
+                model=getattr(career, "last_model", None),
+                provider=getattr(career, "last_provider", None),
+            )
+        )
     usage_event_service.fire(
         user_id=user_id,
         kind=name,
         status="error" if error else "ok",
         duration_ms=latency_ms,
         error_message=error,
-        meta=meta or {},
+        meta=final_meta,
     )
 
 
@@ -92,9 +102,9 @@ async def generate_linkedin(
     try:
         result = await career.generate_linkedin(profile=profile, entries=entries)
     except CareerPackError as exc:
-        _emit(user.id, "career_pack.linkedin.generate", start, error=str(exc))
+        _emit(user.id, "career_pack.linkedin.generate", start, error=str(exc), career=career)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
-    _emit(user.id, "career_pack.linkedin.generate", start)
+    _emit(user.id, "career_pack.linkedin.generate", start, career=career)
     return result
 
 
@@ -137,14 +147,14 @@ async def review_linkedin(
             profile_text=profile_text,
         )
     except CareerPackError as exc:
-        _emit(user.id, "career_pack.linkedin.review", start, error=str(exc))
+        _emit(user.id, "career_pack.linkedin.review", start, error=str(exc), career=career)
         code = (
             status.HTTP_400_BAD_REQUEST
             if "doesn't look like" in str(exc) or "Add a few CV details" in str(exc)
             else status.HTTP_502_BAD_GATEWAY
         )
         raise HTTPException(status_code=code, detail=str(exc)) from exc
-    _emit(user.id, "career_pack.linkedin.review", start)
+    _emit(user.id, "career_pack.linkedin.review", start, career=career)
     return result
 
 
@@ -162,9 +172,9 @@ async def generate_github(
     try:
         result = await career.generate_github(profile=profile, entries=entries)
     except CareerPackError as exc:
-        _emit(user.id, "career_pack.github.generate", start, error=str(exc))
+        _emit(user.id, "career_pack.github.generate", start, error=str(exc), career=career)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
-    _emit(user.id, "career_pack.github.generate", start)
+    _emit(user.id, "career_pack.github.generate", start, career=career)
     return result
 
 
@@ -206,7 +216,7 @@ async def review_github(
             identifier=payload.identifier,
         )
     except CareerPackError as exc:
-        _emit(user.id, "career_pack.github.review", start, error=str(exc))
+        _emit(user.id, "career_pack.github.review", start, error=str(exc), career=career)
         # 400 for bad usernames / no-such-user; 502 for AI upstream flakes.
         code = (
             status.HTTP_400_BAD_REQUEST
@@ -214,5 +224,5 @@ async def review_github(
             else status.HTTP_502_BAD_GATEWAY
         )
         raise HTTPException(status_code=code, detail=str(exc)) from exc
-    _emit(user.id, "career_pack.github.review", start)
+    _emit(user.id, "career_pack.github.review", start, career=career)
     return result

@@ -8,11 +8,17 @@ class AIRawResponse:
 
     Validation against task-specific Pydantic schemas (analyzer, proposal, …)
     happens in the application layer so the domain stays decoupled.
+
+    `usage` is populated when the underlying HTTP response includes a
+    `usage` field (OpenAI-compatible providers do). Consumers log it into
+    `usage_events.meta` so the admin panel can aggregate LLM spend.
+    Shape: `{"prompt_tokens": int, "completion_tokens": int, "total_tokens": int}`.
     """
 
     data: dict[str, Any]
     provider: str
     model: str
+    usage: dict[str, int] | None = None
 
 
 class AIProvider(Protocol):

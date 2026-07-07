@@ -36,7 +36,7 @@ from app.application.dto.student_dto import (
     TextCoachRequest,
     TextCoachResponse,
 )
-from app.domain.providers.ai_provider import AIProvider
+from app.domain.providers.ai_provider import AIProvider, AIRawResponse
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
     StudentProfileEntry,
@@ -335,6 +335,17 @@ def _summarise_for_prompt(
 class StudentCoachService:
     def __init__(self, ai_provider: AIProvider) -> None:
         self._ai = ai_provider
+        # Populated after each provider call so the endpoint can log
+        # token usage + estimated cost into usage_events.meta.
+        self.last_usage: dict[str, int] | None = None
+        self.last_model: str | None = None
+        self.last_provider: str | None = None
+
+    def _capture(self, raw: AIRawResponse) -> AIRawResponse:
+        self.last_usage = raw.usage
+        self.last_model = raw.model
+        self.last_provider = raw.provider
+        return raw
 
     # Email check is pure-rules and doesn't need a service instance, but
     # we expose it here so callers (FastAPI deps) get one service surface.
@@ -346,11 +357,13 @@ class StudentCoachService:
         self, *, image_bytes: bytes, mime_type: str
     ) -> PhotoCoachResponse:
         try:
-            raw = await self._ai.complete_json_with_image(
-                system_prompt=_PHOTO_SYSTEM_PROMPT,
-                user_prompt=_PHOTO_USER_PROMPT,
-                image_bytes=image_bytes,
-                image_mime_type=mime_type,
+            raw = self._capture(
+                await self._ai.complete_json_with_image(
+                    system_prompt=_PHOTO_SYSTEM_PROMPT,
+                    user_prompt=_PHOTO_USER_PROMPT,
+                    image_bytes=image_bytes,
+                    image_mime_type=mime_type,
+                )
             )
         except Exception as exc:  # coach is best-effort; never gate the wizard
             logger.warning("Photo coach failed: %s", exc)
@@ -433,8 +446,8 @@ class StudentCoachService:
             "Draft headline + summary. Return JSON only."
         )
         try:
-            raw = await self._ai.complete_json(
-                system_prompt=system, user_prompt=user
+            raw = self._capture(
+                await self._ai.complete_json(system_prompt=system, user_prompt=user)
             )
         except Exception as exc:  # coach is best-effort; never gate the wizard
             logger.warning("Draft summary failed: %s", exc)
@@ -556,8 +569,8 @@ class StudentCoachService:
         )
 
         try:
-            raw = await self._ai.complete_json(
-                system_prompt=system, user_prompt=user
+            raw = self._capture(
+                await self._ai.complete_json(system_prompt=system, user_prompt=user)
             )
         except Exception as exc:  # coach is best-effort; never gate the wizard
             logger.warning("Proofread failed: %s", exc)
@@ -606,8 +619,8 @@ class StudentCoachService:
             "Rewrite. Return JSON only."
         )
         try:
-            raw = await self._ai.complete_json(
-                system_prompt=system, user_prompt=user
+            raw = self._capture(
+                await self._ai.complete_json(system_prompt=system, user_prompt=user)
             )
         except Exception as exc:  # coach is best-effort; never gate the wizard
             logger.warning("Text coach failed: %s", exc)
@@ -651,8 +664,8 @@ class StudentCoachService:
         system = _INTERNSHIP_COACH_SYSTEM
         user = _build_internship_user_prompt(req)
         try:
-            raw = await self._ai.complete_json(
-                system_prompt=system, user_prompt=user
+            raw = self._capture(
+                await self._ai.complete_json(system_prompt=system, user_prompt=user)
             )
         except Exception as exc:  # coach is best-effort; never gate the wizard
             logger.warning("Internship coach failed: %s", exc)
