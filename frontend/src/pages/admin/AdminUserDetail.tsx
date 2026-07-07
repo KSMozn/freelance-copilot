@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import {
+  downloadAdminUserCvDocx,
+  downloadAdminUserCvPdf,
   useAdminDeleteUser,
   useAdminDisableUser,
   useAdminEmailPreview,
@@ -18,6 +20,7 @@ import {
   useAdminResetWizard,
   useAdminSendEmail,
   useAdminUser,
+  useAdminUserCvPreview,
   useAdminUserEntries,
 } from "@/lib/admin";
 
@@ -192,6 +195,10 @@ export function AdminUserDetailPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {id && user.student && (
+        <CvPreviewCard userId={id} userFullName={user.full_name ?? user.email} />
+      )}
 
       {id && <SendEmailCard userId={id} userEmail={user.email} />}
 
@@ -499,6 +506,118 @@ function EmailPreviewModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// ---- CV preview card ---------------------------------------------------
+//
+// Renders the user's CV HTML inline so we can eyeball it without
+// impersonating (which would mutate their last_login_at + fire an
+// impersonation audit event). Also exposes PDF + DOCX download —
+// same renderers as the student, one audit event per action.
+
+function CvPreviewCard({
+  userId,
+  userFullName,
+}: {
+  userId: string;
+  userFullName: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [docxBusy, setDocxBusy] = useState(false);
+  const { data, isLoading, error, refetch } = useAdminUserCvPreview(
+    loaded ? userId : undefined,
+  );
+
+  async function download(format: "pdf" | "docx") {
+    const setBusy = format === "pdf" ? setPdfBusy : setDocxBusy;
+    setBusy(true);
+    try {
+      const blob =
+        format === "pdf"
+          ? await downloadAdminUserCvPdf(userId)
+          : await downloadAdminUserCvDocx(userId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeName = userFullName.replace(/\s+/g, "_");
+      a.download = format === "pdf" ? `${safeName}.pdf` : `${safeName}_CV.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error(`Could not download ${format.toUpperCase()}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base">CV preview</CardTitle>
+        <div className="flex gap-2">
+          {loaded && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void refetch()}
+              disabled={isLoading}
+            >
+              Reload
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void download("pdf")}
+            disabled={pdfBusy}
+          >
+            {pdfBusy ? "…" : "Download PDF"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void download("docx")}
+            disabled={docxBusy}
+          >
+            {docxBusy ? "…" : "Download DOCX"}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!loaded ? (
+          <div className="flex items-center justify-between rounded-md border bg-muted/20 p-3">
+            <div className="text-xs text-muted-foreground">
+              Preview renders the CV as it would render for the student — no
+              impersonation, no session side effects.
+            </div>
+            <Button size="sm" onClick={() => setLoaded(true)}>
+              Load preview
+            </Button>
+          </div>
+        ) : isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Loading…
+          </div>
+        ) : error ? (
+          <div className="p-4 text-sm text-destructive">
+            Could not load preview.
+          </div>
+        ) : data ? (
+          <div className="overflow-hidden rounded-md border bg-white">
+            <iframe
+              title="Admin CV preview"
+              srcDoc={data.html}
+              className="h-[900px] w-full"
+              sandbox="allow-same-origin"
+            />
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
