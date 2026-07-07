@@ -199,6 +199,31 @@ class AdminActivityResponse(BaseModel):
     size: int
 
 
+class AdminEmailSendRow(BaseModel):
+    """One admin-triggered email send, projected from usage_events.
+
+    Both single and bulk sends land as `admin.action(send_email)` rows
+    with the template id + target user in meta. This DTO joins to the
+    recipient user so the operator sees who got what and can resend.
+    """
+
+    id: UUID
+    sent_at: datetime
+    status: Literal["ok", "error"]
+    template_id: str
+    template_name: str | None
+    target_user_id: UUID | None
+    target_email: str | None
+    target_full_name: str | None
+    actor_email: str | None
+    error_message: str | None
+
+
+class AdminEmailSendsResponse(BaseModel):
+    items: list[AdminEmailSendRow]
+    total: int
+
+
 # ---- Read-only entry inspection (for LLM audit) -------------------------
 
 

@@ -163,6 +163,24 @@ export interface AdminActivityResponse {
   size: number;
 }
 
+export interface AdminEmailSendRow {
+  id: string;
+  sent_at: string;
+  status: "ok" | "error";
+  template_id: string;
+  template_name: string | null;
+  target_user_id: string | null;
+  target_email: string | null;
+  target_full_name: string | null;
+  actor_email: string | null;
+  error_message: string | null;
+}
+
+export interface AdminEmailSendsResponse {
+  items: AdminEmailSendRow[];
+  total: number;
+}
+
 export interface AdminActionResult {
   ok: boolean;
   message: string | null;

@@ -22,6 +22,8 @@ from app.application.dto.admin_dto import (
     AdminCvTemplateListResponse,
     AdminCvTemplateRead,
     AdminCvTemplateUpdate,
+    AdminEmailSendRow,
+    AdminEmailSendsResponse,
     AdminEntriesResponse,
     AdminImpersonateResponse,
     AdminOverview,
@@ -54,6 +56,7 @@ from app.domain.entities.admin_user import AdminUser as AdminUserEntity
 from app.domain.providers.blob_store import BlobStore
 from app.domain.providers.email_provider import EmailProvider
 from app.infrastructure.db.models.feedback_entry import FeedbackEntry
+from app.infrastructure.db.models.usage_event import UsageEvent
 from app.infrastructure.db.models.user import User
 from app.infrastructure.email.errors import EmailProviderError
 
@@ -452,6 +455,82 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 @router.get("/email-templates", response_model=list[EmailTemplateSpec])
 async def list_email_templates(_: CurrentAdmin) -> list[EmailTemplateSpec]:
     return list_templates()
+
+
+@router.get("/emails", response_model=AdminEmailSendsResponse)
+async def list_email_sends(
+    _: CurrentAdmin,
+    session: SessionDep,
+    template_id: str | None = Query(default=None, max_length=64),
+    status_: str | None = Query(default=None, alias="status", pattern="^(ok|error)$"),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> AdminEmailSendsResponse:
+    """History of admin-triggered emails.
+
+    Reads `admin.action(send_email)` rows straight out of `usage_events`
+    (same source of truth the Activity page uses) and joins to the
+    recipient user + resolves the template's display name so operators
+    see human names not slugs.
+    """
+    stmt = (
+        select(UsageEvent)
+        .where(UsageEvent.kind == "admin.action")
+        .where(UsageEvent.meta.op("->>")("action") == "send_email")
+        .order_by(UsageEvent.created_at.desc())
+    )
+    if template_id:
+        stmt = stmt.where(UsageEvent.meta.op("->>")("template") == template_id)
+    if status_:
+        stmt = stmt.where(UsageEvent.status == status_)
+    stmt = stmt.limit(limit)
+    events = (await session.execute(stmt)).scalars().all()
+
+    # Resolve target users in one round-trip so the list doesn't
+    # explode into N+1 queries when we ship 200 rows.
+    target_uuids: set[UUID] = set()
+    for ev in events:
+        meta = ev.meta or {}
+        tid = meta.get("target_user_id")
+        if isinstance(tid, str):
+            try:
+                target_uuids.add(UUID(tid))
+            except ValueError:
+                pass
+    users_by_id: dict[UUID, User] = {}
+    if target_uuids:
+        rows = (
+            await session.execute(select(User).where(User.id.in_(target_uuids)))
+        ).scalars().all()
+        users_by_id = {u.id: u for u in rows}
+
+    items: list[AdminEmailSendRow] = []
+    for ev in events:
+        meta = ev.meta or {}
+        tid_raw = meta.get("target_user_id")
+        target_uuid: UUID | None = None
+        if isinstance(tid_raw, str):
+            try:
+                target_uuid = UUID(tid_raw)
+            except ValueError:
+                target_uuid = None
+        target = users_by_id.get(target_uuid) if target_uuid else None
+        template_slug = str(meta.get("template", "")) or ""
+        spec = get_template(template_slug) if template_slug else None
+        items.append(
+            AdminEmailSendRow(
+                id=ev.id,
+                sent_at=ev.created_at,
+                status=ev.status,  # type: ignore[arg-type]
+                template_id=template_slug,
+                template_name=spec.name if spec else None,
+                target_user_id=target_uuid,
+                target_email=target.email if target else None,
+                target_full_name=target.full_name if target else None,
+                actor_email=meta.get("actor_email") if isinstance(meta.get("actor_email"), str) else None,
+                error_message=ev.error_message,
+            )
+        )
+    return AdminEmailSendsResponse(items=items, total=len(items))
 
 
 @router.get(

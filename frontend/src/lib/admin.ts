@@ -7,6 +7,7 @@ import type {
   AdminCvTemplate,
   AdminCvTemplateListResponse,
   AdminCvTemplateUpdate,
+  AdminEmailSendsResponse,
   AdminEntriesResponse,
   AdminFeedbackItem,
   AdminFeedbackListResponse,
@@ -317,6 +318,34 @@ export async function downloadAdminUserCvDocx(
     params: templateSlug ? { template: templateSlug } : undefined,
   });
   return res.data as Blob;
+}
+
+// ---- Email history -----------------------------------------------------
+
+const EMAILS_KEY = (templateId: string | undefined, status: string | undefined) =>
+  ["admin", "emails", templateId ?? "", status ?? ""] as const;
+
+export function useAdminEmailSends(params: {
+  templateId?: string;
+  status?: string;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: EMAILS_KEY(params.templateId, params.status),
+    queryFn: async () => {
+      const { data } = await api.get<AdminEmailSendsResponse>(
+        "/admin/emails",
+        {
+          params: {
+            template_id: params.templateId || undefined,
+            status: params.status || undefined,
+            limit: params.limit ?? 200,
+          },
+        },
+      );
+      return data;
+    },
+  });
 }
 
 // ---- Feedback triage ---------------------------------------------------
