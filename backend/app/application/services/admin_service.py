@@ -148,7 +148,11 @@ class AdminService:
             for (k, t, e) in usage_rows
         ]
 
-        llm_spend_7d = await self._compute_llm_spend(week_ago)
+        # LLM spend rolls over 30 days (was 7d); at current volume 7d is
+        # noisy — half a week of low usage looks like the coach is broken.
+        # 30d is stable enough to spot trends without being stale.
+        llm_since = now - timedelta(days=30)
+        llm_spend_30d = await self._compute_llm_spend(llm_since)
 
         return AdminOverview(
             users_total=users_total,
@@ -161,10 +165,22 @@ class AdminService:
             funnel=funnel,
             entries_by_kind=entries_by_kind,
             usage_by_kind_7d=usage_by_kind_7d,
-            llm_spend_7d=llm_spend_7d,
+            llm_spend_30d=llm_spend_30d,
         )
 
-    async def _compute_llm_spend(self, since: datetime) -> LlmSpendSummary:
+    async def compute_user_llm_spend(
+        self, user_id: UUID, *, since_days: int = 30
+    ) -> LlmSpendSummary:
+        """Public wrapper — user-scoped LLM spend for the admin user page."""
+        since = datetime.now(tz=UTC) - timedelta(days=since_days)
+        return await self._compute_llm_spend(since, user_id=user_id)
+
+    async def _compute_llm_spend(
+        self,
+        since: datetime,
+        *,
+        user_id: UUID | None = None,
+    ) -> LlmSpendSummary:
         """Aggregate token usage + estimated USD cost from usage_events.
 
         Only events that carry `meta.prompt_tokens` count — legacy or
@@ -176,8 +192,11 @@ class AdminService:
         once — putting them directly in GROUP BY vs. SELECT produced two
         separate parameter placeholders under asyncpg + Postgres refused
         to recognize them as the same expression.
+
+        Pass `user_id` to scope the aggregation to a single user (used
+        by the per-user LLM spend card on the admin user-detail page).
         """
-        inner = (
+        inner_stmt = (
             select(
                 func.coalesce(
                     UsageEvent.meta.op("->>")("model"), "unknown"
@@ -203,8 +222,10 @@ class AdminService:
             )
             .where(UsageEvent.created_at >= since)
             .where(UsageEvent.meta.op("?")("prompt_tokens"))
-            .subquery()
         )
+        if user_id is not None:
+            inner_stmt = inner_stmt.where(UsageEvent.user_id == user_id)
+        inner = inner_stmt.subquery()
         stmt = (
             select(
                 inner.c.model,

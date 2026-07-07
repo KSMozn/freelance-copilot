@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { LlmSpendCardBody } from "@/components/admin/LlmSpendCard";
 import {
   downloadAdminUserCvDocx,
   downloadAdminUserCvPdf,
@@ -23,6 +24,7 @@ import {
   useAdminUser,
   useAdminUserCvPreview,
   useAdminUserEntries,
+  useAdminUserLlmSpend,
 } from "@/lib/admin";
 import type { AdminStudentSummary, AdminUserDetail } from "@/types/admin";
 
@@ -203,6 +205,8 @@ export function AdminUserDetailPage() {
       )}
 
       {id && <SendEmailCard userId={id} userEmail={user.email} />}
+
+      {id && <UserLlmSpendCard userId={id} />}
 
       {id && user.student && <InternshipAuditPanel userId={id} />}
 
@@ -687,6 +691,32 @@ function EmailPreviewModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// ---- Per-user LLM spend card ------------------------------------------
+
+function UserLlmSpendCard({ userId }: { userId: string }) {
+  const { data, isLoading, isError } = useAdminUserLlmSpend(userId, 30);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">LLM spend (last 30 days)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="text-xs text-muted-foreground">Loading…</div>
+        ) : isError || !data ? (
+          <div className="text-xs text-destructive">Could not load spend.</div>
+        ) : (
+          <LlmSpendCardBody
+            summary={data}
+            userId={userId}
+            emptyMessage="This user has no coach or career-pack LLM calls in the last 30 days."
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

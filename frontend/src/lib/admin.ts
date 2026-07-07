@@ -325,19 +325,44 @@ export async function downloadAdminUserCvDocx(
 
 export function useAdminLlmCalls(params: {
   model?: string;
+  userId?: string;
   sinceDays?: number;
   enabled?: boolean;
 }) {
   return useQuery({
-    queryKey: ["admin", "llm-calls", params.model ?? "", params.sinceDays ?? 7] as const,
+    queryKey: [
+      "admin",
+      "llm-calls",
+      params.model ?? "",
+      params.userId ?? "",
+      params.sinceDays ?? 30,
+    ] as const,
     enabled: params.enabled !== false,
     queryFn: async () => {
       const { data } = await api.get<LlmCallsResponse>("/admin/llm-calls", {
         params: {
           model: params.model || undefined,
-          since_days: params.sinceDays ?? 7,
+          user_id: params.userId || undefined,
+          since_days: params.sinceDays ?? 30,
         },
       });
+      return data;
+    },
+  });
+}
+
+export function useAdminUserLlmSpend(
+  userId: string | undefined,
+  sinceDays: number = 30,
+) {
+  return useQuery({
+    queryKey: ["admin", "user", userId ?? "none", "llm-spend", sinceDays] as const,
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await api.get<import("@/types/admin").LlmSpendSummary>(
+        `/admin/users/${userId}/llm-spend`,
+        { params: { since_days: sinceDays } },
+      );
       return data;
     },
   });

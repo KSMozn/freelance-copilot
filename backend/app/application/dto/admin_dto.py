@@ -93,7 +93,7 @@ class LlmCallsResponse(BaseModel):
 
 
 class LlmSpendSummary(BaseModel):
-    """Aggregated LLM usage over the last 7 days.
+    """Aggregated LLM usage over a rolling window (default 30 days).
 
     Populated from `usage_events.meta` (`prompt_tokens`, `completion_tokens`,
     `cost_usd`, `model`) that emit sites write after each provider call.
@@ -119,7 +119,7 @@ class AdminOverview(BaseModel):
     funnel: WizardFunnel
     entries_by_kind: list[EntryKindCount]
     usage_by_kind_7d: list[UsageKindCount]
-    llm_spend_7d: LlmSpendSummary
+    llm_spend_30d: LlmSpendSummary
 
 
 # ---- Users --------------------------------------------------------------
