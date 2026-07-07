@@ -290,14 +290,23 @@ class AdminService:
         page: int,
         size: int,
         stuck_at: str | None = None,
+        persona: str | None = None,
+        active: bool | None = None,
+        email_verified: bool | None = None,
+        has_cv: bool | None = None,
+        college: str | None = None,
+        signed_up_after: datetime | None = None,
+        signed_up_before: datetime | None = None,
     ) -> tuple[list[AdminUserRow], int]:
-        """List users with optional email/name search + funnel drill-down.
+        """List users with optional filters — search / funnel cohort /
+        persona / status / has-CV / college / signup date range.
 
-        `stuck_at` filters to the cohort that reached step X but hasn't
-        completed the next one — the drill-down target from the Overview
-        funnel bars. Special value ``"registered"`` returns users with no
-        wizard progress at all (no student_profile row or empty
-        completed_steps). Unknown slugs are ignored.
+        Filters compose (AND). `stuck_at` behavior is unchanged from
+        item #6 (registered → no wizard progress, any wizard slug →
+        stuck at that step). `has_cv=true` means the user has at least
+        one successful `cv.pdf` event; `has_cv=false` means none.
+        `college` matches by case-insensitive substring on
+        `student_profiles.college`.
         """
         q = select(User)
         if search:
@@ -308,6 +317,43 @@ class AdminService:
                     func.lower(func.coalesce(User.full_name, "")).like(like),
                 )
             )
+        if persona in ("student", "professional"):
+            q = q.where(User.selected_persona_kind == persona)
+        if active is True:
+            q = q.where(User.is_active.is_(True))
+        elif active is False:
+            q = q.where(User.is_active.is_(False))
+        if email_verified is True:
+            q = q.where(User.email_verified_at.is_not(None))
+        elif email_verified is False:
+            q = q.where(User.email_verified_at.is_(None))
+        if signed_up_after is not None:
+            q = q.where(User.created_at >= signed_up_after)
+        if signed_up_before is not None:
+            q = q.where(User.created_at < signed_up_before)
+        if college:
+            college_like = f"%{college.strip().lower()}%"
+            has_college = select(StudentProfile.user_id).where(
+                StudentProfile.user_id == User.id,
+                func.lower(func.coalesce(StudentProfile.college, "")).like(
+                    college_like
+                ),
+            )
+            q = q.where(has_college.exists())
+        if has_cv is True:
+            has_dl = select(UsageEvent.id).where(
+                UsageEvent.user_id == User.id,
+                UsageEvent.kind == "cv.pdf",
+                UsageEvent.status == "ok",
+            )
+            q = q.where(has_dl.exists())
+        elif has_cv is False:
+            has_dl = select(UsageEvent.id).where(
+                UsageEvent.user_id == User.id,
+                UsageEvent.kind == "cv.pdf",
+                UsageEvent.status == "ok",
+            )
+            q = q.where(~has_dl.exists())
         if stuck_at == "registered":
             # Everyone who has NOT completed the basics step yet: either
             # no student_profile row, or one with no completed_steps.

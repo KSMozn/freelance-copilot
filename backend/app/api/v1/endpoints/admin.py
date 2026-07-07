@@ -99,11 +99,28 @@ async def list_users(
     svc: AdminSvc,
     search: str | None = Query(default=None),
     stuck_at: str | None = Query(default=None, max_length=32),
+    persona: str | None = Query(default=None, pattern="^(student|professional)$"),
+    active: bool | None = Query(default=None),
+    email_verified: bool | None = Query(default=None),
+    has_cv: bool | None = Query(default=None),
+    college: str | None = Query(default=None, max_length=120),
+    signed_up_after: datetime | None = Query(default=None),
+    signed_up_before: datetime | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     size: int = Query(default=25, ge=1, le=200),
 ) -> AdminUserListResponse:
     items, total = await svc.list_users(
-        search=search, page=page, size=size, stuck_at=stuck_at
+        search=search,
+        page=page,
+        size=size,
+        stuck_at=stuck_at,
+        persona=persona,
+        active=active,
+        email_verified=email_verified,
+        has_cv=has_cv,
+        college=college,
+        signed_up_after=signed_up_after,
+        signed_up_before=signed_up_before,
     )
     return AdminUserListResponse(items=items, total=total, page=page, size=size)
 

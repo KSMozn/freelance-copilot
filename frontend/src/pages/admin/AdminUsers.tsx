@@ -37,18 +37,66 @@ const STUCK_AT_LABELS: Record<string, string> = {
   "starter-pack": "Reached Starter Pack",
 };
 
+function parseBool(v: string | null): boolean | undefined {
+  if (v === "true") return true;
+  if (v === "false") return false;
+  return undefined;
+}
+
 export function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const size = 25;
   const [params, setParams] = useSearchParams();
   const stuckAt = params.get("stuck_at");
+  const persona = params.get("persona") ?? "";
+  const active = parseBool(params.get("active"));
+  const emailVerified = parseBool(params.get("email_verified"));
+  const hasCv = parseBool(params.get("has_cv"));
+  const college = params.get("college") ?? "";
+  const signedUpAfter = params.get("signed_up_after") ?? "";
+  const signedUpBefore = params.get("signed_up_before") ?? "";
   const stuckAtLabel = stuckAt ? STUCK_AT_LABELS[stuckAt] ?? stuckAt : null;
+
+  function updateFilter(key: string, value: string | null) {
+    const next = new URLSearchParams(params);
+    if (value === null || value === "") next.delete(key);
+    else next.set(key, value);
+    setParams(next, { replace: true });
+    setPage(1);
+  }
+
+  function clearAllFilters() {
+    setParams(new URLSearchParams(), { replace: true });
+    setPage(1);
+  }
+
+  const hasAnyFilter =
+    !!stuckAt ||
+    !!persona ||
+    active !== undefined ||
+    emailVerified !== undefined ||
+    hasCv !== undefined ||
+    !!college ||
+    !!signedUpAfter ||
+    !!signedUpBefore;
+
   const { data, isLoading } = useAdminUsers({
     search,
     page,
     size,
     stuckAt: stuckAt ?? undefined,
+    persona: persona || undefined,
+    active,
+    emailVerified,
+    hasCv,
+    college: college || undefined,
+    signedUpAfter: signedUpAfter
+      ? new Date(signedUpAfter).toISOString()
+      : undefined,
+    signedUpBefore: signedUpBefore
+      ? new Date(signedUpBefore).toISOString()
+      : undefined,
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -89,32 +137,108 @@ export function AdminUsersPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Search by email or name…"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="max-w-sm"
-        />
-        {stuckAtLabel && (
-          <div className="flex items-center gap-1 rounded-full border bg-primary/10 px-3 py-1 text-xs text-primary">
-            <span className="font-medium">{stuckAtLabel}</span>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Search by email or name…"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="max-w-sm"
+          />
+          <div className="w-36">
+            <Select
+              value={persona}
+              onChange={(e) => updateFilter("persona", e.target.value)}
+              options={[
+                { value: "", label: "All personas" },
+                { value: "student", label: "Student" },
+                { value: "professional", label: "Professional" },
+              ]}
+            />
+          </div>
+          <div className="w-32">
+            <Select
+              value={active === undefined ? "" : String(active)}
+              onChange={(e) => updateFilter("active", e.target.value)}
+              options={[
+                { value: "", label: "Any status" },
+                { value: "true", label: "Active" },
+                { value: "false", label: "Disabled" },
+              ]}
+            />
+          </div>
+          <div className="w-40">
+            <Select
+              value={
+                emailVerified === undefined ? "" : String(emailVerified)
+              }
+              onChange={(e) => updateFilter("email_verified", e.target.value)}
+              options={[
+                { value: "", label: "Any verification" },
+                { value: "true", label: "Verified" },
+                { value: "false", label: "Unverified" },
+              ]}
+            />
+          </div>
+          <div className="w-40">
+            <Select
+              value={hasCv === undefined ? "" : String(hasCv)}
+              onChange={(e) => updateFilter("has_cv", e.target.value)}
+              options={[
+                { value: "", label: "CV download?" },
+                { value: "true", label: "Downloaded CV" },
+                { value: "false", label: "No CV yet" },
+              ]}
+            />
+          </div>
+          <Input
+            placeholder="University…"
+            value={college}
+            onChange={(e) => updateFilter("college", e.target.value)}
+            className="max-w-[200px]"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span>Signed up between</span>
+          <Input
+            type="date"
+            value={signedUpAfter}
+            onChange={(e) => updateFilter("signed_up_after", e.target.value)}
+            className="h-8 max-w-[160px] text-xs"
+          />
+          <span>and</span>
+          <Input
+            type="date"
+            value={signedUpBefore}
+            onChange={(e) => updateFilter("signed_up_before", e.target.value)}
+            className="h-8 max-w-[160px] text-xs"
+          />
+          {hasAnyFilter && (
             <button
               type="button"
-              onClick={() => {
-                const next = new URLSearchParams(params);
-                next.delete("stuck_at");
-                setParams(next, { replace: true });
-                setPage(1);
-              }}
-              className="ml-1 rounded-full px-1 text-primary/70 hover:bg-primary/20 hover:text-primary"
-              aria-label="Clear funnel filter"
+              onClick={clearAllFilters}
+              className="ml-auto text-xs text-primary hover:underline"
             >
-              ×
+              Clear all filters
             </button>
+          )}
+        </div>
+        {stuckAtLabel && (
+          <div className="flex flex-wrap gap-1">
+            <div className="flex items-center gap-1 rounded-full border bg-primary/10 px-3 py-1 text-xs text-primary">
+              <span className="font-medium">{stuckAtLabel}</span>
+              <button
+                type="button"
+                onClick={() => updateFilter("stuck_at", null)}
+                className="ml-1 rounded-full px-1 text-primary/70 hover:bg-primary/20 hover:text-primary"
+                aria-label="Clear funnel filter"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
         {selected.size > 0 && (

@@ -21,11 +21,36 @@ import type {
 } from "@/types/admin";
 
 const OVERVIEW_KEY = ["admin", "overview"] as const;
-const USERS_KEY = (
-  search: string | undefined,
-  page: number,
-  stuckAt?: string,
-) => ["admin", "users", search ?? "", stuckAt ?? "", page] as const;
+export interface AdminUsersFilters {
+  search?: string;
+  page: number;
+  size?: number;
+  stuckAt?: string;
+  persona?: string;
+  active?: boolean;
+  emailVerified?: boolean;
+  hasCv?: boolean;
+  college?: string;
+  signedUpAfter?: string;
+  signedUpBefore?: string;
+}
+
+function usersKey(f: AdminUsersFilters) {
+  return [
+    "admin",
+    "users",
+    f.search ?? "",
+    f.stuckAt ?? "",
+    f.persona ?? "",
+    f.active ?? "",
+    f.emailVerified ?? "",
+    f.hasCv ?? "",
+    f.college ?? "",
+    f.signedUpAfter ?? "",
+    f.signedUpBefore ?? "",
+    f.page,
+  ] as const;
+}
 const USER_KEY = (id: string) => ["admin", "user", id] as const;
 const ACTIVITY_KEY = (kind: string | undefined, status: string | undefined, page: number) =>
   ["admin", "activity", kind ?? "", status ?? "", page] as const;
@@ -40,19 +65,21 @@ export function useAdminOverview() {
   });
 }
 
-export function useAdminUsers(params: {
-  search?: string;
-  page: number;
-  size?: number;
-  stuckAt?: string;
-}) {
+export function useAdminUsers(params: AdminUsersFilters) {
   return useQuery({
-    queryKey: USERS_KEY(params.search, params.page, params.stuckAt),
+    queryKey: usersKey(params),
     queryFn: async () => {
       const { data } = await api.get<AdminUserListResponse>("/admin/users", {
         params: {
           search: params.search || undefined,
           stuck_at: params.stuckAt || undefined,
+          persona: params.persona || undefined,
+          active: params.active,
+          email_verified: params.emailVerified,
+          has_cv: params.hasCv,
+          college: params.college || undefined,
+          signed_up_after: params.signedUpAfter || undefined,
+          signed_up_before: params.signedUpBefore || undefined,
           page: params.page,
           size: params.size ?? 25,
         },
