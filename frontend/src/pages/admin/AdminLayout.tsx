@@ -26,6 +26,7 @@ export function AdminLayout() {
         <nav className="flex-1 space-y-1 p-2">
           <SideLink to="/overview" label="Overview" />
           <SideLink to="/users" label="Users" />
+          <SideLink to="/feedback" label="Feedback" />
           <SideLink to="/templates" label="Templates" />
           <SideLink to="/activity" label="Activity" />
         </nav>

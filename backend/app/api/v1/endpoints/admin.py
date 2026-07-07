@@ -7,14 +7,14 @@ action.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.application.dto.admin_dto import (
     AdminActionResult,
@@ -37,7 +37,7 @@ from app.application.dto.admin_dto import (
     SendEmailBulkResponse,
     SendEmailRequest,
 )
-from app.application.dto.feedback_dto import FeedbackListResponse, FeedbackRead
+from app.application.dto.feedback_dto import AdminFeedbackItem, AdminFeedbackListResponse
 from app.application.email_templates import EmailTemplateSpec, get_template, list_templates
 from app.application.services import usage_event_service
 from app.application.services.admin_service import AdminService
@@ -49,6 +49,7 @@ from app.core.security import create_access_token, create_refresh_token
 from app.domain.entities.admin_user import AdminUser as AdminUserEntity
 from app.domain.providers.email_provider import EmailProvider
 from app.infrastructure.db.models.feedback_entry import FeedbackEntry
+from app.infrastructure.db.models.user import User
 from app.infrastructure.email.errors import EmailProviderError
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -436,27 +437,150 @@ async def update_cv_template(
     return AdminCvTemplateRead.model_validate(row)
 
 
-# ---- Feedback list ------------------------------------------------------
+# ---- Feedback triage inbox ---------------------------------------------
 
 
-@router.get("/feedback", response_model=FeedbackListResponse)
+@router.get("/feedback", response_model=AdminFeedbackListResponse)
 async def list_feedback(
     _: CurrentAdmin,
     session: SessionDep,
     kind: str | None = Query(default=None, pattern="^(general|post_download)$"),
     since: datetime | None = Query(default=None),
+    resolved: bool | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
-) -> FeedbackListResponse:
-    stmt = select(FeedbackEntry).order_by(FeedbackEntry.created_at.desc())
+) -> AdminFeedbackListResponse:
+    """Triage inbox — joins to `users` so the operator sees who wrote it.
+
+    `resolved=None` returns everything; `false` only unresolved; `true`
+    only resolved. Unresolved count is computed once and returned
+    alongside so the sidebar badge doesn't need a second round-trip.
+    """
+    stmt = (
+        select(FeedbackEntry, User.email, User.full_name)
+        .join(User, User.id == FeedbackEntry.user_id, isouter=True)
+        .order_by(FeedbackEntry.created_at.desc())
+    )
     if kind:
         stmt = stmt.where(FeedbackEntry.kind == kind)
     if since:
         stmt = stmt.where(FeedbackEntry.created_at >= since)
+    if resolved is True:
+        stmt = stmt.where(FeedbackEntry.resolved_at.is_not(None))
+    elif resolved is False:
+        stmt = stmt.where(FeedbackEntry.resolved_at.is_(None))
     stmt = stmt.limit(limit)
-    rows = (await session.execute(stmt)).scalars().all()
-    return FeedbackListResponse(
-        items=[FeedbackRead.model_validate(r) for r in rows],
-        total=len(rows),
+    rows = (await session.execute(stmt)).all()
+
+    items: list[AdminFeedbackItem] = []
+    for row_entry, row_email, row_name in rows:
+        resolver_email = row_entry.meta.get("resolved_by_email") if row_entry.meta else None
+        items.append(
+            AdminFeedbackItem(
+                id=row_entry.id,
+                user_id=row_entry.user_id,
+                user_email=row_email,
+                user_full_name=row_name,
+                kind=row_entry.kind,
+                rating=row_entry.rating,
+                message=row_entry.message,
+                template_slug=row_entry.template_slug,
+                created_at=row_entry.created_at,
+                resolved_at=row_entry.resolved_at,
+                resolved_by_email=resolver_email,
+            )
+        )
+
+    unresolved_count = (
+        await session.execute(
+            select(func.count())
+            .select_from(FeedbackEntry)
+            .where(FeedbackEntry.resolved_at.is_(None))
+        )
+    ).scalar_one()
+
+    return AdminFeedbackListResponse(
+        items=items, total=len(items), unresolved_count=int(unresolved_count)
+    )
+
+
+@router.post("/feedback/{feedback_id}/resolve", response_model=AdminFeedbackItem)
+async def resolve_feedback(
+    feedback_id: UUID, actor: CurrentAdmin, session: SessionDep
+) -> AdminFeedbackItem:
+    row = (
+        await session.execute(
+            select(FeedbackEntry).where(FeedbackEntry.id == feedback_id)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
+    row.resolved_at = datetime.now(tz=UTC)
+    row.meta = {
+        **(row.meta or {}),
+        "resolved_by_admin_id": str(actor.id),
+        "resolved_by_email": actor.email,
+    }
+    await session.commit()
+    await session.refresh(row)
+    _audit(actor, "resolve_feedback", row.user_id, extra={"feedback_id": str(row.id)})
+
+    user_row = (
+        await session.execute(
+            select(User.email, User.full_name).where(User.id == row.user_id)
+        )
+    ).one_or_none()
+    return AdminFeedbackItem(
+        id=row.id,
+        user_id=row.user_id,
+        user_email=user_row[0] if user_row else None,
+        user_full_name=user_row[1] if user_row else None,
+        kind=row.kind,
+        rating=row.rating,
+        message=row.message,
+        template_slug=row.template_slug,
+        created_at=row.created_at,
+        resolved_at=row.resolved_at,
+        resolved_by_email=actor.email,
+    )
+
+
+@router.post("/feedback/{feedback_id}/unresolve", response_model=AdminFeedbackItem)
+async def unresolve_feedback(
+    feedback_id: UUID, actor: CurrentAdmin, session: SessionDep
+) -> AdminFeedbackItem:
+    row = (
+        await session.execute(
+            select(FeedbackEntry).where(FeedbackEntry.id == feedback_id)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found")
+    row.resolved_at = None
+    meta = dict(row.meta or {})
+    meta.pop("resolved_by_admin_id", None)
+    meta.pop("resolved_by_email", None)
+    row.meta = meta
+    await session.commit()
+    await session.refresh(row)
+    _audit(actor, "unresolve_feedback", row.user_id, extra={"feedback_id": str(row.id)})
+
+    user_row = (
+        await session.execute(
+            select(User.email, User.full_name).where(User.id == row.user_id)
+        )
+    ).one_or_none()
+    return AdminFeedbackItem(
+        id=row.id,
+        user_id=row.user_id,
+        user_email=user_row[0] if user_row else None,
+        user_full_name=user_row[1] if user_row else None,
+        kind=row.kind,
+        rating=row.rating,
+        message=row.message,
+        template_slug=row.template_slug,
+        created_at=row.created_at,
+        resolved_at=None,
+        resolved_by_email=None,
     )
 
 

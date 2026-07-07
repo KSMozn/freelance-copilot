@@ -178,6 +178,30 @@ export interface AdminCvTemplateUpdate {
   sort_order?: number;
 }
 
+// ---- Feedback triage ---------------------------------------------------
+
+export type FeedbackKind = "general" | "post_download";
+
+export interface AdminFeedbackItem {
+  id: string;
+  user_id: string;
+  user_email: string | null;
+  user_full_name: string | null;
+  kind: FeedbackKind;
+  rating: number | null;
+  message: string | null;
+  template_slug: string | null;
+  created_at: string;
+  resolved_at: string | null;
+  resolved_by_email: string | null;
+}
+
+export interface AdminFeedbackListResponse {
+  items: AdminFeedbackItem[];
+  total: number;
+  unresolved_count: number;
+}
+
 // ---- Admin-triggered emails --------------------------------------------
 
 export interface EmailTemplateSpec {
