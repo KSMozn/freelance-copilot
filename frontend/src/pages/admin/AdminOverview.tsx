@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { useAdminOverview } from "@/lib/admin";
+import { useAdminLlmCalls, useAdminOverview } from "@/lib/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   AdminOverview,
@@ -312,36 +313,156 @@ function LlmSpendCard({ summary }: { summary: LlmSpendSummary }) {
           value={`$${summary.total_cost_usd.toFixed(4)}`}
         />
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-xs text-muted-foreground">
-            <th className="py-1 text-left font-normal">Model</th>
-            <th className="py-1 text-right font-normal">Calls</th>
-            <th className="py-1 text-right font-normal">Prompt tok</th>
-            <th className="py-1 text-right font-normal">Completion tok</th>
-            <th className="py-1 text-right font-normal">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          {summary.by_model.map((m) => (
-            <tr key={m.model} className="border-b last:border-none">
-              <td className="py-2 font-mono text-xs">{m.model}</td>
-              <td className="py-2 text-right tabular-nums">
+      <ModelBreakdownTable models={summary.by_model} />
+    </div>
+  );
+}
+
+function ModelBreakdownTable({
+  models,
+}: {
+  models: LlmSpendSummary["by_model"];
+}) {
+  const [expandedModel, setExpandedModel] = useState<string | null>(null);
+  return (
+    <div className="text-sm">
+      <div className="grid grid-cols-[1fr_auto_auto_auto_auto_20px] gap-x-3 border-b py-1 text-xs uppercase tracking-wide text-muted-foreground">
+        <div>Model</div>
+        <div className="text-right">Calls</div>
+        <div className="text-right">Prompt</div>
+        <div className="text-right">Completion</div>
+        <div className="text-right">Cost</div>
+        <div />
+      </div>
+      {models.map((m) => {
+        const open = expandedModel === m.model;
+        return (
+          <div key={m.model} className="border-b last:border-none">
+            <button
+              type="button"
+              onClick={() => setExpandedModel(open ? null : m.model)}
+              className="grid w-full grid-cols-[1fr_auto_auto_auto_auto_20px] items-center gap-x-3 py-2 text-left transition-colors hover:bg-muted/40"
+            >
+              <div className="font-mono text-xs">{m.model}</div>
+              <div className="text-right tabular-nums">
                 {m.calls.toLocaleString()}
-              </td>
-              <td className="py-2 text-right tabular-nums">
+              </div>
+              <div className="text-right tabular-nums">
                 {m.prompt_tokens.toLocaleString()}
-              </td>
-              <td className="py-2 text-right tabular-nums">
+              </div>
+              <div className="text-right tabular-nums">
                 {m.completion_tokens.toLocaleString()}
-              </td>
-              <td className="py-2 text-right tabular-nums">
+              </div>
+              <div className="text-right tabular-nums">
                 ${m.cost_usd.toFixed(4)}
-              </td>
+              </div>
+              <div
+                className={
+                  "text-xs text-muted-foreground transition-transform " +
+                  (open ? "rotate-90" : "")
+                }
+              >
+                ▸
+              </div>
+            </button>
+            {open && <LlmCallList model={m.model} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function LlmCallList({ model }: { model: string }) {
+  const { data, isLoading } = useAdminLlmCalls({ model });
+
+  if (isLoading) {
+    return (
+      <div className="border-t bg-muted/20 p-3 text-xs text-muted-foreground">
+        Loading calls…
+      </div>
+    );
+  }
+  if (!data || data.items.length === 0) {
+    return (
+      <div className="border-t bg-muted/20 p-3 text-xs text-muted-foreground">
+        No calls for this model in the last 7 days.
+      </div>
+    );
+  }
+  return (
+    <div className="border-t bg-muted/20 p-2">
+      <div className="mb-2 flex items-center justify-between px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+        <span>{data.total} calls · total ${data.total_cost_usd.toFixed(4)}</span>
+      </div>
+      <div className="overflow-x-auto rounded border bg-background">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b bg-muted/40 text-[10px] uppercase text-muted-foreground">
+              <th className="px-2 py-1.5 text-left font-medium">When</th>
+              <th className="px-2 py-1.5 text-left font-medium">Kind</th>
+              <th className="px-2 py-1.5 text-left font-medium">User</th>
+              <th className="px-2 py-1.5 text-right font-medium">Prompt</th>
+              <th className="px-2 py-1.5 text-right font-medium">Completion</th>
+              <th className="px-2 py-1.5 text-right font-medium">Total</th>
+              <th className="px-2 py-1.5 text-right font-medium">Cost</th>
+              <th className="px-2 py-1.5 text-right font-medium">Latency</th>
+              <th className="px-2 py-1.5 text-left font-medium">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.items.map((c) => (
+              <tr key={c.id} className="border-b last:border-none">
+                <td className="whitespace-nowrap px-2 py-1.5">
+                  {new Date(c.created_at).toLocaleString()}
+                </td>
+                <td className="whitespace-nowrap px-2 py-1.5 font-mono">
+                  {c.kind}
+                </td>
+                <td className="whitespace-nowrap px-2 py-1.5">
+                  {c.user_id && c.user_email ? (
+                    <Link
+                      to={`/users/${c.user_id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {c.user_email}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums">
+                  {c.prompt_tokens.toLocaleString()}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums">
+                  {c.completion_tokens.toLocaleString()}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums">
+                  {c.total_tokens.toLocaleString()}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums">
+                  {c.cost_usd !== null ? `$${c.cost_usd.toFixed(6)}` : "—"}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums">
+                  {c.duration_ms !== null ? `${c.duration_ms}ms` : "—"}
+                </td>
+                <td className="whitespace-nowrap px-2 py-1.5">
+                  <span
+                    className={
+                      "rounded px-1 text-[10px] font-semibold uppercase " +
+                      (c.status === "error"
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400")
+                    }
+                  >
+                    {c.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

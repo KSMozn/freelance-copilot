@@ -60,6 +60,28 @@ export interface LlmSpendByModel {
   cost_usd: number;
 }
 
+export interface LlmCallRow {
+  id: string;
+  created_at: string;
+  kind: string;
+  status: "ok" | "error";
+  user_id: string | null;
+  user_email: string | null;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  cost_usd: number | null;
+  model: string | null;
+  provider: string | null;
+  duration_ms: number | null;
+}
+
+export interface LlmCallsResponse {
+  items: LlmCallRow[];
+  total: number;
+  total_cost_usd: number;
+}
+
 export interface LlmSpendSummary {
   total_calls: number;
   total_prompt_tokens: number;

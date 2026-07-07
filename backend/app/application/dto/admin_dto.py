@@ -64,6 +64,34 @@ class LlmSpendByModel(BaseModel):
     cost_usd: float
 
 
+class LlmCallRow(BaseModel):
+    """One LLM call as recorded on `usage_events.meta`.
+
+    Powered by the same rows the aggregation reads — no separate log.
+    Used by the model-drill-down on the Overview LLM spend card.
+    """
+
+    id: UUID
+    created_at: datetime
+    kind: str
+    status: Literal["ok", "error"]
+    user_id: UUID | None
+    user_email: str | None
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    cost_usd: float | None
+    model: str | None
+    provider: str | None
+    duration_ms: int | None
+
+
+class LlmCallsResponse(BaseModel):
+    items: list[LlmCallRow]
+    total: int
+    total_cost_usd: float
+
+
 class LlmSpendSummary(BaseModel):
     """Aggregated LLM usage over the last 7 days.
 
