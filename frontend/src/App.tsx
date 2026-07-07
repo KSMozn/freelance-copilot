@@ -12,6 +12,7 @@ import { RegisterPage } from "@/pages/Register";
 import { StudentFeedbackPage } from "@/pages/StudentFeedback";
 import { StudentWizardPage } from "@/pages/StudentWizard";
 import { AdminActivityPage } from "@/pages/admin/AdminActivity";
+import { AdminFeedbackPage } from "@/pages/admin/AdminFeedback";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
 import { AdminOverviewPage } from "@/pages/admin/AdminOverview";
@@ -41,6 +42,7 @@ function AdminRoutes() {
         <Route path="overview" element={<AdminOverviewPage />} />
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="users/:id" element={<AdminUserDetailPage />} />
+        <Route path="feedback" element={<AdminFeedbackPage />} />
         <Route path="templates" element={<AdminTemplatesPage />} />
         <Route path="activity" element={<AdminActivityPage />} />
       </Route>

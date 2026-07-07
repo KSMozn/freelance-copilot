@@ -8,6 +8,8 @@ import type {
   AdminCvTemplateListResponse,
   AdminCvTemplateUpdate,
   AdminEntriesResponse,
+  AdminFeedbackItem,
+  AdminFeedbackListResponse,
   AdminImpersonateResponse,
   AdminOverview,
   AdminUserDetail,
@@ -195,6 +197,62 @@ export function useUpdateAdminCvTemplate() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CV_TEMPLATES_KEY }),
+  });
+}
+
+// ---- Feedback triage ---------------------------------------------------
+
+const FEEDBACK_KEY = (
+  kind: string | undefined,
+  resolved: boolean | undefined,
+) => ["admin", "feedback", kind ?? "", resolved ?? "all"] as const;
+
+export function useAdminFeedback(params: {
+  kind?: string;
+  resolved?: boolean;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: FEEDBACK_KEY(params.kind, params.resolved),
+    queryFn: async () => {
+      const { data } = await api.get<AdminFeedbackListResponse>(
+        "/admin/feedback",
+        {
+          params: {
+            kind: params.kind || undefined,
+            resolved: params.resolved,
+            limit: params.limit ?? 200,
+          },
+        },
+      );
+      return data;
+    },
+  });
+}
+
+export function useAdminResolveFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<AdminFeedbackItem> => {
+      const { data } = await api.post<AdminFeedbackItem>(
+        `/admin/feedback/${id}/resolve`,
+      );
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "feedback"] }),
+  });
+}
+
+export function useAdminUnresolveFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<AdminFeedbackItem> => {
+      const { data } = await api.post<AdminFeedbackItem>(
+        `/admin/feedback/${id}/unresolve`,
+      );
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "feedback"] }),
   });
 }
 

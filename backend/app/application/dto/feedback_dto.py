@@ -44,6 +44,34 @@ class FeedbackRead(BaseModel):
     message: str | None
     template_slug: str | None
     created_at: datetime
+    resolved_at: datetime | None = None
+
+
+class AdminFeedbackItem(BaseModel):
+    """Feedback row enriched with author context for the admin triage inbox.
+
+    Kept as a dedicated DTO (not `FeedbackRead`) so the student-facing
+    surfaces never accidentally leak the user email/name of another
+    student — this shape is only ever returned by /admin/feedback.
+    """
+
+    id: UUID
+    user_id: UUID
+    user_email: str | None
+    user_full_name: str | None
+    kind: FeedbackKind
+    rating: int | None
+    message: str | None
+    template_slug: str | None
+    created_at: datetime
+    resolved_at: datetime | None
+    resolved_by_email: str | None
+
+
+class AdminFeedbackListResponse(BaseModel):
+    items: list[AdminFeedbackItem]
+    total: int
+    unresolved_count: int
 
 
 class FeedbackListResponse(BaseModel):
