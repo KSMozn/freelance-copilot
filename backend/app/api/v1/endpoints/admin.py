@@ -7,7 +7,7 @@ action.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -34,6 +34,8 @@ from app.application.dto.admin_dto import (
     DailyReportRequest,
     DailyReportResult,
     EmailPreviewResponse,
+    LlmCallRow,
+    LlmCallsResponse,
     SendEmailBulkDryRunResponse,
     SendEmailBulkRequest,
     SendEmailBulkResponse,
@@ -189,6 +191,81 @@ async def edit_student_profile(
         extra={"changed_fields": sorted(changed.keys())},
     )
     return updated  # type: ignore[return-value]
+
+
+# ---- LLM call drill-down ----------------------------------------------
+
+
+@router.get("/llm-calls", response_model=LlmCallsResponse)
+async def list_llm_calls(
+    _: CurrentAdmin,
+    session: SessionDep,
+    model: str | None = Query(default=None, max_length=120),
+    since_days: int = Query(default=7, ge=1, le=90),
+    limit: int = Query(default=200, ge=1, le=1000),
+) -> LlmCallsResponse:
+    """Per-call breakdown backing the Overview "LLM spend" drill-down.
+
+    Reads the same rows the aggregation counts (`usage_events` with
+    `meta.prompt_tokens`), optionally filtered to one model. Joins to
+    users for the recipient email so the operator sees who ran what.
+    """
+    since = datetime.now(tz=UTC) - timedelta(days=since_days)
+    stmt = (
+        select(UsageEvent)
+        .where(UsageEvent.created_at >= since)
+        .where(UsageEvent.meta.op("?")("prompt_tokens"))
+        .order_by(UsageEvent.created_at.desc())
+    )
+    if model:
+        stmt = stmt.where(UsageEvent.meta.op("->>")("model") == model)
+    stmt = stmt.limit(limit)
+    events = (await session.execute(stmt)).scalars().all()
+
+    user_ids = {e.user_id for e in events if e.user_id is not None}
+    users_by_id: dict[UUID, User] = {}
+    if user_ids:
+        rows = (
+            await session.execute(select(User).where(User.id.in_(user_ids)))
+        ).scalars().all()
+        users_by_id = {u.id: u for u in rows}
+
+    items: list[LlmCallRow] = []
+    total_cost = 0.0
+    for ev in events:
+        meta = ev.meta or {}
+        pt = _int_or_zero(meta.get("prompt_tokens"))
+        ct = _int_or_zero(meta.get("completion_tokens"))
+        tt = _int_or_zero(meta.get("total_tokens")) or (pt + ct)
+        cost_raw = meta.get("cost_usd")
+        cost = float(cost_raw) if isinstance(cost_raw, int | float) else None
+        if cost is not None:
+            total_cost += cost
+        target = users_by_id.get(ev.user_id) if ev.user_id else None
+        items.append(
+            LlmCallRow(
+                id=ev.id,
+                created_at=ev.created_at,
+                kind=ev.kind,
+                status=ev.status,  # type: ignore[arg-type]
+                user_id=ev.user_id,
+                user_email=target.email if target else None,
+                prompt_tokens=pt,
+                completion_tokens=ct,
+                total_tokens=tt,
+                cost_usd=cost,
+                model=str(meta.get("model")) if isinstance(meta.get("model"), str) else None,
+                provider=str(meta.get("provider")) if isinstance(meta.get("provider"), str) else None,
+                duration_ms=ev.duration_ms,
+            )
+        )
+    return LlmCallsResponse(
+        items=items, total=len(items), total_cost_usd=round(total_cost, 6)
+    )
+
+
+def _int_or_zero(v: object) -> int:
+    return int(v) if isinstance(v, int | float) else 0
 
 
 # ---- CV preview / download (as admin) ----------------------------------

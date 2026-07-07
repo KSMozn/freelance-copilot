@@ -9,6 +9,7 @@ import type {
   AdminCvTemplateUpdate,
   AdminEmailSendsResponse,
   AdminEntriesResponse,
+  LlmCallsResponse,
   AdminFeedbackItem,
   AdminFeedbackListResponse,
   AdminImpersonateResponse,
@@ -318,6 +319,28 @@ export async function downloadAdminUserCvDocx(
     params: templateSlug ? { template: templateSlug } : undefined,
   });
   return res.data as Blob;
+}
+
+// ---- LLM call drill-down ----------------------------------------------
+
+export function useAdminLlmCalls(params: {
+  model?: string;
+  sinceDays?: number;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ["admin", "llm-calls", params.model ?? "", params.sinceDays ?? 7] as const,
+    enabled: params.enabled !== false,
+    queryFn: async () => {
+      const { data } = await api.get<LlmCallsResponse>("/admin/llm-calls", {
+        params: {
+          model: params.model || undefined,
+          since_days: params.sinceDays ?? 7,
+        },
+      });
+      return data;
+    },
+  });
 }
 
 // ---- Email history -----------------------------------------------------
