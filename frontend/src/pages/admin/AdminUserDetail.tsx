@@ -13,6 +13,7 @@ import {
   downloadAdminUserCvPdf,
   useAdminDeleteUser,
   useAdminDisableUser,
+  useAdminEditStudentProfile,
   useAdminEmailPreview,
   useAdminEmailTemplates,
   useAdminEnableUser,
@@ -23,6 +24,7 @@ import {
   useAdminUserCvPreview,
   useAdminUserEntries,
 } from "@/lib/admin";
+import type { AdminStudentSummary, AdminUserDetail } from "@/types/admin";
 
 export function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -272,55 +274,8 @@ export function AdminUserDetailPage() {
           </CardContent>
         </Card>
 
-        {user.student && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Student profile</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm">
-              <Row k="Name" v={user.student.full_name ?? "—"} />
-              <Row k="CV email" v={user.student.professional_email ?? "—"} />
-              <Row k="Phone" v={user.student.phone ?? "—"} />
-              <Row k="Location" v={user.student.location ?? "—"} />
-              <Row k="Date of birth" v={user.student.date_of_birth ?? "—"} />
-              <Row k="CV template" v={user.student.cv_template_slug ?? "—"} />
-              <Row k="University" v={user.student.college ?? "—"} />
-              <Row k="Department" v={user.student.department ?? "—"} />
-              <Row k="Degree" v={user.student.degree ?? "—"} />
-              <Row k="Major" v={user.student.major ?? "—"} />
-              <Row k="Grad. year" v={user.student.graduation_year?.toString() ?? "—"} />
-              <Row k="GPA" v={user.student.gpa ?? "—"} />
-              <Row
-                k="Wizard"
-                v={`${user.student.completed_steps.length}/13 · current: ${user.student.current_step ?? "none"}`}
-              />
-              <Row k="Entries" v={user.student.entries_count.toString()} />
-              {user.student.headline && <Row k="Headline" v={user.student.headline} />}
-              {user.student.summary && (
-                <div className="mt-2">
-                  <div className="text-xs text-muted-foreground">Summary</div>
-                  <div className="mt-1 whitespace-pre-wrap rounded bg-muted/30 p-2 text-xs">
-                    {user.student.summary}
-                  </div>
-                </div>
-              )}
-              {Object.keys(user.student.entries_by_kind).length > 0 && (
-                <div className="mt-2">
-                  <div className="text-xs text-muted-foreground">Entries by kind</div>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {Object.entries(user.student.entries_by_kind).map(([k, c]) => (
-                      <span
-                        key={k}
-                        className="rounded bg-muted px-1.5 py-0.5 text-[10px]"
-                      >
-                        {k}: {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {user.student && id && (
+          <StudentProfileCard userId={id} user={user} student={user.student} />
         )}
       </div>
     </div>
@@ -334,6 +289,232 @@ function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
       <div className={mono ? "font-mono text-xs" : ""}>{v}</div>
     </div>
   );
+}
+
+// ---- Student profile card (view + edit) --------------------------------
+
+function StudentProfileCard({
+  userId,
+  user,
+  student,
+}: {
+  userId: string;
+  user: AdminUserDetail;
+  student: AdminStudentSummary;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  if (!editing) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Student profile</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+        </CardHeader>
+        <CardContent className="text-sm">
+          <Row k="Name" v={student.full_name ?? "—"} />
+          <Row k="CV email" v={student.professional_email ?? "—"} />
+          <Row k="Phone" v={student.phone ?? "—"} />
+          <Row k="Location" v={student.location ?? "—"} />
+          <Row k="Date of birth" v={student.date_of_birth ?? "—"} />
+          <Row k="CV template" v={student.cv_template_slug ?? "—"} />
+          <Row k="University" v={student.college ?? "—"} />
+          <Row k="Department" v={student.department ?? "—"} />
+          <Row k="Degree" v={student.degree ?? "—"} />
+          <Row k="Major" v={student.major ?? "—"} />
+          <Row k="Grad. year" v={student.graduation_year?.toString() ?? "—"} />
+          <Row k="GPA" v={student.gpa ?? "—"} />
+          <Row
+            k="Wizard"
+            v={`${student.completed_steps.length}/13 · current: ${student.current_step ?? "none"}`}
+          />
+          <Row k="Entries" v={student.entries_count.toString()} />
+          {student.headline && <Row k="Headline" v={student.headline} />}
+          {student.summary && (
+            <div className="mt-2">
+              <div className="text-xs text-muted-foreground">Summary</div>
+              <div className="mt-1 whitespace-pre-wrap rounded bg-muted/30 p-2 text-xs">
+                {student.summary}
+              </div>
+            </div>
+          )}
+          {Object.keys(student.entries_by_kind).length > 0 && (
+            <div className="mt-2">
+              <div className="text-xs text-muted-foreground">Entries by kind</div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {Object.entries(student.entries_by_kind).map(([k, c]) => (
+                  <span
+                    key={k}
+                    className="rounded bg-muted px-1.5 py-0.5 text-[10px]"
+                  >
+                    {k}: {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <StudentProfileEditForm
+      userId={userId}
+      user={user}
+      student={student}
+      onDone={() => setEditing(false)}
+    />
+  );
+}
+
+function StudentProfileEditForm({
+  userId,
+  student,
+  onDone,
+}: {
+  userId: string;
+  user: AdminUserDetail;
+  student: AdminStudentSummary;
+  onDone: () => void;
+}) {
+  const mutation = useAdminEditStudentProfile(userId);
+  const [fullName, setFullName] = useState(student.full_name ?? "");
+  const [email, setEmail] = useState(student.professional_email ?? "");
+  const [phone, setPhone] = useState(student.phone ?? "");
+  const [location, setLocation] = useState(student.location ?? "");
+  const [dob, setDob] = useState(student.date_of_birth ?? "");
+  const [college, setCollege] = useState(student.college ?? "");
+  const [department, setDepartment] = useState(student.department ?? "");
+  const [degree, setDegree] = useState(student.degree ?? "");
+  const [major, setMajor] = useState(student.major ?? "");
+  const [year, setYear] = useState(
+    student.graduation_year ? String(student.graduation_year) : "",
+  );
+
+  async function save() {
+    try {
+      await mutation.mutateAsync({
+        full_name: emptyToNull(fullName),
+        professional_email: emptyToNull(email),
+        phone: emptyToNull(phone),
+        location: emptyToNull(location),
+        date_of_birth: emptyToNull(dob),
+        college: emptyToNull(college),
+        department: emptyToNull(department),
+        degree: emptyToNull(degree),
+        major: emptyToNull(major),
+        graduation_year: year ? Number(year) : null,
+      });
+      toast.success("Profile updated");
+      onDone();
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: unknown } } })
+        ?.response?.data?.detail;
+      const msg =
+        typeof detail === "string"
+          ? detail
+          : Array.isArray(detail)
+            ? detail
+                .map((d: { msg?: string; loc?: unknown[] }) =>
+                  d.msg ? `${(d.loc ?? []).slice(-1)[0]}: ${d.msg}` : "invalid",
+                )
+                .join("; ")
+            : "Could not save";
+      toast.error(msg);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="text-base">Student profile (editing)</CardTitle>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDone}
+            disabled={mutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button size="sm" onClick={() => void save()} disabled={mutation.isPending}>
+            {mutation.isPending ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <EditField label="Name" value={fullName} onChange={setFullName} />
+        <EditField
+          label="CV email"
+          value={email}
+          onChange={setEmail}
+          type="email"
+        />
+        <EditField label="Phone" value={phone} onChange={setPhone} />
+        <EditField label="Location" value={location} onChange={setLocation} />
+        <EditField
+          label="Date of birth"
+          value={dob}
+          onChange={setDob}
+          type="date"
+          placeholder="YYYY-MM-DD"
+        />
+        <EditField label="University" value={college} onChange={setCollege} />
+        <EditField
+          label="Department"
+          value={department}
+          onChange={setDepartment}
+        />
+        <EditField label="Degree" value={degree} onChange={setDegree} />
+        <EditField label="Major" value={major} onChange={setMajor} />
+        <EditField
+          label="Grad. year"
+          value={year}
+          onChange={(v) => setYear(v.replace(/[^0-9]/g, "").slice(0, 4))}
+          placeholder="2027"
+        />
+        <div className="pt-1 text-[11px] text-muted-foreground">
+          Only fields on this card are editable here. Photo, template choice,
+          summary, headline, and links stay under the student's control.
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <div className="grid grid-cols-[110px_1fr] items-center gap-2">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Input
+        value={value}
+        type={type}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 text-sm"
+      />
+    </div>
+  );
+}
+
+function emptyToNull(v: string): string | null {
+  const t = v.trim();
+  return t.length === 0 ? null : t;
 }
 
 // ---- Send email card + preview modal -----------------------------------

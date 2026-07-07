@@ -200,6 +200,43 @@ export function useUpdateAdminCvTemplate() {
   });
 }
 
+// ---- Edit student profile ---------------------------------------------
+
+export interface AdminEditStudentProfilePayload {
+  full_name?: string | null;
+  professional_email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  date_of_birth?: string | null;
+  college?: string | null;
+  department?: string | null;
+  degree?: string | null;
+  major?: string | null;
+  graduation_year?: number | null;
+  gpa?: string | null;
+  headline?: string | null;
+  summary?: string | null;
+}
+
+export function useAdminEditStudentProfile(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      payload: AdminEditStudentProfilePayload,
+    ): Promise<AdminUserDetail> => {
+      const { data } = await api.patch<AdminUserDetail>(
+        `/admin/users/${userId}/student-profile`,
+        payload,
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      if (userId) qc.setQueryData(["admin", "user", userId] as const, data);
+      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+    },
+  });
+}
+
 // ---- Admin CV preview / download --------------------------------------
 
 interface AdminCvPreview {

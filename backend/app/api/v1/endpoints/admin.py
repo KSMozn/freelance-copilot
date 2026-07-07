@@ -38,6 +38,7 @@ from app.application.dto.admin_dto import (
     SendEmailRequest,
 )
 from app.application.dto.feedback_dto import AdminFeedbackItem, AdminFeedbackListResponse
+from app.application.dto.student_dto import StudentProfileUpdate
 from app.application.email_templates import EmailTemplateSpec, get_template, list_templates
 from app.application.services import usage_event_service
 from app.application.services.admin_service import AdminService
@@ -125,6 +126,46 @@ async def get_user_entries(
     """
     items = await svc.list_user_entries(user_id, kind=kind)
     return AdminEntriesResponse(items=items)
+
+
+# ---- Edit student profile fields ---------------------------------------
+
+
+@router.patch("/users/{user_id}/student-profile", response_model=AdminUserDetail)
+async def edit_student_profile(
+    user_id: UUID,
+    payload: StudentProfileUpdate,
+    actor: CurrentAdmin,
+    svc: AdminSvc,
+    session: SessionDep,
+    blobs: Annotated[BlobStore, Depends(get_blob_store)],
+) -> AdminUserDetail:
+    """Admin-side edit of the student_profile row.
+
+    Support-case: student typoed their email, entered a fake phone,
+    picked the wrong graduation year. Previously the only fix was
+    impersonation. Uses the same DTO + service the wizard uses, so
+    validation is identical. Records which fields changed in the
+    audit meta so an admin can't silently rewrite content.
+    """
+    detail = await svc.get_user_detail(user_id)
+    if detail is None or detail.student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Student profile not found"
+        )
+    changed = payload.model_dump(exclude_unset=True)
+    if not changed:
+        return detail
+    student_svc = StudentProfileService(session, blobs)
+    await student_svc.upsert_profile(user_id, payload)
+    updated = await svc.get_user_detail(user_id)
+    _audit(
+        actor,
+        "edit_student_profile",
+        user_id,
+        extra={"changed_fields": sorted(changed.keys())},
+    )
+    return updated  # type: ignore[return-value]
 
 
 # ---- CV preview / download (as admin) ----------------------------------
