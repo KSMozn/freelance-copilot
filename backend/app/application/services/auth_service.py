@@ -111,6 +111,12 @@ class AuthService:
         user = await self._users.get_by_id(UUID(data["sub"]))
         if user is None:
             raise NotFoundError("User not found")
+        # A still-valid access token must not outlive a disable action.
+        # Mirrors the login/refresh and admin-token paths, which all check
+        # is_active — closing the up-to-60-min window where a disabled user
+        # keeps API access.
+        if not user.is_active:
+            raise InvalidCredentialsError("User is inactive")
         return user
 
     # --- OTP flow (Phase A) ------------------------------------------------

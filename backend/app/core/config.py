@@ -1,8 +1,18 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Signing keys that ship in the repo / CI for local use. None of these may
+# sign real tokens — the validator below refuses to boot on them outside dev.
+_PLACEHOLDER_SECRETS = frozenset(
+    {
+        "change-me",
+        "change-me-in-production-this-is-a-dev-only-key",
+        "ci-secret-key-please-change",
+    }
+)
 
 
 class Settings(BaseSettings):
@@ -68,6 +78,29 @@ class Settings(BaseSettings):
     # the endpoint 401s on mismatch.
     report_task_secret: str | None = None
     admin_base_url: str = "http://localhost:5173"
+
+    @model_validator(mode="after")
+    def _harden_for_deployed_envs(self) -> "Settings":
+        """Fail closed on insecure config in staging/production.
+
+        Dev/test keep their conveniences (placeholder key, mock email). The
+        moment `environment` is staging or production we refuse to start on a
+        known/weak signing key or the mock email provider (which logs OTP
+        codes) — a missing Secret Manager mount becomes a boot failure, not a
+        silent security hole.
+        """
+        if self.environment in ("staging", "production"):
+            if self.secret_key in _PLACEHOLDER_SECRETS or len(self.secret_key) < 32:
+                raise ValueError(
+                    "SECRET_KEY must be a strong, non-placeholder value "
+                    "(>=32 chars) in staging/production"
+                )
+            if self.email_provider == "mock":
+                raise ValueError(
+                    "EMAIL_PROVIDER must not be 'mock' in staging/production "
+                    "(the mock provider logs OTP codes)"
+                )
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property

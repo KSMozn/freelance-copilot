@@ -12,6 +12,14 @@ from app.application.dto.auth_dto import (
     UserRead,
 )
 from app.core.deps import AuthServiceDep, CurrentUser, SettingsDep
+from app.core.rate_limit import (
+    client_ip,
+    login_account_limiter,
+    login_ip_limiter,
+    otp_request_ip_limiter,
+    otp_verify_limiter,
+    refresh_ip_limiter,
+)
 from app.domain.exceptions import (
     AlreadyExistsError,
     InvalidCredentialsError,
@@ -31,7 +39,13 @@ async def register(payload: RegisterRequest, auth: AuthServiceDep) -> AuthRespon
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(payload: LoginRequest, auth: AuthServiceDep) -> AuthResponse:
+async def login(
+    payload: LoginRequest, auth: AuthServiceDep, request: Request
+) -> AuthResponse:
+    # Per-account is the spoof-proof guard against brute-forcing one target;
+    # per-IP is defense-in-depth. Both run before the (slow) password verify.
+    login_account_limiter.check(f"login:{str(payload.email).lower()}")
+    login_ip_limiter.check(f"login:{client_ip(request)}")
     try:
         return await auth.login(payload)
     except InvalidCredentialsError as exc:
@@ -39,7 +53,10 @@ async def login(payload: LoginRequest, auth: AuthServiceDep) -> AuthResponse:
 
 
 @router.post("/refresh", response_model=TokenPair)
-async def refresh(payload: RefreshRequest, auth: AuthServiceDep) -> TokenPair:
+async def refresh(
+    payload: RefreshRequest, auth: AuthServiceDep, request: Request
+) -> TokenPair:
+    refresh_ip_limiter.check(f"refresh:{client_ip(request)}")
     try:
         return await auth.refresh(payload)
     except InvalidCredentialsError as exc:
@@ -53,6 +70,7 @@ async def request_code(
     settings: SettingsDep,
     request: Request,
 ) -> OtpRequestResponse:
+    otp_request_ip_limiter.check(f"otp-request:{client_ip(request)}")
     try:
         await auth.request_otp(
             email=str(payload.email),
@@ -70,7 +88,11 @@ async def request_code(
 
 
 @router.post("/verify-code", response_model=AuthResponse)
-async def verify_code(payload: OtpVerifyRequest, auth: AuthServiceDep) -> AuthResponse:
+async def verify_code(
+    payload: OtpVerifyRequest, auth: AuthServiceDep, request: Request
+) -> AuthResponse:
+    otp_verify_limiter.check(f"otp-verify:{str(payload.email).lower()}")
+    otp_verify_limiter.check(f"otp-verify:{client_ip(request)}")
     try:
         return await auth.verify_otp(payload)
     except OtpInvalidError as exc:

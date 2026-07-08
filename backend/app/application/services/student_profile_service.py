@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
+from pathlib import PurePosixPath
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -37,6 +39,20 @@ from app.infrastructure.db.models.student_profile import (
 )
 
 logger = logging.getLogger(__name__)
+
+_UNSAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def _safe_filename(filename: str) -> str:
+    """Reduce a client-supplied filename to a single safe path component.
+
+    Drops directory components (`../`, absolute paths, backslashes) and any
+    character outside `[A-Za-z0-9._-]`, then trims leading dots so the result
+    can never traverse out of the storage prefix. Falls back to `photo`.
+    """
+    base = PurePosixPath(filename.replace("\\", "/")).name
+    cleaned = _UNSAFE_FILENAME_CHARS.sub("_", base).lstrip(".")
+    return cleaned or "photo"
 
 
 class StudentProfileService:
@@ -115,8 +131,10 @@ class StudentProfileService:
         file_row = existing.scalar_one_or_none()
 
         # Key shape: `student-photos/<sha>-<original-filename>`. Stable
-        # across re-uploads (sha-based) and human-readable in logs.
-        key = f"student-photos/{sha}-{filename}"
+        # across re-uploads (sha-based) and human-readable in logs. The raw
+        # client filename is attacker-controlled — strip any path components
+        # and unsafe chars so it can never traverse out of the blob prefix.
+        key = f"student-photos/{sha}-{_safe_filename(filename)}"
 
         if file_row is None:
             try:
