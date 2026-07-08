@@ -57,6 +57,33 @@ def create_access_token(
     )
 
 
+def create_impersonation_token(
+    subject: str | UUID,
+    *,
+    actor_admin_id: str | UUID,
+    actor_email: str,
+) -> str:
+    """Mint a short-lived, non-refreshable access token for admin "view as user".
+
+    Carries an `act` (actor) claim identifying the impersonating admin and an
+    `imp` flag so an impersonated session is distinguishable from the user's own
+    login in logs. It is an ordinary `pt=user` access token otherwise (the admin
+    is acting *as* the user), but with a shortened TTL and no paired refresh
+    token, so the session self-expires instead of lasting 14 days.
+    """
+    settings = get_settings()
+    return _create_token(
+        str(subject),
+        "access",
+        timedelta(minutes=settings.impersonation_token_expire_minutes),
+        "user",
+        extra={
+            "imp": True,
+            "act": {"aid": str(actor_admin_id), "email": actor_email},
+        },
+    )
+
+
 def create_refresh_token(
     subject: str | UUID,
     principal_type: PrincipalType = "user",

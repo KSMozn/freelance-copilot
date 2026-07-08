@@ -291,16 +291,19 @@ class AdminActionResult(BaseModel):
 
 
 class AdminImpersonateResponse(BaseModel):
-    """Superuser gets a fresh (access, refresh) pair for the target user.
+    """Superuser gets a short-lived access token for the target user.
 
-    The frontend swaps its own tokens in the auth store; a header hint
-    is added so the frontend can render an "impersonating" banner.
+    The frontend swaps its own tokens in the auth store. `refresh_token` is
+    intentionally an empty string: impersonation sessions are non-refreshable
+    and self-expire (the access token carries an `act` claim + short TTL), so
+    an abandoned "view as user" session ends on its own instead of lingering.
     """
 
     target_user_id: UUID
     target_user_email: EmailStr
     access_token: str
-    refresh_token: str
+    # Always "" for impersonation — there is nothing to refresh.
+    refresh_token: str = ""
     token_type: str = "bearer"
 
 
