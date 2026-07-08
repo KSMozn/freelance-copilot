@@ -24,7 +24,11 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 # ---------- 2. Runtime stage ----------
-FROM nginx:1.27-alpine
+# Unprivileged nginx: same envsubst-on-templates entrypoint and paths as the
+# official image, but runs as user nginx (uid 101), writes its pid/temp under
+# /tmp, and defaults to a non-privileged port — no root in the running
+# container.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template

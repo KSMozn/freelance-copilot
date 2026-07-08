@@ -136,3 +136,13 @@ def test_config_allows_placeholder_in_dev() -> None:
         email_provider="mock",
     )
     assert settings.environment == "development"
+
+
+def test_config_rejects_wildcard_cors() -> None:
+    with pytest.raises(ValueError):
+        Settings(  # type: ignore[call-arg]
+            environment="development",
+            secret_key="change-me-in-production-this-is-a-dev-only-key",
+            email_provider="mock",
+            cors_origins="https://app.example.com,*",
+        )
