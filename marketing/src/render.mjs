@@ -316,7 +316,7 @@ const articleLd = (page) => ({
     logo: { "@type": "ImageObject", url: absUrl("/icon.svg") },
   },
   mainEntityOfPage: { "@type": "WebPage", "@id": absUrl(page.slug) },
-  image: absUrl(page.ogImage || "/og-default.svg"),
+  image: absUrl(page.ogImage || "/og-default.png"),
 });
 
 const buildJsonLd = (page) => {
@@ -337,7 +337,7 @@ const buildJsonLd = (page) => {
 // ---- <head> ----------------------------------------------------------------
 const head = (page) => {
   const url = absUrl(page.slug);
-  const ogImage = absUrl(page.ogImage || "/og-default.svg");
+  const ogImage = absUrl(page.ogImage || "/og-default.png");
   const ogType = page.type === "article" ? "article" : "website";
   return `
   <meta charset="utf-8">
@@ -358,6 +358,10 @@ const head = (page) => {
   <meta property="og:description" content="${esc(page.description)}">
   <meta property="og:url" content="${esc(url)}">
   <meta property="og:image" content="${esc(ogImage)}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${esc(page.ogTitle || page.title)}">
   <meta property="og:locale" content="${site.locale}">
   ${
     page.type === "article"

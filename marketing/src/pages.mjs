@@ -1007,4 +1007,320 @@ export const pages = [
       ),
     ],
   },
+
+  // -------------------------------------------------- CV EXAMPLES -----------
+  {
+    slug: "student-cv-examples",
+    title: "Student CV Examples — Real Samples & What Makes Them Work | Careero",
+    description:
+      "See what a great student CV looks like. Real, annotated student CV examples for first CVs, internships and graduate roles — then build your own free with Careero.",
+    h1: "Student CV examples that actually get interviews",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV Examples",
+        h1: "Student CV examples that actually get interviews",
+        lead:
+          "The fastest way to write a great CV is to see one first. These examples show how strong student CVs are structured — and how to describe projects and experience the way recruiters want to read them.",
+        primaryCta: { text: "Build my CV from an example", href: APP },
+        secondaryCta: { text: "Browse templates", href: "/student-cv-templates" },
+      },
+      {
+        type: "cards",
+        h2: "Examples for every kind of student",
+        intro:
+          "An example is a starting point, not a script — use the structure, then fill it with <strong>your</strong> projects, modules and experience.",
+        items: [
+          {
+            icon: "🎓",
+            title: "First-CV example",
+            text: "For students with little formal work history — education-led, with projects and volunteering doing the heavy lifting.",
+            href: "/first-cv",
+          },
+          {
+            icon: "💼",
+            title: "Internship CV example",
+            text: "Tailored to a specific internship, with a targeted summary and the most relevant coursework up top.",
+            href: "/cv-for-internship",
+          },
+          {
+            icon: "💻",
+            title: "Technical / CS example",
+            text: "Projects and skills first, with a tech stack and links to GitHub — ideal for software and data roles.",
+            href: "/github-profile-for-students",
+          },
+          {
+            icon: "🎯",
+            title: "Graduate-role example",
+            text: "A polished one-pager that balances degree, projects and any placement or part-time experience.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "What every strong student CV example has in common",
+        paragraphs: [
+          "Look past the visual design and the best examples share the same fundamentals: a clear one-page layout, a specific summary, education front and centre, and — most importantly — <strong>achievement-focused bullet points</strong> instead of lists of duties.",
+        ],
+        bullets: [
+          "A specific, role-aware summary (not &ldquo;hard-working student&rdquo;).",
+          "Projects described by result and skill, with numbers where possible.",
+          "Consistent formatting and standard, ATS-friendly headings.",
+          "Everything relevant, nothing padded — one focused page.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "Can I copy a CV example directly?",
+            a: "Use the structure and phrasing style, but always fill it with your own real experience. Careero starts you from a proven layout and helps you write your own content.",
+          },
+          {
+            q: "What's the difference between an example and a template?",
+            a: "A <a href=\"/student-cv-templates\">template</a> is the blank design; an example is a filled-in sample showing how to word each section. Careero gives you both.",
+          },
+          {
+            q: "Do these examples work for internships?",
+            a: "Yes — see the dedicated <a href=\"/cv-for-internship\">internship CV</a> guidance for how to tailor an example to a specific role.",
+          },
+        ],
+      },
+      closingCta(
+        "Turn an example into your CV",
+        "Start from a proven structure and let Careero help you write every section.",
+        "Build my CV from an example",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- DOWNLOAD PDF/DOCX -----
+  {
+    slug: "download-cv-pdf",
+    title: "Download Your CV as PDF or Word (DOCX) — Free | Careero",
+    description:
+      "Build your student CV and download it as a print-ready PDF or an editable Word DOCX file. Free, ATS-friendly, and formatted consistently across both formats with Careero.",
+    h1: "Download your CV as PDF or Word (DOCX)",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "PDF & DOCX Download",
+        h1: "Download your CV as PDF or Word (DOCX)",
+        lead:
+          "Finish your CV in Careero and export it exactly how each application needs it — a pixel-perfect PDF for online forms and job boards, or a fully editable Word DOCX when someone asks for one.",
+        primaryCta: { text: "Create & download my CV", href: APP },
+        secondaryCta: { text: "See templates", href: "/student-cv-templates" },
+      },
+      {
+        type: "prose",
+        h2: "Download as PDF",
+        paragraphs: [
+          "PDF is the safest format for most applications: it looks identical on every device and can't be accidentally reformatted. Careero produces a clean, ATS-friendly PDF with selectable text (never a flat image), so applicant tracking systems can still read every line.",
+        ],
+      },
+      {
+        type: "prose",
+        id: "docx",
+        h2: "Download as Word (DOCX)",
+        paragraphs: [
+          "Some universities, careers services and recruiters ask for an editable Word document. Careero exports a <strong>DOCX</strong> that opens cleanly in Microsoft Word or Google Docs, keeping your layout and headings intact so you can make quick edits without breaking the design.",
+        ],
+      },
+      {
+        type: "cards",
+        h2: "Which format should you use?",
+        items: [
+          {
+            icon: "📄",
+            title: "Use PDF when…",
+            text: "Applying online, uploading to a job board, or emailing directly — anywhere the layout must stay fixed.",
+          },
+          {
+            icon: "📝",
+            title: "Use DOCX when…",
+            text: "An employer or careers service specifically asks for Word, or you want to hand-edit outside Careero.",
+          },
+          {
+            icon: "✅",
+            title: "Either way…",
+            text: "Both exports stay ATS-friendly and keep identical formatting, so your CV looks the same wherever it lands.",
+          },
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "Is downloading my CV free?",
+            a: "You can build and export your CV at <a href=\"" + APP + "\" rel=\"noopener\">app.careero.app</a>. Start free and download as PDF or DOCX.",
+          },
+          {
+            q: "Is the PDF ATS-friendly?",
+            a: "Yes. Careero's PDF keeps selectable, structured text — not a flat image — so applicant tracking systems can parse it. Learn more about <a href=\"/ats-friendly-student-cv\">ATS-friendly CVs</a>.",
+          },
+          {
+            q: "Can I edit the DOCX after downloading?",
+            a: "Yes — the DOCX opens and edits normally in Word or Google Docs while keeping your Careero layout.",
+          },
+        ],
+      },
+      closingCta(
+        "Build once, download in any format",
+        "Create your CV with Careero and export a PDF or Word file in a click.",
+        "Create & download my CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- LINKEDIN --------------
+  {
+    slug: "linkedin-profile-for-students",
+    title: "LinkedIn Profile for Students — Tips to Get Noticed | Careero",
+    description:
+      "Build a LinkedIn profile that gets students noticed by recruiters: headline, About section, projects and skills. Practical tips that pair perfectly with your Careero CV.",
+    h1: "Build a LinkedIn profile that gets you noticed",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "LinkedIn for Students",
+        h1: "Build a LinkedIn profile that gets you noticed",
+        lead:
+          "Recruiters check LinkedIn before (and after) they read your CV. A clear, consistent profile makes you easy to find and easy to trust — here's how to build one as a student.",
+        primaryCta: { text: "Build my CV first", href: APP },
+        secondaryCta: { text: "Write a CV with no experience", href: "/blog/how-to-write-cv-with-no-experience" },
+      },
+      {
+        type: "steps",
+        h2: "The essentials, in order",
+        items: [
+          {
+            title: "A clear photo and headline",
+            text: "A friendly, well-lit headshot and a headline that says what you study and what you're looking for — e.g. &ldquo;Computer Science student · seeking summer software internships.&rdquo;",
+          },
+          {
+            title: "A short, specific About section",
+            text: "Three or four lines on your field, key skills and goals. Mirror the language of the roles you want.",
+          },
+          {
+            title: "Projects, education and experience",
+            text: "List the same projects and experience as your CV, described the same way. Consistency builds credibility.",
+          },
+          {
+            title: "Skills and a few connections",
+            text: "Add the skills relevant to your target roles and connect with classmates, lecturers and societies to grow your network.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Keep LinkedIn and your CV in sync",
+        paragraphs: [
+          "Your LinkedIn profile and CV should tell the same story. Recruiters get suspicious when dates, titles or projects don't match. The easiest approach is to write strong CV content first, then mirror it on LinkedIn.",
+          "Careero helps you produce that content once — clear summaries and quantified project bullets — which you can reuse directly in your LinkedIn About and Experience sections.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "Do students really need LinkedIn?",
+            a: "Yes — it's where many recruiters search for early-career talent and verify your CV. Even a simple, consistent profile helps.",
+          },
+          {
+            q: "What should my LinkedIn headline say?",
+            a: "State what you study and what you're seeking, e.g. &ldquo;Marketing student · seeking 2026 summer internships.&rdquo; Keep it specific.",
+          },
+          {
+            q: "How do I match LinkedIn to my CV?",
+            a: "Write your CV content in Careero first, then reuse the same summaries and bullet points on LinkedIn so both are consistent.",
+          },
+        ],
+      },
+      closingCta(
+        "Get your CV and LinkedIn working together",
+        "Write strong, reusable content once with Careero — then mirror it on LinkedIn.",
+        "Build my CV first",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- GITHUB ----------------
+  {
+    slug: "github-profile-for-students",
+    title: "GitHub Profile Tips for Students (Put It on Your CV) | Careero",
+    description:
+      "Turn your GitHub into a portfolio that strengthens your CV. Tips on your README, pinned projects and commit history for students applying to tech roles. Build your CV free with Careero.",
+    h1: "Make your GitHub profile work for your CV",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "GitHub for Students",
+        h1: "Make your GitHub profile work for your CV",
+        lead:
+          "For tech roles, your GitHub is living proof of what you can build. A tidy profile with a few well-presented projects can matter as much as the CV itself — here's how to get it right.",
+        primaryCta: { text: "Build my technical CV", href: APP },
+        secondaryCta: { text: "Describe your projects", href: "/blog/how-to-describe-student-projects" },
+      },
+      {
+        type: "cards",
+        h2: "What recruiters look for on your GitHub",
+        items: [
+          {
+            icon: "📌",
+            title: "Pinned projects",
+            text: "Pin your best 3–6 repositories so the strongest work is the first thing a visitor sees.",
+          },
+          {
+            icon: "📖",
+            title: "Clear READMEs",
+            text: "Each project needs a README explaining what it does, the tech used, and how to run it. This is where you show communication skills.",
+          },
+          {
+            icon: "🟩",
+            title: "Real, steady activity",
+            text: "A consistent commit history signals genuine, ongoing practice — more than one giant last-minute commit.",
+          },
+          {
+            icon: "🔗",
+            title: "A profile README",
+            text: "A short profile README introducing who you are, what you study and what you're building ties it all together.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Link GitHub from your CV — the right way",
+        paragraphs: [
+          "Add your GitHub URL to your CV's contact details, and link individual repositories from the relevant project bullets. But only link a profile you're happy for a recruiter to explore — tidy up or unpin half-finished work first.",
+          "When you describe those projects on your CV, use the same achievement-focused style you'd use anywhere: what you built, the tech, and the result. Careero helps you write those bullets so your CV and GitHub reinforce each other.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "How many projects should be on my GitHub?",
+            a: "Quality over quantity — three to six polished, well-documented projects beat dozens of empty repositories.",
+          },
+          {
+            q: "Should I put my GitHub link on my CV?",
+            a: "Yes, for technical roles. Add it to your contact details and link specific repos from your project bullets.",
+          },
+          {
+            q: "How do I describe GitHub projects on my CV?",
+            a: "Use achievement-focused bullets: what you built, the tech, and the outcome. See our guide on <a href=\"/blog/how-to-describe-student-projects\">describing student projects</a>.",
+          },
+        ],
+      },
+      closingCta(
+        "Turn your GitHub into CV-ready proof",
+        "Careero helps you describe your projects so your CV and GitHub tell one strong story.",
+        "Build my technical CV",
+      ),
+    ],
+  },
 ];
