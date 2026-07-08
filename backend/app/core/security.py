@@ -26,6 +26,7 @@ def _create_token(
     token_type: TokenType,
     expires_delta: timedelta,
     principal_type: PrincipalType,
+    extra: dict[str, Any] | None = None,
 ) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
@@ -39,6 +40,8 @@ def _create_token(
         "iat": int(now.timestamp()),
         "exp": int((now + expires_delta).timestamp()),
     }
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
@@ -55,14 +58,31 @@ def create_access_token(
 
 
 def create_refresh_token(
-    subject: str | UUID, principal_type: PrincipalType = "user"
+    subject: str | UUID,
+    principal_type: PrincipalType = "user",
+    *,
+    jti: str | None = None,
+    family_id: str | None = None,
 ) -> str:
+    """Mint a refresh token.
+
+    When `jti`/`family_id` are supplied they are embedded so the token can be
+    tracked server-side for rotation + reuse detection. Omitting them (e.g.
+    admin impersonation) yields an untracked token that the refresh flow
+    treats as legacy and bootstraps into a tracked family on first use.
+    """
     settings = get_settings()
+    extra: dict[str, Any] = {}
+    if jti is not None:
+        extra["jti"] = jti
+    if family_id is not None:
+        extra["fid"] = family_id
     return _create_token(
         str(subject),
         "refresh",
         timedelta(days=settings.refresh_token_expire_days),
         principal_type,
+        extra=extra or None,
     )
 
 

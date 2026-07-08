@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 
 import { PersonaSwitcher } from "@/components/PersonaSwitcher";
 import { Button } from "@/components/ui/button";
+import { logoutCurrentSurface } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth";
 
 export function Topbar() {
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
+  const logout = () => void logoutCurrentSurface();
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
 
   useEffect(() => {

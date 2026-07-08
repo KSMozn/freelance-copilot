@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { logoutCurrentSurface } from "@/lib/api";
 import { fetchPhotoDataUri } from "@/lib/photoCache";
 import { useLastProfileStore } from "@/stores/lastProfile";
 import { AboutFooter } from "@/components/brand/AboutFooter";
@@ -2671,7 +2672,6 @@ const LOCATION_LABEL: Record<ProofreadFix["field"], string> = {
 
 function SignOutButton() {
   const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
   const email = useAuthStore((s) => s.user?.email);
   return (
     <div className="flex items-center gap-2">
@@ -2683,8 +2683,9 @@ function SignOutButton() {
       <button
         type="button"
         onClick={() => {
-          logout();
-          navigate("/login", { replace: true });
+          void logoutCurrentSurface().finally(() =>
+            navigate("/login", { replace: true }),
+          );
         }}
         className="rounded-md border border-border/60 px-2 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
       >

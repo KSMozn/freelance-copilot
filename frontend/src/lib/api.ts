@@ -120,3 +120,23 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/**
+ * Log out of the surface this bundle is serving. Best-effort: revokes the
+ * refresh token's whole family server-side (so it can't be replayed) before
+ * clearing local state. Network failure still clears locally.
+ */
+export async function logoutCurrentSurface(): Promise<void> {
+  const store = isAdminSurface ? useAdminAuthStore : useAuthStore;
+  const path = isAdminSurface ? "/admin/auth/logout" : "/auth/logout";
+  const refreshToken = store.getState().refreshToken;
+  if (refreshToken) {
+    try {
+      await axios.post(`${baseURL}${path}`, { refresh_token: refreshToken });
+    } catch {
+      // Server-side revoke is best-effort; the local clear below is what the
+      // user sees. A stale token self-expires within its TTL regardless.
+    }
+  }
+  store.getState().logout();
+}

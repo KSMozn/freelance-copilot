@@ -33,3 +33,11 @@ class AdminAuthResponse(BaseModel):
 
 class AdminRefreshRequest(BaseModel):
     refresh_token: str
+
+
+class AdminLogoutRequest(BaseModel):
+    refresh_token: str
+
+
+class AdminLogoutResponse(BaseModel):
+    ok: bool = True
