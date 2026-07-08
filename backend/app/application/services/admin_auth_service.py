@@ -12,16 +12,13 @@ import jwt
 from app.application.dto.admin_auth_dto import (
     AdminAuthResponse,
     AdminLoginRequest,
+    AdminLogoutRequest,
     AdminRefreshRequest,
     AdminTokenPair,
     AdminUserRead,
 )
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    verify_password,
-)
+from app.application.services.refresh_token_manager import RefreshTokenManager
+from app.core.security import decode_token, verify_password
 from app.domain.entities.admin_user import AdminUser
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
 from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import (
@@ -30,15 +27,19 @@ from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import 
 
 
 class AdminAuthService:
-    def __init__(self, admin_repo: SQLAlchemyAdminUserRepository) -> None:
+    def __init__(
+        self,
+        admin_repo: SQLAlchemyAdminUserRepository,
+        refresh_tokens: RefreshTokenManager | None = None,
+    ) -> None:
         self._admins = admin_repo
+        self._refresh = refresh_tokens
 
-    @staticmethod
-    def _tokens_for(admin_id: UUID) -> AdminTokenPair:
-        return AdminTokenPair(
-            access_token=create_access_token(admin_id, principal_type="admin"),
-            refresh_token=create_refresh_token(admin_id, principal_type="admin"),
-        )
+    async def _issue_tokens(self, admin_id: UUID) -> AdminTokenPair:
+        if self._refresh is None:
+            raise RuntimeError("Refresh-token manager is not configured")
+        access, refresh = await self._refresh.issue(admin_id, "admin")
+        return AdminTokenPair(access_token=access, refresh_token=refresh)
 
     @staticmethod
     def _to_read(admin: AdminUser) -> AdminUserRead:
@@ -59,10 +60,12 @@ class AdminAuthService:
             raise InvalidCredentialsError("Admin account is disabled")
         await self._admins.touch_last_login(admin.id, datetime.now(UTC))
         return AdminAuthResponse(
-            user=self._to_read(admin), tokens=self._tokens_for(admin.id)
+            user=self._to_read(admin), tokens=await self._issue_tokens(admin.id)
         )
 
     async def refresh(self, payload: AdminRefreshRequest) -> AdminTokenPair:
+        if self._refresh is None:
+            raise RuntimeError("Refresh-token manager is not configured")
         try:
             data = decode_token(payload.refresh_token, "refresh")
         except jwt.InvalidTokenError as exc:
@@ -73,7 +76,20 @@ class AdminAuthService:
         admin = await self._admins.get_by_id(admin_id)
         if admin is None or not admin.is_active:
             raise InvalidCredentialsError("Admin not found or inactive")
-        return self._tokens_for(admin.id)
+        access, refresh = await self._refresh.rotate(data, "admin", admin.id)
+        return AdminTokenPair(access_token=access, refresh_token=refresh)
+
+    async def logout(self, payload: AdminLogoutRequest) -> None:
+        if self._refresh is None:
+            return
+        try:
+            data = decode_token(payload.refresh_token, "refresh")
+        except jwt.InvalidTokenError:
+            return
+        # Only revoke if it really is an admin refresh token.
+        if data.get("pt") != "admin":
+            return
+        await self._refresh.revoke_session(data)
 
     async def get_admin_by_token(self, access_token: str) -> AdminUser:
         try:

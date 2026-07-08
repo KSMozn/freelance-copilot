@@ -39,6 +39,7 @@ from app.application.services.proposal_generation_service import (
     ProposalGenerationService,
 )
 from app.application.services.proposal_review_service import ProposalReviewService
+from app.application.services.refresh_token_manager import RefreshTokenManager
 from app.application.services.repository_improvement_service import (
     RepositoryImprovementService,
 )
@@ -105,6 +106,9 @@ from app.infrastructure.db.repositories.sqlalchemy_portfolio_repository import (
 )
 from app.infrastructure.db.repositories.sqlalchemy_proposal_repository import (
     SQLAlchemyProposalRepository,
+)
+from app.infrastructure.db.repositories.sqlalchemy_refresh_token_repository import (
+    SQLAlchemyRefreshTokenRepository,
 )
 from app.infrastructure.db.repositories.sqlalchemy_repository_store import (
     SQLAlchemyRepositoryStore,
@@ -236,7 +240,10 @@ def get_auth_service(
     persona_service: Annotated[PersonaService, Depends(get_persona_service)],
 ) -> AuthService:
     return AuthService(
-        SQLAlchemyUserRepository(session), otp_service, persona_service
+        SQLAlchemyUserRepository(session),
+        otp_service,
+        persona_service,
+        RefreshTokenManager(SQLAlchemyRefreshTokenRepository(session)),
     )
 
 

@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException, Request, status
 from app.application.dto.auth_dto import (
     AuthResponse,
     LoginRequest,
+    LogoutRequest,
+    LogoutResponse,
     OtpRequestRequest,
     OtpRequestResponse,
     OtpVerifyRequest,
@@ -103,6 +105,14 @@ async def verify_code(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)
         ) from exc
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(payload: LogoutRequest, auth: AuthServiceDep) -> LogoutResponse:
+    # Revokes the refresh token's whole family server-side. Best-effort:
+    # always 200 so it can't be used to probe token validity.
+    await auth.logout(payload)
+    return LogoutResponse()
 
 
 @router.get("/me", response_model=UserRead)

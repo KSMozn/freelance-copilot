@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { logoutCurrentSurface } from "@/lib/api";
 import { useSubmitFeedback } from "@/lib/feedback";
-import { useAuthStore } from "@/stores/auth";
 
 const MIN_LEN = 10;
 
@@ -85,13 +85,13 @@ export function StudentFeedbackPage() {
 
 function SignOutLink() {
   const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
   return (
     <button
       type="button"
       onClick={() => {
-        logout();
-        navigate("/login", { replace: true });
+        void logoutCurrentSurface().finally(() =>
+          navigate("/login", { replace: true }),
+        );
       }}
       className="text-xs text-muted-foreground hover:text-foreground"
     >

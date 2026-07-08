@@ -1,13 +1,13 @@
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { BrandWordmark } from "@/components/brand/BrandWordmark";
+import { logoutCurrentSurface } from "@/lib/api";
 import { useAdminAuthStore } from "@/stores/adminAuth";
 import { cn } from "@/lib/utils";
 
 export function AdminLayout() {
   const admin = useAdminAuthStore((s) => s.admin);
   const accessToken = useAdminAuthStore((s) => s.accessToken);
-  const logout = useAdminAuthStore((s) => s.logout);
   const navigate = useNavigate();
 
   if (!accessToken || !admin) {
@@ -35,8 +35,9 @@ export function AdminLayout() {
           <button
             type="button"
             onClick={() => {
-              logout();
-              navigate("/login", { replace: true });
+              void logoutCurrentSurface().finally(() =>
+                navigate("/login", { replace: true }),
+              );
             }}
             className="block w-full rounded-md px-3 py-2 text-left hover:bg-muted"
           >

@@ -34,6 +34,7 @@ from app.infrastructure.db.models.project import (
     ProjectSkill,
 )
 from app.infrastructure.db.models.proposal import Proposal
+from app.infrastructure.db.models.refresh_token import RefreshToken
 from app.infrastructure.db.models.repository import Repository
 from app.infrastructure.db.models.resume import Resume, ResumeSkill
 from app.infrastructure.db.models.skill import Skill
@@ -86,6 +87,7 @@ __all__ = [
     "ProjectSkill",
     "Proposal",
     "RecruiterInteraction",
+    "RefreshToken",
     "Repository",
     "Resume",
     "ResumeSkill",

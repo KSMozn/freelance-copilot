@@ -6,6 +6,7 @@ import jwt
 from app.application.dto.auth_dto import (
     AuthResponse,
     LoginRequest,
+    LogoutRequest,
     OtpVerifyRequest,
     RefreshRequest,
     RegisterRequest,
@@ -14,13 +15,8 @@ from app.application.dto.auth_dto import (
 )
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.persona_service import PersonaService
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    hash_password,
-    verify_password,
-)
+from app.application.services.refresh_token_manager import RefreshTokenManager
+from app.core.security import decode_token, hash_password, verify_password
 from app.domain.entities.user import User
 from app.domain.exceptions import (
     AlreadyExistsError,
@@ -36,17 +32,18 @@ class AuthService:
         user_repo: UserRepository,
         otp_service: EmailOtpService | None = None,
         persona_service: PersonaService | None = None,
+        refresh_tokens: RefreshTokenManager | None = None,
     ) -> None:
         self._users = user_repo
         self._otp = otp_service
         self._personas = persona_service
+        self._refresh = refresh_tokens
 
-    @staticmethod
-    def _tokens_for(user_id: UUID) -> TokenPair:
-        return TokenPair(
-            access_token=create_access_token(user_id),
-            refresh_token=create_refresh_token(user_id),
-        )
+    async def _issue_tokens(self, user_id: UUID) -> TokenPair:
+        if self._refresh is None:
+            raise RuntimeError("Refresh-token manager is not configured")
+        access, refresh = await self._refresh.issue(user_id, "user")
+        return TokenPair(access_token=access, refresh_token=refresh)
 
     @staticmethod
     def _to_read(user: User) -> UserRead:
@@ -73,7 +70,9 @@ class AuthService:
             selected_persona_kind=payload.persona_kind,
         )
         await self._users.touch_last_login(user.id, datetime.now(UTC))
-        return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))
+        return AuthResponse(
+            user=self._to_read(user), tokens=await self._issue_tokens(user.id)
+        )
 
     async def login(self, payload: LoginRequest) -> AuthResponse:
         user = await self._users.get_by_email(str(payload.email))
@@ -86,18 +85,36 @@ class AuthService:
         if not user.is_active:
             raise InvalidCredentialsError("User is inactive")
         await self._users.touch_last_login(user.id, datetime.now(UTC))
-        return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))
+        return AuthResponse(
+            user=self._to_read(user), tokens=await self._issue_tokens(user.id)
+        )
 
     async def refresh(self, payload: RefreshRequest) -> TokenPair:
+        if self._refresh is None:
+            raise RuntimeError("Refresh-token manager is not configured")
         try:
             data = decode_token(payload.refresh_token, "refresh")
         except jwt.InvalidTokenError as exc:
             raise InvalidCredentialsError("Invalid refresh token") from exc
+        if data.get("pt") == "admin":
+            raise InvalidCredentialsError("Not a user refresh token")
         user_id = UUID(data["sub"])
         user = await self._users.get_by_id(user_id)
         if user is None or not user.is_active:
             raise InvalidCredentialsError("User not found or inactive")
-        return self._tokens_for(user.id)
+        access, refresh = await self._refresh.rotate(data, "user", user.id)
+        return TokenPair(access_token=access, refresh_token=refresh)
+
+    async def logout(self, payload: LogoutRequest) -> None:
+        """Revoke the session behind a refresh token. Best-effort and
+        non-leaking: a malformed/expired/unknown token is a silent no-op."""
+        if self._refresh is None:
+            return
+        try:
+            data = decode_token(payload.refresh_token, "refresh")
+        except jwt.InvalidTokenError:
+            return
+        await self._refresh.revoke_session(data)
 
     async def get_user_by_token(self, access_token: str) -> User:
         try:
@@ -180,4 +197,6 @@ class AuthService:
                 pass
 
         await self._users.touch_last_login(user.id, now)
-        return AuthResponse(user=self._to_read(user), tokens=self._tokens_for(user.id))
+        return AuthResponse(
+            user=self._to_read(user), tokens=await self._issue_tokens(user.id)
+        )

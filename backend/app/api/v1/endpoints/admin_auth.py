@@ -12,11 +12,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.application.dto.admin_auth_dto import (
     AdminAuthResponse,
     AdminLoginRequest,
+    AdminLogoutRequest,
+    AdminLogoutResponse,
     AdminRefreshRequest,
     AdminTokenPair,
     AdminUserRead,
 )
 from app.application.services.admin_auth_service import AdminAuthService
+from app.application.services.refresh_token_manager import RefreshTokenManager
 from app.core.deps import CurrentAdmin, SessionDep
 from app.core.rate_limit import (
     client_ip,
@@ -28,12 +31,18 @@ from app.domain.exceptions import InvalidCredentialsError
 from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import (
     SQLAlchemyAdminUserRepository,
 )
+from app.infrastructure.db.repositories.sqlalchemy_refresh_token_repository import (
+    SQLAlchemyRefreshTokenRepository,
+)
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
 
 
 def _service(session: SessionDep) -> AdminAuthService:
-    return AdminAuthService(SQLAlchemyAdminUserRepository(session))
+    return AdminAuthService(
+        SQLAlchemyAdminUserRepository(session),
+        RefreshTokenManager(SQLAlchemyRefreshTokenRepository(session)),
+    )
 
 
 AdminAuthDep = Annotated[AdminAuthService, Depends(_service)]
@@ -66,6 +75,14 @@ async def refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)
         ) from exc
+
+
+@router.post("/logout", response_model=AdminLogoutResponse)
+async def logout(
+    payload: AdminLogoutRequest, auth: AdminAuthDep
+) -> AdminLogoutResponse:
+    await auth.logout(payload)
+    return AdminLogoutResponse()
 
 
 @router.get("/me", response_model=AdminUserRead)
