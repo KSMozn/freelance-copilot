@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 14
+    # Admin "view as user" tokens are short-lived and non-refreshable, so an
+    # abandoned impersonation session self-expires quickly instead of lingering
+    # for the normal 14-day refresh window.
+    impersonation_token_expire_minutes: int = 30
 
     cors_origins: str = "http://localhost:5173"
 

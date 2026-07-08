@@ -55,7 +55,7 @@ from app.application.services.student_cv_renderer import StudentCvRenderer, Weas
 from app.application.services.student_profile_service import StudentProfileService
 from app.core.config import Settings, get_settings
 from app.core.deps import CurrentAdmin, SessionDep, get_blob_store, get_email_provider
-from app.core.security import create_access_token, create_refresh_token
+from app.core.security import create_impersonation_token
 from app.domain.entities.admin_user import AdminUser as AdminUserEntity
 from app.domain.providers.blob_store import BlobStore
 from app.domain.providers.email_provider import EmailProvider
@@ -502,9 +502,15 @@ async def impersonate(
     detail = await svc.get_user_detail(user_id)
     if detail is None:
         raise HTTPException(status_code=404, detail="User not found")
-    # Mint tokens for the target — no password check, admin-level trust.
-    access = create_access_token(user_id)
-    refresh = create_refresh_token(user_id)
+    # Mint a short-lived, non-refreshable token for the target — no password
+    # check, admin-level trust. It carries an `act` claim naming the admin and
+    # self-expires (see impersonation_token_expire_minutes), so an abandoned
+    # "view as user" session can't linger. No refresh token is issued: the
+    # empty string tells the frontend there's nothing to refresh, so the
+    # session simply ends when the access token expires.
+    access = create_impersonation_token(
+        user_id, actor_admin_id=actor.id, actor_email=actor.email
+    )
     usage_event_service.fire(
         user_id=None,
         kind="admin.impersonate",
@@ -520,7 +526,7 @@ async def impersonate(
         target_user_id=user_id,
         target_user_email=detail.email,
         access_token=access,
-        refresh_token=refresh,
+        refresh_token="",
     )
 
 
