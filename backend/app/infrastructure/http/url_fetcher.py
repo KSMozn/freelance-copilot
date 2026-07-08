@@ -1,15 +1,26 @@
 """Fetch a public URL and reduce it to readable plain text.
 
-Defensive defaults: short timeout, redirect cap, custom UA, size cap. Not an
-SSRF guard — the app is single-user; we trust the operator not to point this
-at internal hosts.
+Defensive defaults: short timeout, redirect cap, custom UA, size cap. SSRF
+guard: the target host must resolve to a public IP, and every redirect hop is
+re-validated (redirects are followed manually, not by httpx), so a public URL
+cannot bounce the fetch to an internal address.
+
+Residual risk: DNS rebinding between the validation lookup and httpx's own
+connect lookup is not fully closed (would require pinning the connection to the
+validated IP). Acceptable for this surface; the private-IP block stops the
+common metadata/internal-service and redirect vectors.
 """
 from __future__ import annotations
 
+import ipaddress
 import re
+import socket
 from dataclasses import dataclass
+from urllib.parse import urljoin, urlparse
 
 import httpx
+
+_ALLOWED_SCHEMES = frozenset({"http", "https"})
 
 DEFAULT_TIMEOUT_S = 12.0
 MAX_BYTES = 1_500_000  # ~1.5 MB cap on the raw HTML
@@ -48,6 +59,32 @@ class UrlFetchError(Exception):
     """Raised when we can't get usable text out of a URL."""
 
 
+def _assert_public_url(url: str) -> None:
+    """Reject non-http(s) schemes and any host that resolves to a
+    private/loopback/link-local/reserved/multicast address (SSRF guard)."""
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
+        raise UrlFetchError(f"Unsupported URL scheme: {parsed.scheme!r}")
+    host = parsed.hostname
+    if not host:
+        raise UrlFetchError("URL has no host")
+    try:
+        infos = socket.getaddrinfo(host, parsed.port or 80, proto=socket.IPPROTO_TCP)
+    except socket.gaierror as exc:
+        raise UrlFetchError(f"Cannot resolve host {host!r}: {exc}") from exc
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        ):
+            raise UrlFetchError("Refusing to fetch a non-public address")
+
+
 def _strip_html(raw: str) -> str:
     cleaned = _SCRIPT_STYLE_RE.sub(" ", raw)
     cleaned = _TAG_RE.sub(" ", cleaned)
@@ -74,17 +111,31 @@ def _first_match(pattern: re.Pattern[str], raw: str) -> str | None:
 
 async def fetch_page(url: str, *, timeout_s: float = DEFAULT_TIMEOUT_S) -> FetchedPage:
     headers = {"User-Agent": USER_AGENT, "Accept": "text/html,*/*;q=0.5"}
+    # Follow redirects manually so every hop is re-validated against the
+    # SSRF guard — httpx's own follow_redirects would happily chase a
+    # public URL's 302 into an internal host.
+    current = url
     try:
         async with httpx.AsyncClient(
             timeout=timeout_s,
-            follow_redirects=True,
-            max_redirects=5,
+            follow_redirects=False,
             headers=headers,
         ) as client:
-            resp = await client.get(url)
+            resp = None
+            for _ in range(6):
+                _assert_public_url(current)
+                resp = await client.get(current)
+                if resp.is_redirect and "location" in resp.headers:
+                    current = urljoin(current, resp.headers["location"])
+                    continue
+                break
+            else:
+                raise UrlFetchError(f"Too many redirects fetching {url}")
     except httpx.HTTPError as exc:
         raise UrlFetchError(f"Network error fetching {url}: {exc}") from exc
 
+    if resp is None:
+        raise UrlFetchError(f"No response fetching {url}")
     if resp.status_code >= 400:
         raise UrlFetchError(f"HTTP {resp.status_code} for {resp.url}")
 

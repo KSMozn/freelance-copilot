@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.application.dto.admin_auth_dto import (
     AdminAuthResponse,
@@ -18,6 +18,12 @@ from app.application.dto.admin_auth_dto import (
 )
 from app.application.services.admin_auth_service import AdminAuthService
 from app.core.deps import CurrentAdmin, SessionDep
+from app.core.rate_limit import (
+    client_ip,
+    login_account_limiter,
+    login_ip_limiter,
+    refresh_ip_limiter,
+)
 from app.domain.exceptions import InvalidCredentialsError
 from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import (
     SQLAlchemyAdminUserRepository,
@@ -34,7 +40,13 @@ AdminAuthDep = Annotated[AdminAuthService, Depends(_service)]
 
 
 @router.post("/login", response_model=AdminAuthResponse)
-async def login(payload: AdminLoginRequest, auth: AdminAuthDep) -> AdminAuthResponse:
+async def login(
+    payload: AdminLoginRequest, auth: AdminAuthDep, request: Request
+) -> AdminAuthResponse:
+    # Admin login is password-only with no MFA — throttle it hardest. Keyed
+    # on the target email (spoof-proof) and the source IP.
+    login_account_limiter.check(f"admin-login:{str(payload.email).lower()}")
+    login_ip_limiter.check(f"admin-login:{client_ip(request)}")
     try:
         return await auth.login(payload)
     except InvalidCredentialsError as exc:
@@ -44,7 +56,10 @@ async def login(payload: AdminLoginRequest, auth: AdminAuthDep) -> AdminAuthResp
 
 
 @router.post("/refresh", response_model=AdminTokenPair)
-async def refresh(payload: AdminRefreshRequest, auth: AdminAuthDep) -> AdminTokenPair:
+async def refresh(
+    payload: AdminRefreshRequest, auth: AdminAuthDep, request: Request
+) -> AdminTokenPair:
+    refresh_ip_limiter.check(f"admin-refresh:{client_ip(request)}")
     try:
         return await auth.refresh(payload)
     except InvalidCredentialsError as exc:

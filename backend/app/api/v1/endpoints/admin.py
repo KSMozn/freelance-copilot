@@ -7,6 +7,7 @@ action.
 from __future__ import annotations
 
 import logging
+import secrets as _secrets
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
@@ -977,15 +978,23 @@ async def run_daily_report(
 ) -> DailyReportResult:
     """Machine-called (Cloud Scheduler). No admin JWT here — the shared
     secret in `X-Task-Secret` is the auth. In dev, if the secret isn't
-    configured, the check is skipped so we can trigger locally.
+    configured, the check is skipped so we can trigger locally; in any
+    deployed env a missing secret is a hard 503 (fail closed) rather than
+    an open endpoint.
     """
-    expected = get_settings().report_task_secret
-    if expected:
-        if x_task_secret != expected:
+    settings = get_settings()
+    expected = settings.report_task_secret
+    if not expected:
+        if settings.environment != "development":
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid task secret",
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Task secret not configured",
             )
+    elif not _secrets.compare_digest(x_task_secret or "", expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid task secret",
+        )
     svc = DailyReportService(session, email_provider)
     report = await svc.build_report(window_hours=payload.window_hours)
     return await svc.send(report)
