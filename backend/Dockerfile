@@ -22,5 +22,11 @@ RUN pip install --upgrade pip && pip install -e ".[dev]"
 
 COPY . .
 
+# Drop root: run as an unprivileged user. The app writes nothing under /app in
+# prod (uploads go to GCS), and 8000 is a non-privileged port, so no extra caps
+# are needed. chown lets local-dev (BLOB_STORE=local writing var/uploads) work.
+RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

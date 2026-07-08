@@ -93,6 +93,15 @@ class Settings(BaseSettings):
         codes) — a missing Secret Manager mount becomes a boot failure, not a
         silent security hole.
         """
+        # The API always sends `Access-Control-Allow-Credentials: true`, which
+        # is incompatible with a wildcard origin (the browser rejects it and,
+        # worse, Starlette would reflect the caller's origin). Refuse `*` in
+        # every env so it can't be introduced by a stray env var.
+        if "*" in self.cors_origin_list:
+            raise ValueError(
+                "CORS_ORIGINS cannot contain '*' while credentials are allowed"
+            )
+
         if self.environment in ("staging", "production"):
             if self.secret_key in _PLACEHOLDER_SECRETS or len(self.secret_key) < 32:
                 raise ValueError(
