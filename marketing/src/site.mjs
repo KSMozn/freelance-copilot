@@ -48,27 +48,18 @@ export const nav = [
         href: "/blog/how-to-describe-student-projects",
       },
       { label: "Internship Summary Helper", href: "/cv-for-internship" },
-      { label: "PDF Download", href: "/student-cv-builder#formats" },
-      { label: "DOCX Download", href: "/student-cv-builder#formats" },
-      {
-        label: "LinkedIn Profile Helper",
-        href: "/blog/how-to-write-cv-with-no-experience",
-      },
+      { label: "PDF Download", href: "/download-cv-pdf" },
+      { label: "DOCX Download", href: "/download-cv-pdf#docx" },
+      { label: "LinkedIn Profile Helper", href: "/linkedin-profile-for-students" },
     ],
   },
   {
     label: "Resources",
     items: [
-      { label: "CV Examples", href: "/student-cv-templates" },
+      { label: "CV Examples", href: "/student-cv-examples" },
       { label: "Career Tips", href: "/blog" },
-      {
-        label: "LinkedIn Tips",
-        href: "/blog/how-to-write-cv-with-no-experience",
-      },
-      {
-        label: "GitHub Profile Tips",
-        href: "/blog/how-to-describe-student-projects",
-      },
+      { label: "LinkedIn Tips", href: "/linkedin-profile-for-students" },
+      { label: "GitHub Profile Tips", href: "/github-profile-for-students" },
     ],
   },
 ];
