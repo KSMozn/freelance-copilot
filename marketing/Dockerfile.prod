@@ -1,0 +1,18 @@
+# Careero marketing site — static build served by unprivileged nginx.
+#
+# Cloud Run sets $PORT (default 8080); the nginx image expands ${PORT} in
+# /etc/nginx/templates/*.template via envsubst before boot.
+
+# ---------- 1. Build stage ----------
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY . .
+RUN node build.mjs
+
+# ---------- 2. Runtime stage ----------
+# Unprivileged nginx (uid 101, pid/temp under /tmp) — no root at runtime.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+ENV PORT=8080
+EXPOSE 8080

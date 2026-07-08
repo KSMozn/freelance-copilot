@@ -1,0 +1,11 @@
+{
+  "name": "careero-marketing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public SEO/marketing site for Careero (careero.app). Zero-dependency static-site generator — emits fully pre-rendered HTML.",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs && cd dist && python3 -m http.server 4321"
+  }
+}
