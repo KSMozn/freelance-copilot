@@ -1,5 +1,16 @@
 # Architecture
 
+> **Which surface is live (2026-07).** The professional-surface sections
+> below — Phases A–H (knowledge graph, personas, source ingestion, match
+> reports, outputs, market signals, tracker) and the Phase 2–7 subsystems —
+> describe the **dormant** professional Career-OS. Its backend endpoints
+> still run and this documentation is kept accurate as historical/dormant
+> reference, but the frontend routes are not registered
+> (`frontend/src/features/professional/` is quarantined). The **live**
+> product is Careero — the Phase-K student surface — plus the PersonaArmory
+> admin console (Phases L–M) and the Phase-P auth hardening, documented at
+> the end of this file. Frontend architecture lives in `frontend/CLAUDE.md`.
+
 ## Principles
 
 - **Clean Architecture** — dependencies point inward. The Domain layer knows
@@ -693,12 +704,123 @@ Analytics never joins back to mutable `jobs`/`proposals`/`resumes` rows —
 the Phase-6 snapshot is the source of truth. That's the same guarantee
 Phase 8's learning loop will lean on.
 
+## PersonaArmory Admin console (Phases L–M)
+
+The live operator surface, served from `admin.*` hosts by the same SPA
+build. Everything under `/api/v1/admin` is gated by `CurrentAdmin`.
+
+**Separate identity space.** `admin_users` (migration 0031) is fully
+independent from `users` — the same email can exist on both sides with
+independent passwords and lifecycles. JWTs carry a `pt`
+(principal-type) claim set in `core/security.py`; the two token
+families are mutually rejected: `AuthService.get_user_by_token` refuses
+`pt == "admin"` and `AdminAuthService.get_admin_by_token` refuses
+anything but `pt == "admin"`. `get_current_admin` in `core/deps.py` is
+the gate (it also 403s disabled admins). The old `users.is_superuser`
+gate (`require_superuser`) is legacy and no longer used by admin
+endpoints.
+
+**Admin auth (`admin_auth.py`, `/admin/auth`).** Password-only login —
+no OTP, no self-registration; accounts are seeded via the `create_admin`
+job. Login is the hardest-throttled surface (per-target-email +
+per-IP limiters), plus `refresh` (rotating, via the shared
+`RefreshTokenManager`), `logout` (revokes the token family), and `me`.
+
+**The `/admin` surface (`admin.py`).**
+- *Overview + activity* — aggregated by `AdminService` from
+  `usage_events`, the append-only log every meaningful call emits
+  fire-and-forget through `usage_event_service.fire()` (a failed or slow
+  log write can never affect a user request). The overview derives a
+  funnel over the 13 wizard steps from `student_profiles.completed_steps`,
+  with the final "downloaded" stage counted from `cv.pdf` usage events.
+- *Users* — list with rich filters, detail, read-only entries audit
+  (inspect AI-generated content without impersonating), direct
+  student-profile edits (same DTO + service the wizard uses),
+  enable / disable / reset-wizard / delete (email-confirmation
+  required), and per-user CV preview / PDF / DOCX rendering.
+- *Impersonation* — `POST /users/{id}/impersonate` mints a short-lived,
+  **non-refreshable** `pt=user` access token carrying an `act` claim
+  naming the admin (`create_impersonation_token`). The frontend hands it
+  to the app surface via URL **fragment** (never sent to a server);
+  `/impersonate` decodes it, stores it, and wipes the fragment. The
+  session simply expires — there is no refresh token to revoke.
+- *CV templates* — `cv_templates` (migration 0033) is a seeded registry
+  matching the Jinja files 1:1; admins toggle `is_visible` /
+  `sort_order` only.
+- *Emails* — template list / per-user preview / send / bulk send with
+  dry-run; send history is read straight back out of
+  `admin.action(send_email)` usage events. `POST /admin/tasks/daily-report`
+  is a machine endpoint for Cloud Scheduler authenticated by an
+  `X-Task-Secret` header (constant-time compare; fail-closed outside
+  development).
+- *Feedback triage (Phase M)* — inbox over `feedback_entries` with
+  resolve / unresolve; the resolving admin's identity lands in the row's
+  `meta` JSONB (no FK across identity spaces).
+- *LLM call / cost tracking* — LLM emit sites stash
+  `prompt_tokens` / `completion_tokens` / `model` / `provider` /
+  `cost_usd` (priced by the static table in `llm_cost.py`) into
+  `usage_events.meta`; `/admin/llm-calls` and per-user `llm-spend`
+  drill into them.
+
+**Audit trail.** Every admin mutation fires an `admin.action` usage
+event. `user_id` stays NULL (an `admin_users.id` can't satisfy the FK to
+`users`); the actor's id + email travel in `meta` instead.
+
+**Layering note.** `AdminService` talks to the SQLAlchemy models and
+session directly — a documented deviation from the repository pattern.
+Every method is a query (aggregations, filtered lists, narrow
+mutations); pushing them behind repository protocols would add ceremony
+without a seam anyone swaps.
+
+## Auth hardening (Phase P)
+
+**Refresh-token rotation with family revocation.** The `refresh_tokens`
+table (migration 0043) stores one row per minted refresh token — the
+row id **is** the JWT `jti`, and `family_id` links a rotation chain.
+`RefreshTokenManager` (`application/services/refresh_token_manager.py`),
+shared by the user and admin auth services, rotates on every refresh:
+the presented token is revoked (`rotated`) and a successor is issued in
+the same family. Replaying an already-rotated token after a 15-second
+grace window (double-submit tolerance) is treated as theft — the whole
+family is revoked (`reuse_detected`) so both attacker and victim are
+forced to re-login. `POST /auth/logout` and `/admin/auth/logout` revoke
+the family. Legacy tokens (no `jti`) and impersonation tokens bootstrap
+into a tracked family on first use, so the migration needed no
+backfill. Access tokens stay stateless and short-lived.
+
+**In-process rate limiting.** `core/rate_limit.py` is a dependency-free
+sliding-window counter applied to the auth surfaces only: user + admin
+login, refresh, OTP request, OTP verify. Two dimensions per endpoint:
+per-account/email (the primary control — not IP-spoofable) and per-IP
+(defense in depth; trusts the left-most `X-Forwarded-For` entry, which
+is documented as spoofable). Redis/slowapi is deliberately avoided —
+limiters are per-instance, and at Cloud Run scale the effective limit
+being `limit × instance_count` is an accepted trade-off. 429 responses
+carry `Retry-After`.
+
+**Transport & headers.** `main.py` adds a security-header middleware
+(`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, CSP `frame-ancestors 'none'`, HSTS in
+deployed environments) and disables `/docs` + the OpenAPI schema in
+production. `config.py` validates at startup: wildcard CORS origins are
+refused in every environment (credentials are always allowed, so `*`
+would be a silent hole), and staging/production reject placeholder or
+short `SECRET_KEY`s.
+
 ## Testing strategy
 
-- **Unit** — services and domain logic with in-memory fake repositories.
-- **Integration** — pytest with a disposable Postgres (Docker) verifying
-  repositories and end-to-end API flows.
-- **E2E** — Playwright drives the frontend against a seeded backend.
+- **Unit (the automated suite)** — 309 tests (incl. the live-surface API suite: auth, students, admin), no database needed.
+  Services and domain logic run against the in-memory fakes in
+  `tests/factories.py`; API tests use FastAPI's `TestClient` with
+  `app.dependency_overrides` swapping in fakes and a stub current user.
+  Hardening has dedicated coverage (`test_refresh_rotation.py`,
+  `test_hardening.py`).
+- **Integration / E2E — currently manual.** There is no automated
+  Playwright suite or Docker-Postgres integration layer yet. Releases
+  are gated by the release checklist in
+  `README_DEVELOPMENT_PROCESS.md` — the end-to-end journey walked in a
+  real browser (Playwright-driven) against a running stack, plus a
+  post-deploy smoke test in prod.
 
 ## Configuration
 

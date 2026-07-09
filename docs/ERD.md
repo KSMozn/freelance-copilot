@@ -1,5 +1,15 @@
 # Entity Relationship Diagram
 
+> **Live vs dormant surfaces (2026-07).** The live Careero product (student CV
+> wizard + PersonaArmory admin console) uses: `users`, `email_otp_codes`,
+> `refresh_tokens`, `uploaded_files` (profile photos), `student_profiles`,
+> `student_profile_entries`, `cv_templates`, `feedback_entries`,
+> `usage_events`, and the separate `admin_users` identity space.
+> (`persona_archetypes` / `personas` still gain a row per user via
+> `ensure_primary` at auth.) Every other table belongs to the **dormant**
+> professional surface — its backend endpoints still run, but the frontend
+> routes are not registered.
+
 ```
 ┌─────────────┐        ┌──────────────┐
 │   users     │ 1───n  │     jobs     │
@@ -56,6 +66,13 @@
   interview_events (n) ─── applications (1)                         [Phase H]
   follow_up_reminders (n) ─── applications (1)                      [Phase H]
   applications.{resume_output_id, cover_letter_output_id} → outputs [Phase H]
+
+  student_profiles (1) ─── users (1) ─── student_profile_entries (n) [Phase K]
+  usage_events (n) ─── users (1) SET NULL — append-only activity log [Phase L]
+  admin_users — separate identity space, no FK to users              [Phase L]
+  cv_templates — seeded registry; student_profiles.cv_template_slug  [Phase L]
+  feedback_entries (n) ─── users (1)                                 [Phase M]
+  refresh_tokens — one per minted refresh JWT; no FK (user or admin) [Phase P]
 ```
 
 ## Tables
@@ -441,18 +458,25 @@ application?" is one read.
 | professional_email | text NULL     | separate from auth login email; rule-coached at entry        |
 | phone             | text NULL      |                                                              |
 | location          | text NULL      |                                                              |
+| date_of_birth     | date NULL      | *(0032)* not rendered on the CV by default (age-bias risk)   |
 | college           | text NULL      | wizard "Education" step                                      |
+| department        | varchar(200) NULL | *(0029)* faculty/college line, e.g. "College of Computer & Information Sciences" |
 | degree            | text NULL      | e.g. Bachelor of Science                                     |
 | major             | text NULL      |                                                              |
 | graduation_year   | smallint NULL  |                                                              |
 | gpa               | numeric(3,2) NULL |                                                           |
 | photo_file_id     | uuid NULL FK→uploaded_files.id | SET NULL on file delete                      |
+| photo_offset_x    | smallint NOT NULL default 50 | *(Phase N, 0035)* 0–100 % → CSS `background-position` |
+| photo_offset_y    | smallint NOT NULL default 50 | *(Phase N, 0035)* 0–100 % → CSS `background-position` |
+| photo_zoom        | smallint NOT NULL default 100 | *(Phase N, 0035)* 100–300 % → CSS `background-size`; crop applied at display time only |
 | summary           | text NULL      |                                                              |
 | headline          | text NULL      |                                                              |
 | links             | jsonb          | `{github, linkedin, website, portfolio}` — partial OK        |
 | interests         | jsonb          | list[str]                                                    |
+| career_pack       | jsonb NOT NULL default '{}' | *(Phase O, 0036)* generated LinkedIn/GitHub content + review state; URLs stay in `links` |
 | completed_steps   | jsonb          | list of step slugs the wizard has saved                      |
 | current_step      | varchar(64) NULL | step to resume on next visit                               |
+| cv_template_slug  | varchar(64) NULL | *(Phase L, 0033)* chosen template; no FK to `cv_templates` — NULL falls back to first visible |
 | created_at        | timestamptz    |                                                              |
 | updated_at        | timestamptz    |                                                              |
 
@@ -461,7 +485,7 @@ application?" is one read.
 |-------------------|----------------|--------------------------------------------------------------|
 | id                | uuid PK        |                                                              |
 | user_id           | uuid FK→users.id | cascade                                                    |
-| kind              | enum `student_entry_kind` | `course / project / volunteer / certificate / skill / award / extracurricular / language` |
+| kind              | enum `student_entry_kind` | `course / project / internship / volunteer / certificate / skill / award / extracurricular / language` — `internship` added by 0040 |
 | title             | text           | required                                                     |
 | organization      | text NULL      | school / employer / issuer                                   |
 | start_date        | date NULL      |                                                              |
@@ -475,6 +499,108 @@ application?" is one read.
 | updated_at        | timestamptz    |                                                              |
 
 Index: `ix_student_entries_user_kind (user_id, kind, sort_order)`.
+
+### usage_events *(Phase L)*
+Append-only log of every "meaningful" call — coach LLM calls, CV renders,
+auth events, admin actions/impersonations. Emitted fire-and-forget via
+`usage_event_service.fire()`; the admin Activity page paginates over it and
+the Overview/funnel/LLM-spend cards aggregate over it. LLM calls stash
+`prompt_tokens` / `completion_tokens` / `cost_usd` / `model` / `provider`
+in `meta`.
+
+| column        | type                                   | notes                                                    |
+|---------------|----------------------------------------|----------------------------------------------------------|
+| id            | uuid PK                                | `gen_random_uuid()` default                              |
+| user_id       | uuid FK→users SET NULL NULL            | NULL for pre-auth / system / admin-issued events         |
+| kind          | enum `usage_event_kind`                | see values below                                         |
+| status        | enum `usage_event_status` (ok, error)  |                                                          |
+| duration_ms   | int NULL                               |                                                          |
+| error_message | text NULL                              |                                                          |
+| meta          | jsonb NOT NULL default '{}'            | kind-specific extras (target_user_id, tokens, cost, …)   |
+| created_at    | timestamptz                            |                                                          |
+
+Indexes: `(created_at, kind)`, `(user_id, created_at)`.
+
+`usage_event_kind` values (0030, extended by 0037 / 0039 / 0041):
+`auth.register / auth.login / auth.otp_request / auth.otp_verify /
+coach.draft_summary / coach.proofread / coach.photo / coach.text /
+coach.email / cv.preview / cv.pdf / admin.impersonate / admin.action /
+error` + `career_pack.linkedin.generate / career_pack.linkedin.review /
+career_pack.github.generate / career_pack.github.review` *(0037)* +
+`cv.docx` *(0039)* + `coach.internship` *(0041)*.
+
+### admin_users *(Phase L)*
+Completely separate identity space from `users` — the same email can exist
+on both sides with independent passwords and lifecycles. Admin JWTs carry
+`pt=admin`; user and admin tokens can't access each other's resources. No
+self-registration: rows are seeded via the `create_admin` job. The old
+`users.is_superuser` column is vestigial.
+
+| column        | type            | notes                              |
+|---------------|-----------------|------------------------------------|
+| id            | uuid PK         | `gen_random_uuid()` default        |
+| email         | citext UNIQUE   | indexed; independent of users.email|
+| password_hash | varchar(255)    | password-only login (no OTP)       |
+| full_name     | varchar(255) NULL |                                  |
+| is_active     | bool            | default true                       |
+| last_login_at | timestamptz NULL |                                   |
+| created_at    | timestamptz     |                                    |
+| updated_at    | timestamptz     |                                    |
+
+### cv_templates *(Phase L)*
+Registry of the bundled CV templates students pick in the Preview step.
+Rows are seeded by migration 0033 (`classic / modern / minimal / academic /
+creative`) and correspond 1:1 to Jinja files under
+`app/application/templates/student_cv/` — never inserted via the UI. Admins
+toggle visibility / ordering from the admin panel.
+
+| column       | type              | notes                                  |
+|--------------|-------------------|----------------------------------------|
+| slug         | varchar(64) PK    | must match a physical Jinja file       |
+| display_name | varchar(120)      |                                        |
+| description  | text              | default ''                             |
+| is_visible   | bool              | default true; admin-toggled            |
+| sort_order   | int               | default 100; admin-ordered             |
+| created_at   | timestamptz       |                                        |
+| updated_at   | timestamptz       |                                        |
+
+### feedback_entries *(Phase M)*
+One table for both feedback surfaces, discriminated by `kind`:
+`general` (free-text from the /feedback page — fires an immediate admin
+email) and `post_download` (1–5 star survey after a CV download — rolls
+into the daily report only).
+
+| column        | type                                    | notes                                                  |
+|---------------|-----------------------------------------|--------------------------------------------------------|
+| id            | uuid PK                                 | `gen_random_uuid()` default                            |
+| user_id       | uuid FK→users CASCADE                   |                                                        |
+| kind          | enum `feedback_kind` (general, post_download) |                                                  |
+| rating        | smallint NULL                           | 1–5 stars for post_download; NULL for general          |
+| message       | text NULL                               | required for general; optional survey comment          |
+| template_slug | varchar(64) NULL                        | which CV template the survey followed                  |
+| meta          | jsonb NOT NULL default '{}'             | carries `resolved_by_admin_id` / `resolved_by_email`   |
+| created_at    | timestamptz                             |                                                        |
+| resolved_at   | timestamptz NULL                        | *(0042)* NULL = needs attention; set by admin triage   |
+
+Indexes: `(created_at)`, `(user_id, created_at)`, `(resolved_at)` *(0042)*.
+
+### refresh_tokens *(Phase P)*
+One row per minted refresh token — `id` **is** the JWT `jti`. `family_id`
+links a rotation chain so replaying an already-rotated token revokes the
+whole lineage (reuse detection). Access tokens stay stateless; only refresh
+tokens are tracked. Pre-0043 tokens have no `jti` claim and bootstrap into
+a new family on first refresh — no backfill needed.
+
+| column         | type              | notes                                              |
+|----------------|-------------------|----------------------------------------------------|
+| id             | uuid PK           | == JWT `jti`                                       |
+| family_id      | uuid              | indexed; rotation chain                            |
+| principal_type | varchar(16)       | `user` \| `admin` — mirrors the JWT `pt` claim     |
+| subject_id     | uuid              | indexed; users.id or admin_users.id (no FK)        |
+| expires_at     | timestamptz       |                                                    |
+| revoked_at     | timestamptz NULL  |                                                    |
+| revoked_reason | varchar(32) NULL  | `rotated` \| `logout` \| `reuse_detected`          |
+| created_at     | timestamptz       |                                                    |
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.
@@ -692,5 +818,19 @@ Index: `ivfflat (vector vector_cosine_ops)`. Unique `(owner_type, owner_id, mode
 - Phase 6 (migration `0006_phase6_application`) extends `applications` with
   per-status timestamps + immutable snapshot, and adds `draft`/`offer` to
   the status enum.
-- Future phases will build analytics views and add a per-user
-  `scoring_configs` table for Scoring v2.
+- Phase K (migration `0028_phase_k_student_persona`) creates
+  `student_profiles` + `student_profile_entries` and
+  `users.selected_persona_kind`; follow-ups: `0029` adds `department`,
+  `0032` adds `date_of_birth`, `0038` backfills every existing user to
+  `selected_persona_kind = 'student'` (Careero ships student-only).
+- Phase L: `0030` creates `usage_events`, `0031` creates `admin_users`,
+  `0033` creates `cv_templates` + `student_profiles.cv_template_slug` and
+  seeds the 5 launch templates.
+- Phase M: `0034` creates `feedback_entries`; `0042` adds `resolved_at`
+  + its index for admin triage.
+- Phase N: `0035` adds `photo_offset_x` / `photo_offset_y` / `photo_zoom`
+  to `student_profiles`.
+- Phase O: `0036` adds `student_profiles.career_pack` JSONB; `0037` /
+  `0039` / `0041` add `career_pack.*`, `cv.docx`, and `coach.internship`
+  to `usage_event_kind`; `0040` adds `internship` to `student_entry_kind`.
+- Phase P: `0043` creates `refresh_tokens`.

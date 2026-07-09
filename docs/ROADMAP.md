@@ -1,5 +1,22 @@
 # Implementation Roadmap
 
+## Where we are (2026-07)
+
+Two eras, one codebase:
+
+- **Professional era (Phases 1–9 + A–J)** — the freelancer / Career-OS
+  product. Built and working, now **dormant**: the backend endpoints still
+  run, but the frontend routes are not registered
+  (`frontend/src/features/professional/` is quarantined by ESLint).
+- **Careero era (Phase K onward)** — the **live product**: the student CV
+  wizard (`/students` + `/students/career-pack` + `/auth` APIs) plus the
+  PersonaArmory admin console (`/admin` + `/admin/auth`, separate
+  `admin_users` identity space). Phase K has since gained follow-up
+  migrations `0029` (department), `0032` (date_of_birth), and `0038`
+  (backfill all accounts to the student persona).
+- A marketing site exists alongside the app (see
+  `docs/llm-visibility-playbook.md`).
+
 Phase 1 lays a complete foundation that downstream phases extend without
 schema rewrites. Each subsequent phase is independently shippable.
 
@@ -730,7 +747,164 @@ honoured photo, summary, links, and all section types.
 
 ---
 
-## Phase I — Chrome Extension *(roadmap)*
+## Phase L — PersonaArmory admin console + usage analytics ✅
+
+**Goal:** an operator console on its own subdomain (`admin.*`) with its own
+identity space, backed by an append-only usage log.
+
+- Migrations: `0030` — `usage_events` (kind/status enums, `meta` JSONB,
+  `(created_at, kind)` + `(user_id, created_at)` indexes); `0031` —
+  `admin_users` (separate from `users`; same email may exist on both
+  sides); `0033` — `cv_templates` registry +
+  `student_profiles.cv_template_slug`, seeds 5 templates.
+- Services: `usage_event_service.fire()` — fire-and-forget event log
+  (a slow log write can never slow a user request); `AdminService` — all
+  `/admin` aggregations + mutations, talks to the ORM directly (documented
+  deviation from the repository pattern); `AdminAuthService` —
+  password-only login, no self-registration (admins seeded via the
+  `create_admin` job); `CvTemplateService`; `DailyReportService` +
+  `llm_cost.py` (static per-1M-token price table stamps `cost_usd` into
+  `usage_events.meta`).
+- API: `/admin/auth` — login / refresh / logout / me (JWTs carry
+  `pt=admin`; user and admin tokens are mutually rejected).
+  `/admin` — overview (signups, funnel over the 13 wizard steps, LLM
+  spend), activity, users list (rich filters) / detail / entries audit /
+  student-profile edit, enable / disable / reset-wizard / delete /
+  impersonate (short-lived non-refreshable `pt=user` token with an `act`
+  claim), per-user CV preview / `cv.pdf` / `cv.docx`, email templates +
+  preview + send + bulk + send history, `/admin/llm-calls` + per-user
+  `llm-spend` drill-downs, CV template visibility/ordering, and
+  `POST /admin/tasks/daily-report` — a machine endpoint for Cloud
+  Scheduler authenticated by an `X-Task-Secret` header (fail-closed
+  outside development). Every mutation emits an `admin.action` audit
+  event with the actor's identity in `meta`.
+- Frontend: `features/admin` — `AdminLayout` + Overview / Users /
+  UserDetail / Emails / Templates / Activity pages, `adminAuthStore`;
+  the admin surface is selected at runtime from the hostname.
+  Impersonation hands tokens to the app surface via URL fragment
+  (`/impersonate` decodes, stores, wipes it).
+
+**Exit:** an admin logs into `admin.*` with a password, watches signups +
+wizard funnel + LLM spend on the Overview, drills into a user, previews
+their CV, and impersonates them into the student app — with every action
+audited in `usage_events`.
+
+---
+
+## Phase M — Student feedback + surveys ✅
+
+**Goal:** hear from students without leaving the product — a feedback page
+plus a post-download pulse survey, triaged from the admin console.
+
+- Migrations: `0034` — `feedback_entries` (`feedback_kind` enum:
+  `general` | `post_download`, rating, message, `template_slug`, `meta`);
+  `0042` — `resolved_at` + index for admin triage.
+- Services: `FeedbackService.submit_general` (fires an *immediate*
+  fire-and-forget email to every active admin) and `submit_survey`
+  (1–5 stars + optional comment; daily-report only). Both roll into the
+  daily report.
+- API: `POST /students/feedback`, `POST /students/survey`;
+  admin: `GET /admin/feedback` (filter by kind / since / resolved, returns
+  `unresolved_count` for the sidebar badge),
+  `POST /admin/feedback/{id}/resolve` + `/unresolve` (resolver identity
+  lands in the row's `meta`).
+- Frontend: `StudentFeedbackPage` at `/feedback`, `PostDownloadSurvey`
+  card after a CV download, `AdminFeedbackPage` triage inbox.
+
+**Exit:** a general feedback submission lands in the admin inbox and
+triggers an immediate admin email; a post-download star rating shows in
+the daily report; resolving an item stamps who resolved it and when.
+
+---
+
+## Phase N — Photo positioning ✅
+
+**Goal:** let students crop their photo once and have the same crop render
+identically in the wizard preview, every CV template, and the exports.
+
+- Migration `0035` — `photo_offset_x` / `photo_offset_y` (0–100 %) and
+  `photo_zoom` (100–300 %) on `student_profiles`, all non-null with
+  server defaults (50 / 50 / 100 = "centered, fitted").
+- The transform is applied at display time only — the stored bytes are
+  never modified. HTML/PDF templates feed the values into CSS
+  `background-position` / `background-size`; the DOCX renderer replays
+  the same "cover" math server-side via Pillow.
+- Frontend: `PhotoPositioner.tsx` in the wizard's photo step — drag to
+  pan, slider to zoom.
+
+**Exit:** panning/zooming in the wizard changes the preview, the PDF, and
+the DOCX identically; profiles saved before 0035 render with the natural
+centered crop.
+
+---
+
+## Phase O — Career Starter Pack + DOCX export + internship coaching ✅
+
+**Goal:** extend the wizard beyond "download a PDF": generated
+LinkedIn/GitHub starter content, a Word-editable ATS-safe CV export, and
+AI coaching for internship bullet points.
+
+- Migrations: `0036` — `career_pack` JSONB on `student_profiles` (one
+  column instead of ten; generated content + review state, URLs stay in
+  `links`); `0040` — `internship` added to `student_entry_kind`;
+  `0037` / `0039` / `0041` — `career_pack.*`, `cv.docx`, and
+  `coach.internship` added to `usage_event_kind` so the admin panel sees
+  the new calls.
+- Services: `CareerPackService` — generates/reviews LinkedIn + GitHub
+  content from the student's CV data, never invents facts, persists into
+  `career_pack` so revisits don't re-spend an AI call (GitHub review hits
+  the public `api.github.com` unauthenticated); `StudentCvDocxRenderer` —
+  programmatic `python-docx` builder reusing the PDF renderer's
+  `build_context()`, no text boxes / floating shapes / image-based text;
+  internship coaching in `StudentCoachService`.
+- API: `/students/career-pack` — `GET`, `POST linkedin/generate`,
+  `linkedin/review`, `github/generate`, `github/review`, `clear`;
+  `GET /students/cv.docx`; `POST /students/coach/internship`.
+- Frontend: `career-pack/CareerStarterPack` (post-CV page), the
+  Internships wizard step (`InternshipCard`), DOCX download beside PDF —
+  the wizard is now 13 steps ending in `starter-pack`.
+
+**Exit:** a completed profile generates a LinkedIn headline/about + GitHub
+README pack grounded only in entered facts, downloads a Word-editable
+DOCX that mirrors the chosen template, and gets internship bullets
+coached — all visible as usage events in the admin panel.
+
+---
+
+## Phase P — Auth hardening: refresh-token rotation + rate limiting ✅
+
+**Goal:** make stolen refresh tokens short-lived and brute force useless,
+without adding infrastructure.
+
+- Migration `0043` — `refresh_tokens`: one row per minted refresh token
+  (`id` == JWT `jti`), `family_id` rotation chains, `principal_type`,
+  revocation columns.
+- `RefreshTokenManager` (shared by user + admin auth): every refresh
+  rotates; replaying an already-rotated token after a 15-second grace
+  window revokes the whole family (reuse detection); logout revokes the
+  family; legacy pre-0043 tokens bootstrap into a tracked family on first
+  use. Access tokens stay stateless.
+- `core/rate_limit.py` — dependency-free in-process sliding-window
+  limiter, applied to auth surfaces only (login, refresh, OTP request /
+  verify, admin login / refresh) on two dimensions: per-account/email
+  (the primary, non-spoofable control) and per-IP (defense in depth).
+  Deliberately no Redis/slowapi — per-instance memory is a documented
+  trade-off at Cloud Run scale.
+- `main.py` — security-header middleware (nosniff, `X-Frame-Options:
+  DENY`, `Referrer-Policy: no-referrer`, CSP `frame-ancestors 'none'`,
+  HSTS when deployed) and docs disabled in production; `config.py`
+  refuses wildcard CORS while credentials are allowed and rejects
+  weak/placeholder secrets in staging/production.
+- API: `POST /auth/logout` + `POST /admin/auth/logout` revoke the
+  presented token's family.
+
+**Exit:** `test_refresh_rotation.py` covers rotate / reuse-after-grace
+family revocation / logout / legacy bootstrap; `test_hardening.py` covers
+the limiter and the production config guards. 429s carry `Retry-After`.
+
+---
+
+## Phase I — Chrome Extension *(superseded — deferred by the Careero pivot)*
 
 Separate codebase. Form detection on LinkedIn / Greenhouse / Lever /
 Workday / Ashby / Wellfound / Upwork / generic. Persona auto-suggest.
@@ -740,7 +914,7 @@ field-fills require explicit user click-through.
 
 ---
 
-## Phase 8 — Learning Loop
+## Phase 8 — Learning Loop *(deferred — professional surface dormant)*
 
 - Periodic job: for each won/lost outcome, write back features into a
   training set and re-fit the dimension weights in the scoring config.
@@ -748,7 +922,12 @@ field-fills require explicit user click-through.
 
 ---
 
-## Phase 9 — Hardening
+## Phase 9 — Hardening *(superseded by Phases L + P for the live surface)*
+
+The Careero pivot delivered most of this list on the live surface: the
+cost dashboard and per-call AI audit log landed as `usage_events` + the
+admin LLM-spend cards (Phase L); auth rate limiting landed in Phase P.
+Still open: per-user LLM quotas and automated Playwright E2E.
 
 - Rate-limit & quota on LLM calls per user.
 - Cost dashboard.
