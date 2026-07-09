@@ -18,7 +18,10 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
 
 export default [
-  { ignores: ["dist", "node_modules", "*.config.js"] },
+  // scripts/ holds Node maintenance scripts (not app code); .storybook and
+  // storybook-static are tooling/output — all outside the lint surface,
+  // matching the reference project's ignore list.
+  { ignores: ["dist", "node_modules", "*.config.js", "scripts", ".storybook", "storybook-static"] },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
