@@ -68,6 +68,35 @@ const KIND_FOR_STEP: Record<string, StudentEntryKind> = {
   certificates: "certificate",
 };
 
+// Two save models coexist in the wizard and the footer must not lie about
+// which one is active: profile steps persist via useAutoSave (debounced),
+// while entry/internship steps only persist on their explicit Add/Save
+// buttons — an unsubmitted form is discarded on navigation. Preview and
+// the starter pack capture nothing, so they make no save claim at all.
+type SaveModel = "auto" | "manual" | "none";
+
+const SAVE_MODEL: Record<string, SaveModel> = {
+  basics: "auto",
+  education: "auto",
+  photo: "auto",
+  summary: "auto",
+  skills: "manual",
+  courses: "manual",
+  projects: "manual",
+  internships: "manual",
+  volunteer: "manual",
+  languages: "manual",
+  certificates: "manual",
+  preview: "none",
+  "starter-pack": "none",
+};
+
+const SAVE_HINT: Record<SaveModel, string | null> = {
+  auto: "Changes auto-saved",
+  manual: "Click save to keep your changes",
+  none: null,
+};
+
 export function StudentWizardPage() {
   const { data: profile, isLoading: profileLoading } = useStudentProfile();
   const updateProfile = useUpdateStudentProfile();
@@ -98,31 +127,36 @@ export function StudentWizardPage() {
   // uploads from the wizard propagate into localStorage so the next
   // visit greets the student with the freshest data. Fire-and-forget:
   // an error here should never block the wizard.
+  //
+  // The fields the effect consumes are narrowed to scalars first so the
+  // dependency array is genuinely exhaustive (no eslint-disable) without
+  // re-running on every profile refetch — the query returns a fresh
+  // object identity each time even when nothing changed.
+  const profileLoaded = Boolean(profile);
+  const profileFullName = profile?.full_name ?? null;
+  const photoFileId = profile?.photo_file_id ?? null;
+  const photoOffsetX = profile?.photo_offset_x ?? 50;
+  const photoOffsetY = profile?.photo_offset_y ?? 50;
+  const photoZoom = profile?.photo_zoom ?? 100;
   useEffect(() => {
     const authUser = useAuthStore.getState().user;
-    if (!authUser || !profile) return;
+    if (!authUser || !profileLoaded) return;
     useLastProfileStore.getState().remember({
       email: authUser.email,
-      full_name: profile.full_name ?? authUser.full_name,
+      full_name: profileFullName ?? authUser.full_name,
       photo_data_uri: null,
-      photo_offset_x: profile.photo_offset_x,
-      photo_offset_y: profile.photo_offset_y,
-      photo_zoom: profile.photo_zoom,
+      photo_offset_x: photoOffsetX,
+      photo_offset_y: photoOffsetY,
+      photo_zoom: photoZoom,
     });
-    if (profile.photo_file_id) {
+    if (photoFileId) {
       void fetchPhotoDataUri().then((uri) => {
         if (uri) useLastProfileStore.getState().patchPhoto(uri);
       });
     } else {
       useLastProfileStore.getState().patchPhoto(null);
     }
-  }, [
-    profile?.photo_file_id,
-    profile?.full_name,
-    profile?.photo_offset_x,
-    profile?.photo_offset_y,
-    profile?.photo_zoom,
-  ]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profileLoaded, profileFullName, photoFileId, photoOffsetX, photoOffsetY, photoZoom]);
 
   const step = STEPS[stepIndex];
 
@@ -207,7 +241,10 @@ export function StudentWizardPage() {
                 Back
               </Button>
               <div className="text-xs text-muted-foreground">
-                Step {stepIndex + 1} of {STEPS.length} · auto-saved
+                Step {stepIndex + 1} of {STEPS.length}
+                {SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]
+                  ? ` · ${SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]}`
+                  : ""}
               </div>
               <Button
                 variant="outline"
