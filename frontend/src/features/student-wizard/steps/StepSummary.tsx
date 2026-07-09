@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useDraftSummary } from "@/features/student-wizard/coaching/coachingApi";
-import {
-  useStudentProfile,
-  useUpdateStudentProfile,
-} from "@/features/student-wizard/studentApi";
+import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import type { StudentLinks } from "@/features/student-wizard/studentTypes";
 import { useAutoSave } from "@/shared/hooks/useAutoSave";
 import { Button } from "@/shared/ui/button";
@@ -28,7 +25,7 @@ export function StepSummary({ onSaved }: { onSaved: () => Promise<void> | void }
     setHeadline((current) => current || profile.headline || "");
     setSummary((current) => current || profile.summary || "");
     setLinks(profile.links ?? {});
-  }, [profile?.user_id]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (autoDraftAttempted) return;
@@ -36,7 +33,7 @@ export function StepSummary({ onSaved }: { onSaved: () => Promise<void> | void }
     if (profile.headline || profile.summary) return;
     setAutoDraftAttempted(true);
     void generateDraft({ silent: true });
-  }, [profile?.user_id]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useAutoSave({ headline, summary, links }, async ({ headline, summary, links }) => {
     try {
@@ -117,7 +114,9 @@ export function StepSummary({ onSaved }: { onSaved: () => Promise<void> | void }
           rows={6}
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          placeholder={drafting ? "Drafting…" : "A short paragraph about who you are and what you care about."}
+          placeholder={
+            drafting ? "Drafting…" : "A short paragraph about who you are and what you care about."
+          }
           disabled={drafting && !summary}
         />
       </div>

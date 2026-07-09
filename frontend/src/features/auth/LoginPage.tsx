@@ -34,9 +34,7 @@ export function LoginPage() {
   // If a previous session left a snapshot, greet the returner directly.
   // Fresh browsers skip straight to the email input (behavior parity with
   // the pre-picker version).
-  const [step, setStep] = useState<Step>(() =>
-    lastProfile ? "picker" : "email",
-  );
+  const [step, setStep] = useState<Step>(() => (lastProfile ? "picker" : "email"));
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   // Prefill the name for returners so they don't type it twice. Reset
@@ -142,9 +140,7 @@ export function LoginPage() {
         <PickerStep
           profile={lastProfile}
           continuing={requestCode.isPending}
-          onContinue={() =>
-            requestCode.mutate({ email: lastProfile.email })
-          }
+          onContinue={() => requestCode.mutate({ email: lastProfile.email })}
           onUseAnother={() => {
             setEmail("");
             setFullName("");
@@ -206,12 +202,8 @@ export function LoginPage() {
       {step === "code" && (
         <>
           <div className="mb-6 space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Check your email
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Enter the code we sent to {email}.
-            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">Check your email</h2>
+            <p className="text-sm text-muted-foreground">Enter the code we sent to {email}.</p>
           </div>
           <form
             className="space-y-4"
@@ -230,7 +222,7 @@ export function LoginPage() {
                 value={code}
                 required
                 autoFocus
-                className="text-center text-2xl tracking-[0.5em] font-mono"
+                className="text-center font-mono text-2xl tracking-[0.5em]"
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               />
               <p className="text-xs text-muted-foreground">
@@ -288,9 +280,7 @@ export function LoginPage() {
         <>
           <div className="mb-6 space-y-1">
             <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
-            <p className="text-sm text-muted-foreground">
-              Use your password to sign in.
-            </p>
+            <p className="text-sm text-muted-foreground">Use your password to sign in.</p>
           </div>
           <form
             className="space-y-4"
@@ -401,13 +391,9 @@ function PickerStep({
           zoom={profile.photo_zoom}
         />
         <div className="text-center">
-          <div className="text-2xl font-semibold tracking-tight">
-            {displayName}
-          </div>
+          <div className="text-2xl font-semibold tracking-tight">{displayName}</div>
           {profile.full_name && (
-            <div className="mt-0.5 text-sm text-muted-foreground">
-              {profile.email}
-            </div>
+            <div className="mt-0.5 text-sm text-muted-foreground">{profile.email}</div>
           )}
         </div>
       </div>
@@ -423,23 +409,13 @@ function PickerStep({
         >
           {continuing ? "Sending code…" : "Continue"}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="w-full"
-          onClick={onUseAnother}
-        >
+        <Button type="button" variant="outline" size="lg" className="w-full" onClick={onUseAnother}>
           Use another profile
         </Button>
       </div>
 
       <div className="border-t pt-4 text-center text-sm text-muted-foreground">
-        <button
-          type="button"
-          className="text-primary hover:underline"
-          onClick={onCreateAccount}
-        >
+        <button type="button" className="text-primary hover:underline" onClick={onCreateAccount}>
           Create new account
         </button>
       </div>
@@ -467,10 +443,7 @@ function Avatar({
   const initials = deriveInitials(name, email);
   return (
     <div className="relative">
-      <div
-        aria-hidden
-        className="absolute inset-0 rounded-full bg-brand-gradient p-[2px]"
-      />
+      <div aria-hidden className="bg-brand-gradient absolute inset-0 rounded-full p-[2px]" />
       <div className="relative h-24 w-24 overflow-hidden rounded-full bg-background">
         {photoDataUri ? (
           // Match the CV renderer's crop: background-image + size + position.
@@ -484,7 +457,7 @@ function Avatar({
             }}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-brand-gradient text-xl font-semibold text-white">
+          <div className="bg-brand-gradient flex h-full w-full items-center justify-center text-xl font-semibold text-white">
             {initials}
           </div>
         )}

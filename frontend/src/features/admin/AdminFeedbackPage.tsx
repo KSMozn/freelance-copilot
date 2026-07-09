@@ -31,11 +31,7 @@ export function AdminFeedbackPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const resolvedParam =
-    resolvedFilter === "resolved"
-      ? true
-      : resolvedFilter === "unresolved"
-        ? false
-        : undefined;
+    resolvedFilter === "resolved" ? true : resolvedFilter === "unresolved" ? false : undefined;
 
   const { data, isLoading } = useAdminFeedback({
     kind: kind || undefined,
@@ -108,9 +104,7 @@ export function AdminFeedbackPage() {
             {isLoading ? (
               <div className="p-6 text-sm text-muted-foreground">Loading…</div>
             ) : !data || data.items.length === 0 ? (
-              <div className="p-6 text-sm text-muted-foreground">
-                No matching feedback.
-              </div>
+              <div className="p-6 text-sm text-muted-foreground">No matching feedback.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -148,9 +142,7 @@ export function AdminFeedbackPage() {
                               {r.user_email}
                             </Link>
                           ) : (
-                            <span className="text-muted-foreground">
-                              deleted user
-                            </span>
+                            <span className="text-muted-foreground">deleted user</span>
                           )}
                         </Td>
                         <Td className="whitespace-nowrap">
@@ -159,9 +151,7 @@ export function AdminFeedbackPage() {
                         <Td>{r.rating !== null ? `${r.rating}/5` : "—"}</Td>
                         <Td className="max-w-md">
                           <div className="line-clamp-2 text-muted-foreground">
-                            {r.message ?? (
-                              <span className="italic">(no comment)</span>
-                            )}
+                            {r.message ?? <span className="italic">(no comment)</span>}
                           </div>
                         </Td>
                         <Td className="whitespace-nowrap">
@@ -201,11 +191,7 @@ export function AdminFeedbackPage() {
           </CardContent>
         </Card>
 
-        <DetailPanel
-          item={selected}
-          onResolve={handleResolve}
-          onUnresolve={handleUnresolve}
-        />
+        <DetailPanel item={selected} onResolve={handleResolve} onUnresolve={handleUnresolve} />
       </div>
     </div>
   );
@@ -262,21 +248,14 @@ function DetailPanel({
         <div>
           <div className="uppercase text-muted-foreground">From</div>
           {item.user_email ? (
-            <Link
-              to={`/users/${item.user_id}`}
-              className="text-sm text-primary hover:underline"
-            >
+            <Link to={`/users/${item.user_id}`} className="text-sm text-primary hover:underline">
               {item.user_full_name ?? item.user_email}
             </Link>
           ) : (
-            <div className="text-sm italic text-muted-foreground">
-              deleted user
-            </div>
+            <div className="text-sm italic text-muted-foreground">deleted user</div>
           )}
           {item.user_email && item.user_full_name && (
-            <div className="text-[11px] text-muted-foreground">
-              {item.user_email}
-            </div>
+            <div className="text-[11px] text-muted-foreground">{item.user_email}</div>
           )}
         </div>
 
@@ -285,12 +264,8 @@ function DetailPanel({
             <div className="uppercase text-muted-foreground">Rating</div>
             <div className="text-sm">
               {"★".repeat(item.rating)}
-              <span className="text-muted-foreground">
-                {"★".repeat(5 - item.rating)}
-              </span>{" "}
-              <span className="text-[11px] text-muted-foreground">
-                ({item.rating}/5)
-              </span>
+              <span className="text-muted-foreground">{"★".repeat(5 - item.rating)}</span>{" "}
+              <span className="text-[11px] text-muted-foreground">({item.rating}/5)</span>
             </div>
           </div>
         )}
@@ -298,7 +273,7 @@ function DetailPanel({
         {item.template_slug && (
           <div>
             <div className="uppercase text-muted-foreground">Template</div>
-            <div className="text-sm font-mono">{item.template_slug}</div>
+            <div className="font-mono text-sm">{item.template_slug}</div>
           </div>
         )}
 
@@ -322,11 +297,7 @@ function DetailPanel({
 
         <div className="flex gap-2 pt-1">
           {item.resolved_at ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => void onUnresolve(item.id)}
-            >
+            <Button size="sm" variant="outline" onClick={() => void onUnresolve(item.id)}>
               Reopen
             </Button>
           ) : (
@@ -344,12 +315,6 @@ function Th({ children }: { children?: React.ReactNode }) {
   return <th className="px-3 py-2 text-left font-medium">{children}</th>;
 }
 
-function Td({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={cn("px-3 py-2", className)}>{children}</td>;
 }

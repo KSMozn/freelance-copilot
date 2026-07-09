@@ -29,9 +29,7 @@ export function StepPreview() {
   const [loading, setLoading] = useState(false);
   // null when idle; "pdf" or "docx" while that format is being built.
   // A single field so the menu can label just the clicked row.
-  const [downloadingFormat, setDownloadingFormat] = useState<
-    "pdf" | "docx" | null
-  >(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<"pdf" | "docx" | null>(null);
   // Currently previewed template slug. Not necessarily saved — user
   // must click "Set as default" to persist the choice.
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
@@ -73,12 +71,10 @@ export function StepPreview() {
   // Reload preview when the picked template changes.
   useEffect(() => {
     if (selectedSlug) void loadPreview(selectedSlug);
-  }, [selectedSlug]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedSlug]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const savedSlug =
-    profile?.cv_template_slug ?? templatesResp?.default_slug ?? null;
-  const canSaveAsDefault =
-    !!selectedSlug && selectedSlug !== profile?.cv_template_slug;
+  const savedSlug = profile?.cv_template_slug ?? templatesResp?.default_slug ?? null;
+  const canSaveAsDefault = !!selectedSlug && selectedSlug !== profile?.cv_template_slug;
 
   async function saveAsDefault() {
     if (!selectedSlug) return;
@@ -113,9 +109,7 @@ export function StepPreview() {
           "PDF renderer isn't installed in this environment. Rebuild the backend image to install WeasyPrint system deps.",
         );
       } else {
-        toast.error(
-          format === "pdf" ? "Could not download PDF" : "Could not download DOCX",
-        );
+        toast.error(format === "pdf" ? "Could not download PDF" : "Could not download DOCX");
       }
     } finally {
       setDownloadingFormat(null);
@@ -139,9 +133,7 @@ export function StepPreview() {
     try {
       if (fix.entity_kind === "profile") {
         const patch: StudentProfileUpdate =
-          fix.field === "summary"
-            ? { summary: fix.suggested }
-            : { headline: fix.suggested };
+          fix.field === "summary" ? { summary: fix.suggested } : { headline: fix.suggested };
         await updateProfile.mutateAsync(patch);
       } else if (fix.entity_kind === "entry" && fix.entity_id) {
         const entry = entries.find((e) => e.id === fix.entity_id);
@@ -151,8 +143,7 @@ export function StepPreview() {
           return;
         }
         const nextTitle = fix.field === "title" ? fix.suggested : entry.title;
-        const nextDesc =
-          fix.field === "description" ? fix.suggested : entry.description;
+        const nextDesc = fix.field === "description" ? fix.suggested : entry.description;
         await updateEntry.mutateAsync({
           id: entry.id,
           payload: {
@@ -189,8 +180,7 @@ export function StepPreview() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <p className="flex-1 text-sm text-muted-foreground">
-          This is what recruiters will see. Give it one last polish, then
-          download.
+          This is what recruiters will see. Give it one last polish, then download.
         </p>
         <Button
           type="button"
@@ -200,10 +190,7 @@ export function StepPreview() {
         >
           {proofread.isPending ? "Proofreading…" : "Proofread with AI"}
         </Button>
-        <DownloadCvMenu
-          busyFormat={downloadingFormat}
-          onDownload={(fmt) => void download(fmt)}
-        />
+        <DownloadCvMenu busyFormat={downloadingFormat} onDownload={(fmt) => void download(fmt)} />
       </div>
 
       {templates.length > 1 && (
@@ -212,8 +199,8 @@ export function StepPreview() {
             <div>
               <div className="text-sm font-medium">Template</div>
               <div className="text-xs text-muted-foreground">
-                Click any style to preview it. Set as default to save your
-                choice — Download uses whatever is showing.
+                Click any style to preview it. Set as default to save your choice — Download uses
+                whatever is showing.
               </div>
             </div>
             {canSaveAsDefault && (
@@ -246,13 +233,11 @@ export function StepPreview() {
                   {active && (
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-brand-gradient"
+                      className="bg-brand-gradient pointer-events-none absolute inset-x-0 top-0 h-0.5"
                     />
                   )}
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-semibold tracking-tight">
-                      {t.display_name}
-                    </div>
+                    <div className="text-sm font-semibold tracking-tight">{t.display_name}</div>
                     {isSaved && (
                       <span className="bg-brand-gradient rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                         Default
@@ -305,10 +290,7 @@ export function StepPreview() {
       )}
 
       {showSurvey && (
-        <PostDownloadSurvey
-          templateSlug={selectedSlug}
-          onDismiss={() => setShowSurvey(false)}
-        />
+        <PostDownloadSurvey templateSlug={selectedSlug} onDismiss={() => setShowSurvey(false)} />
       )}
 
       <div className="overflow-hidden rounded-2xl border border-border/40 bg-white shadow-xl">
@@ -367,7 +349,12 @@ function DownloadCvMenu({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {label} {!busy && <span aria-hidden className="ml-1">▾</span>}
+        {label}{" "}
+        {!busy && (
+          <span aria-hidden className="ml-1">
+            ▾
+          </span>
+        )}
       </Button>
       {open && !busy && (
         <div
@@ -384,9 +371,7 @@ function DownloadCvMenu({
             className="block w-full px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
           >
             <div className="font-medium">PDF</div>
-            <div className="text-xs text-muted-foreground">
-              Final, print-ready
-            </div>
+            <div className="text-xs text-muted-foreground">Final, print-ready</div>
           </button>
           <button
             type="button"
@@ -398,9 +383,7 @@ function DownloadCvMenu({
             className="block w-full border-t border-border/60 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
           >
             <div className="font-medium">DOCX</div>
-            <div className="text-xs text-muted-foreground">
-              Editable in Word or Google Docs
-            </div>
+            <div className="text-xs text-muted-foreground">Editable in Word or Google Docs</div>
           </button>
         </div>
       )}
@@ -447,17 +430,13 @@ function FixCard({
       <div className="text-xs text-muted-foreground">{fix.reason}</div>
       <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Original
-          </div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Original</div>
           <div className="mt-0.5 whitespace-pre-wrap rounded bg-destructive/5 p-2 text-xs">
             {fix.original}
           </div>
         </div>
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Suggested
-          </div>
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Suggested</div>
           <div className="mt-0.5 whitespace-pre-wrap rounded bg-primary/5 p-2 text-xs">
             {fix.suggested}
           </div>
@@ -467,10 +446,7 @@ function FixCard({
   );
 }
 
-const CATEGORY_BADGE: Record<
-  ProofreadFix["category"],
-  { label: string; className: string }
-> = {
+const CATEGORY_BADGE: Record<ProofreadFix["category"], { label: string; className: string }> = {
   typo: { label: "Typo", className: "bg-destructive/10 text-destructive" },
   grammar: { label: "Grammar", className: "bg-amber-500/10 text-amber-600" },
   clarity: { label: "Clarity", className: "bg-primary/10 text-primary" },

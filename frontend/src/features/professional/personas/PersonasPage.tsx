@@ -3,14 +3,12 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
-import { useDeletePersona, usePersonas, useSetDefaultPersona } from "@/features/professional/personas/personasApi";
+  useDeletePersona,
+  usePersonas,
+  useSetDefaultPersona,
+} from "@/features/professional/personas/personasApi";
 
 export function PersonasPage() {
   const { data: personas, isLoading } = usePersonas();
@@ -23,22 +21,19 @@ export function PersonasPage() {
         <div>
           <h1 className="text-2xl font-semibold">Personas</h1>
           <p className="text-sm text-muted-foreground">
-            Lenses over your knowledge graph. Each persona shapes how the
-            system weighs your skills, picks portfolio highlights, and tunes
-            generated outputs.
+            Lenses over your knowledge graph. Each persona shapes how the system weighs your skills,
+            picks portfolio highlights, and tunes generated outputs.
           </p>
         </div>
         <Button asChild>
           <Link to="/personas/new">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             New persona
           </Link>
         </Button>
       </div>
 
-      {isLoading && (
-        <p className="text-sm text-muted-foreground">Loading personas…</p>
-      )}
+      {isLoading && <p className="text-sm text-muted-foreground">Loading personas…</p>}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {(personas ?? []).map((p) => (
@@ -47,12 +42,10 @@ export function PersonasPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-base">{p.name}</CardTitle>
-                  <CardDescription>
-                    {p.target_role || "no target role set"}
-                  </CardDescription>
+                  <CardDescription>{p.target_role || "no target role set"}</CardDescription>
                 </div>
                 {p.is_default && (
-                  <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                  <span className="flex items-center gap-1 text-xs font-medium text-primary">
                     <Star className="h-3 w-3 fill-current" />
                     Default
                   </span>
@@ -61,15 +54,11 @@ export function PersonasPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="text-xs text-muted-foreground">
-                {p.target_seniority && (
-                  <span className="capitalize">{p.target_seniority}</span>
-                )}
+                {p.target_seniority && <span className="capitalize">{p.target_seniority}</span>}
                 {p.proposal_tone && (
                   <>
                     {" · "}
-                    <span className="capitalize">
-                      {p.proposal_tone.replace("_", " ")}
-                    </span>
+                    <span className="capitalize">{p.proposal_tone.replace("_", " ")}</span>
                   </>
                 )}
               </div>
@@ -87,15 +76,14 @@ export function PersonasPage() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-destructive ml-auto"
+                  className="ml-auto text-destructive"
                   disabled={deletePersona.isPending}
                   onClick={() => {
                     if (!confirm(`Delete persona "${p.name}"?`)) return;
                     deletePersona.mutate(p.id, {
                       onError: (err: unknown) => {
-                        const detail = (
-                          err as { response?: { data?: { detail?: string } } }
-                        )?.response?.data?.detail;
+                        const detail = (err as { response?: { data?: { detail?: string } } })
+                          ?.response?.data?.detail;
                         toast.error(detail ?? "Could not delete persona");
                       },
                     });

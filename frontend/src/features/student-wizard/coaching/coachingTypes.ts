@@ -1,7 +1,4 @@
-import type {
-  InternshipField,
-  InternshipWorkMode,
-} from "@/features/student-wizard/studentTypes";
+import type { InternshipField, InternshipWorkMode } from "@/features/student-wizard/studentTypes";
 
 export interface InternshipCoachRequest {
   organization: string;

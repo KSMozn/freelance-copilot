@@ -28,8 +28,7 @@ function formatBytes(n: number): string {
  */
 async function captureFromScreen(): Promise<File | null> {
   const md = navigator.mediaDevices as
-    | (MediaDevices & { getDisplayMedia?: (c?: unknown) => Promise<MediaStream> })
-    | undefined;
+    (MediaDevices & { getDisplayMedia?: (c?: unknown) => Promise<MediaStream> }) | undefined;
   if (!md?.getDisplayMedia) {
     toast.error("Screen capture isn't supported in this browser.");
     return null;
@@ -104,8 +103,8 @@ function PreviewPanel({ preview }: { preview: JobImportPreview }) {
       <CardHeader>
         <CardTitle className="text-base">Extracted fields</CardTitle>
         <CardDescription>
-          What the AI pulled from the screenshot. The Job Detail page now has the full
-          description with everything folded in.
+          What the AI pulled from the screenshot. The Job Detail page now has the full description
+          with everything folded in.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
@@ -251,8 +250,8 @@ export function JobImportPage() {
         },
         onError: (err: unknown) => {
           const detail =
-            (err as { response?: { data?: { detail?: string } } } | undefined)?.response
-              ?.data?.detail ?? "Could not import the screenshot";
+            (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+              ?.detail ?? "Could not import the screenshot";
           toast.error(detail);
         },
       },
@@ -273,10 +272,9 @@ export function JobImportPage() {
           Import a job from a screenshot
         </h1>
         <p className="text-sm text-muted-foreground">
-          Upload an Upwork job-post screenshot. The AI extracts title, summary, budget,
-          skills, and questions, then creates the job for you. Image is sent to the
-          configured AI provider; with <code>AI_PROVIDER=mock</code> a clearly-labeled
-          placeholder is returned instead.
+          Upload an Upwork job-post screenshot. The AI extracts title, summary, budget, skills, and
+          questions, then creates the job for you. Image is sent to the configured AI provider; with{" "}
+          <code>AI_PROVIDER=mock</code> a clearly-labeled placeholder is returned instead.
         </p>
       </div>
 
@@ -285,10 +283,16 @@ export function JobImportPage() {
           <CardContent className="space-y-3 p-5">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted/40 p-3">
               <div className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Three ways to attach a screenshot:</span>{" "}
+                <span className="font-medium text-foreground">
+                  Three ways to attach a screenshot:
+                </span>{" "}
                 drop a file below, capture without leaving the page, or paste from the clipboard
-                with <kbd className="rounded border border-border/70 px-1 py-0.5 text-[10px]">⌘ V</kbd> /{" "}
-                <kbd className="rounded border border-border/70 px-1 py-0.5 text-[10px]">Ctrl V</kbd>.
+                with{" "}
+                <kbd className="rounded border border-border/70 px-1 py-0.5 text-[10px]">⌘ V</kbd> /{" "}
+                <kbd className="rounded border border-border/70 px-1 py-0.5 text-[10px]">
+                  Ctrl V
+                </kbd>
+                .
               </div>
               <Button
                 type="button"
@@ -358,18 +362,11 @@ export function JobImportPage() {
                   </>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground">
-                PNG / JPEG / WebP · up to 10 MB
-              </div>
+              <div className="text-xs text-muted-foreground">PNG / JPEG / WebP · up to 10 MB</div>
             </div>
             {file && (
               <div className="mt-3 flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setFile(null)}
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={() => setFile(null)}>
                   Remove
                 </Button>
               </div>
@@ -387,22 +384,19 @@ export function JobImportPage() {
             onChange={(e) => setSourceUrl(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Just saved on the job for traceability. The URL alone doesn't import
-            anything — Upwork blocks automated access, so we need the screenshot
-            above to read the post.
+            Just saved on the job for traceability. The URL alone doesn't import anything — Upwork
+            blocks automated access, so we need the screenshot above to read the post.
           </p>
         </div>
 
         <div className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-card/40 p-3">
           <div className="text-sm">
             {file ? (
-              <span className="text-emerald-400">
-                ✓ Ready to import — screenshot attached.
-              </span>
+              <span className="text-emerald-400">✓ Ready to import — screenshot attached.</span>
             ) : (
               <span className="text-muted-foreground">
-                <span className="font-medium text-foreground">Step 1:</span> upload
-                a screenshot above. <span className="font-medium text-foreground">Step 2:</span> click Import.
+                <span className="font-medium text-foreground">Step 1:</span> upload a screenshot
+                above. <span className="font-medium text-foreground">Step 2:</span> click Import.
               </span>
             )}
           </div>

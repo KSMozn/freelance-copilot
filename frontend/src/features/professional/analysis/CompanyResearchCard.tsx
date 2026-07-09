@@ -104,8 +104,8 @@ export function CompanyResearchCard({
       },
       onError: (err: unknown) => {
         const detail =
-          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-          "Research failed";
+          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+            ?.detail ?? "Research failed";
         toast.error(detail);
       },
     });
@@ -119,7 +119,8 @@ export function CompanyResearchCard({
           Company research
         </CardTitle>
         <CardDescription className="text-xs">
-          Paste the client's website or product URL — we'll extract a structured read to personalize the proposal.
+          Paste the client's website or product URL — we'll extract a structured read to personalize
+          the proposal.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

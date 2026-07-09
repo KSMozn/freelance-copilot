@@ -147,7 +147,12 @@ export function SkillEvidenceCard({
             const Icon = meta.icon;
             return (
               <section key={status} className="space-y-2">
-                <div className={cn("flex items-center gap-2 text-xs uppercase tracking-wide", meta.tone)}>
+                <div
+                  className={cn(
+                    "flex items-center gap-2 text-xs uppercase tracking-wide",
+                    meta.tone,
+                  )}
+                >
                   <Icon className="h-3.5 w-3.5" />
                   {meta.label} ({rows.length})
                 </div>

@@ -1,4 +1,15 @@
-import { BarChart3, Briefcase, FileText, FolderGit2, Github, Heart, LayoutDashboard, Sparkles, Settings, UserCog } from "lucide-react";
+import {
+  BarChart3,
+  Briefcase,
+  FileText,
+  FolderGit2,
+  Github,
+  Heart,
+  LayoutDashboard,
+  Sparkles,
+  Settings,
+  UserCog,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";

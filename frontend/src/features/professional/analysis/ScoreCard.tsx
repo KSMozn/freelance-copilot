@@ -21,7 +21,12 @@ export function ScoreCard({ score }: { score: OpportunityScore }) {
     <Card>
       <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center">
         <div className="flex items-baseline gap-2">
-          <div className={cn("text-6xl font-semibold tabular-nums leading-none", scoreColor(score.score))}>
+          <div
+            className={cn(
+              "text-6xl font-semibold tabular-nums leading-none",
+              scoreColor(score.score),
+            )}
+          >
             {score.score}
           </div>
           <div className="text-sm text-muted-foreground">/ 100</div>
@@ -36,12 +41,8 @@ export function ScoreCard({ score }: { score: OpportunityScore }) {
             >
               {score.recommendation}
             </span>
-            <span className="text-xs text-muted-foreground">
-              confidence: {score.confidence}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              profile: {score.profile_version}
-            </span>
+            <span className="text-xs text-muted-foreground">confidence: {score.confidence}</span>
+            <span className="text-xs text-muted-foreground">profile: {score.profile_version}</span>
           </div>
           <p className="text-sm text-muted-foreground">{score.reasoning}</p>
         </div>

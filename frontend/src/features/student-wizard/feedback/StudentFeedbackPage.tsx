@@ -33,10 +33,7 @@ export function StudentFeedbackPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <Link
-            to="/student"
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
+          <Link to="/student" className="text-xs text-muted-foreground hover:text-foreground">
             ← Back to your CV
           </Link>
           <SignOutLink />
@@ -46,8 +43,7 @@ export function StudentFeedbackPage() {
           <CardHeader>
             <CardTitle>Feedback</CardTitle>
             <CardDescription>
-              Bugs, gripes, features you wish existed, anything. Every message
-              lands in our inbox.
+              Bugs, gripes, features you wish existed, anything. Every message lands in our inbox.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -63,17 +59,13 @@ export function StudentFeedbackPage() {
                   ? `Write at least ${MIN_LEN} characters.`
                   : `${message.trim().length} characters`}
               </span>
-              <Button
-                onClick={() => void onSubmit()}
-                disabled={tooShort || submit.isPending}
-              >
+              <Button onClick={() => void onSubmit()} disabled={tooShort || submit.isPending}>
                 {submit.isPending ? "Sending…" : "Send feedback"}
               </Button>
             </div>
             {submittedAt && (
               <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
-                Submitted at {submittedAt.toLocaleTimeString()} — thanks. Feel
-                free to send more.
+                Submitted at {submittedAt.toLocaleTimeString()} — thanks. Feel free to send more.
               </div>
             )}
           </CardContent>
@@ -89,9 +81,7 @@ function SignOutLink() {
     <button
       type="button"
       onClick={() => {
-        void logoutCurrentSurface().finally(() =>
-          navigate("/login", { replace: true }),
-        );
+        void logoutCurrentSurface().finally(() => navigate("/login", { replace: true }));
       }}
       className="text-xs text-muted-foreground hover:text-foreground"
     >

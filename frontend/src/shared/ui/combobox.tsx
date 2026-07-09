@@ -120,9 +120,7 @@ export function Combobox({
               onMouseEnter={() => setHighlight(i)}
               className={cn(
                 "block w-full px-3 py-2 text-left text-sm transition-colors",
-                i === highlight
-                  ? "bg-accent text-accent-foreground"
-                  : "hover:bg-muted",
+                i === highlight ? "bg-accent text-accent-foreground" : "hover:bg-muted",
               )}
             >
               {opt}

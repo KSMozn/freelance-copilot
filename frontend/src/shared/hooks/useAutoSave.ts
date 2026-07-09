@@ -30,5 +30,5 @@ export function useAutoSave<T>(
       void save(value);
     }, delay);
     return () => clearTimeout(t);
-  }, [value, enabled, delay]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [value, enabled, delay]); // eslint-disable-line react-hooks/exhaustive-deps
 }

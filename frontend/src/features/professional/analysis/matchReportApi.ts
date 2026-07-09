@@ -46,9 +46,7 @@ export function useMatchReport(jobId: string | undefined, personaId?: string | n
     queryKey: ["match-report", jobId, personaId ?? "default"],
     queryFn: async () => {
       const params = personaId ? `?persona_id=${personaId}` : "";
-      const { data } = await api.post<MatchReport>(
-        `/jobs/${jobId}/match-report${params}`,
-      );
+      const { data } = await api.post<MatchReport>(`/jobs/${jobId}/match-report${params}`);
       return data;
     },
     enabled: !!jobId,
@@ -62,12 +60,8 @@ export function useRebuildMatchReport(jobId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (personaId?: string | null) => {
-      const params = personaId
-        ? `?persona_id=${personaId}&force=true`
-        : `?force=true`;
-      const { data } = await api.post<MatchReport>(
-        `/jobs/${jobId}/match-report${params}`,
-      );
+      const params = personaId ? `?persona_id=${personaId}&force=true` : `?force=true`;
+      const { data } = await api.post<MatchReport>(`/jobs/${jobId}/match-report${params}`);
       return data;
     },
     onSuccess: () => {

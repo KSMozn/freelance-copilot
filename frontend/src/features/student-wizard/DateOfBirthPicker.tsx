@@ -89,7 +89,7 @@ export function DateOfBirthPicker({
         .toString()
         .padStart(2, "0")}`,
     );
-  }, [day, month, year]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [day, month, year]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const yearOptions = useMemo(() => {
     const from = currentYear - minYearOffset;

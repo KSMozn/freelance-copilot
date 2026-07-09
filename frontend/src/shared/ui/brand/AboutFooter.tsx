@@ -8,15 +8,10 @@ import { cn } from "@/shared/lib/utils";
  */
 export function AboutFooter({ className }: { className?: string }) {
   return (
-    <p
-      className={cn(
-        "text-center text-xs text-muted-foreground",
-        className,
-      )}
-    >
+    <p className={cn("text-center text-xs text-muted-foreground", className)}>
       <span className="font-medium text-foreground/80">{BRAND.product}</span> is a{" "}
-      <span className="text-brand-gradient font-semibold">{BRAND.company}</span>{" "}
-      product · {BRAND.tagline}
+      <span className="text-brand-gradient font-semibold">{BRAND.company}</span> product ·{" "}
+      {BRAND.tagline}
     </p>
   );
 }

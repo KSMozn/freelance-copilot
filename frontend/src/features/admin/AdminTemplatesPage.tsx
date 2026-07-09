@@ -47,9 +47,8 @@ export function AdminTemplatesPage() {
       <div>
         <h1 className="text-2xl font-semibold">CV Templates</h1>
         <p className="text-sm text-muted-foreground">
-          Toggle visibility to show or hide a template in the student
-          wizard. Sort order controls display order in the picker
-          (lowest first) — the first visible template is also the
+          Toggle visibility to show or hide a template in the student wizard. Sort order controls
+          display order in the picker (lowest first) — the first visible template is also the
           fallback for students who haven't picked one.
         </p>
       </div>
@@ -81,9 +80,7 @@ export function AdminTemplatesPage() {
                         <div className="font-medium">{t.display_name}</div>
                       </Td>
                       <Td>
-                        <code className="text-xs text-muted-foreground">
-                          {t.slug}
-                        </code>
+                        <code className="text-xs text-muted-foreground">{t.slug}</code>
                       </Td>
                       <Td>
                         <div className="max-w-md text-xs text-muted-foreground">
@@ -97,9 +94,7 @@ export function AdminTemplatesPage() {
                             className="h-4 w-4"
                             checked={t.is_visible}
                             disabled={update.isPending}
-                            onChange={(e) =>
-                              void toggleVisible(t.slug, e.target.checked)
-                            }
+                            onChange={(e) => void toggleVisible(t.slug, e.target.checked)}
                           />
                           <span
                             className={

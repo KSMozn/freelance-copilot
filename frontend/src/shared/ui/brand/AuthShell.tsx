@@ -38,21 +38,15 @@ export function AuthShell({
             dominate" note in the brief. */}
         <div
           aria-hidden
-          className="absolute -top-1/3 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full bg-brand-gradient opacity-25 blur-3xl"
+          className="bg-brand-gradient absolute -top-1/3 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full opacity-25 blur-3xl"
         />
         <div className="relative z-10 flex items-center gap-3 text-white">
           <Mark size={40} />
-          <span className="text-lg font-semibold tracking-tight">
-            {brandName}
-          </span>
+          <span className="text-lg font-semibold tracking-tight">{brandName}</span>
         </div>
         <div className="relative z-10 max-w-md text-white">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-            {slogan}
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight">
-            {title}
-          </h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">{slogan}</p>
+          <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight">{title}</h1>
           <p className="mt-4 text-base text-white/70">{subtitle}</p>
         </div>
         <p className="relative z-10 text-xs text-white/40">

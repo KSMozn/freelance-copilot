@@ -12,12 +12,7 @@ export type OutputKind =
   | "resume_tailored";
 
 export type EvidenceType =
-  | "experience"
-  | "project"
-  | "repository"
-  | "certificate"
-  | "content_item"
-  | "skill";
+  "experience" | "project" | "repository" | "certificate" | "content_item" | "skill";
 
 export interface Citation {
   claim: string;
@@ -70,13 +65,7 @@ export function useOutputsForJob(jobId: string | undefined) {
 export function useGenerateOutput(jobId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      kind,
-      personaId,
-    }: {
-      kind: OutputKind;
-      personaId?: string | null;
-    }) => {
+    mutationFn: async ({ kind, personaId }: { kind: OutputKind; personaId?: string | null }) => {
       const { data } = await api.post<Output>("/outputs", {
         kind,
         job_id: jobId,

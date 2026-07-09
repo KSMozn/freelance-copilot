@@ -1,9 +1,6 @@
 import { useMemo, useState } from "react";
 
-import {
-  useDeleteStudentEntry,
-  useStudentEntries,
-} from "@/features/student-wizard/studentApi";
+import { useDeleteStudentEntry, useStudentEntries } from "@/features/student-wizard/studentApi";
 import { INTERNSHIP_WORK_MODES } from "@/features/student-wizard/studentSuggestions";
 import type {
   InternshipDetails,
@@ -14,25 +11,17 @@ import { Button } from "@/shared/ui/button";
 
 import { InternshipCard } from "./InternshipCard";
 
-export function StepInternships({
-  onSaved,
-}: {
-  onSaved: () => Promise<void> | void;
-}) {
+export function StepInternships({ onSaved }: { onSaved: () => Promise<void> | void }) {
   const { data: entries = [] } = useStudentEntries();
-  const items = useMemo(
-    () => entries.filter((e) => e.kind === "internship"),
-    [entries],
-  );
+  const items = useMemo(() => entries.filter((e) => e.kind === "internship"), [entries]);
   const [adding, setAdding] = useState(false);
 
   return (
     <div className="space-y-5">
       {items.length === 0 && !adding && (
         <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-          Internships are optional. If you don't have one yet, skip this
-          section — your projects, skills, and education can still make
-          your CV strong.
+          Internships are optional. If you don't have one yet, skip this section — your projects,
+          skills, and education can still make your CV strong.
         </div>
       )}
 
@@ -47,11 +36,7 @@ export function StepInternships({
       {adding ? (
         <InternshipCard onDone={() => setAdding(false)} />
       ) : (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setAdding(true)}
-        >
+        <Button type="button" variant="outline" onClick={() => setAdding(true)}>
           + Add internship
         </Button>
       )}
@@ -73,11 +58,7 @@ function InternshipRow({ entry }: { entry: StudentEntry }) {
     return <InternshipCard entry={entry} onDone={() => setEditing(false)} />;
   }
 
-  const dates = _fmtRange(
-    entry.start_date,
-    entry.end_date,
-    entry.is_current,
-  );
+  const dates = _fmtRange(entry.start_date, entry.end_date, entry.is_current);
 
   return (
     <div className="rounded-lg border bg-muted/10 p-4">
@@ -87,18 +68,11 @@ function InternshipRow({ entry }: { entry: StudentEntry }) {
           <div className="text-xs text-muted-foreground">
             {entry.organization}
             {dates ? ` · ${dates}` : ""}
-            {details.work_mode
-              ? ` · ${_workModeLabel(details.work_mode)}`
-              : ""}
+            {details.work_mode ? ` · ${_workModeLabel(details.work_mode)}` : ""}
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => setEditing(true)}
-          >
+          <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
             Edit
           </Button>
           <Button
@@ -116,9 +90,7 @@ function InternshipRow({ entry }: { entry: StudentEntry }) {
         </div>
       </div>
       {details.ai_summary && (
-        <div className="mt-2 text-sm italic text-muted-foreground">
-          {details.ai_summary}
-        </div>
+        <div className="mt-2 text-sm italic text-muted-foreground">{details.ai_summary}</div>
       )}
       {aiBullets.length > 0 && (
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
@@ -131,14 +103,10 @@ function InternshipRow({ entry }: { entry: StudentEntry }) {
   );
 }
 
-function _fmtRange(
-  start: string | null,
-  end: string | null,
-  isCurrent: boolean,
-): string {
+function _fmtRange(start: string | null, end: string | null, isCurrent: boolean): string {
   if (!start && !end && !isCurrent) return "";
   const s = start ?? "";
-  const e = isCurrent ? "Present" : end ?? "";
+  const e = isCurrent ? "Present" : (end ?? "");
   if (s && e) return `${s} – ${e}`;
   return s || e;
 }

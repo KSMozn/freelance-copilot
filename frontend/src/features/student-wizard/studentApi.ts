@@ -42,11 +42,9 @@ export function useUploadStudentPhoto() {
     mutationFn: async (file: File): Promise<StudentProfile> => {
       const form = new FormData();
       form.append("file", file);
-      const { data } = await api.post<StudentProfile>(
-        "/students/profile/photo",
-        form,
-        { headers: { "Content-Type": "multipart/form-data" } },
-      );
+      const { data } = await api.post<StudentProfile>("/students/profile/photo", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return data;
     },
     onSuccess: (data) => {
@@ -166,9 +164,7 @@ export function useCvTemplates() {
   return useQuery({
     queryKey: ["student", "cv-templates"] as const,
     queryFn: async () => {
-      const { data } = await api.get<CvTemplateListResponse>(
-        "/students/cv-templates",
-      );
+      const { data } = await api.get<CvTemplateListResponse>("/students/cv-templates");
       return data;
     },
     staleTime: 60_000,

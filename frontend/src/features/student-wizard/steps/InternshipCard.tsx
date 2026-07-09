@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useImproveInternship } from "@/features/student-wizard/coaching/coachingApi";
-import {
-  useCreateStudentEntry,
-  useUpdateStudentEntry,
-} from "@/features/student-wizard/studentApi";
+import { useCreateStudentEntry, useUpdateStudentEntry } from "@/features/student-wizard/studentApi";
 import {
   INTERNSHIP_ACTION_CHIPS,
   INTERNSHIP_FIELD_OPTIONS,
@@ -30,13 +27,7 @@ import { Textarea } from "@/shared/ui/textarea";
 
 import { Field } from "./wizardShared";
 
-export function InternshipCard({
-  entry,
-  onDone,
-}: {
-  entry?: StudentEntry;
-  onDone: () => void;
-}) {
+export function InternshipCard({ entry, onDone }: { entry?: StudentEntry; onDone: () => void }) {
   const create = useCreateStudentEntry();
   const update = useUpdateStudentEntry();
   const improve = useImproveInternship();
@@ -51,38 +42,26 @@ export function InternshipCard({
   // Track which field-preset chips the student has already picked so
   // we can hide them and backfill from the rest of the pool. Reset on
   // field change (new pool → nothing consumed yet).
-  const [usedPresetIdxs, setUsedPresetIdxs] = useState<Set<number>>(
-    () => new Set(),
-  );
+  const [usedPresetIdxs, setUsedPresetIdxs] = useState<Set<number>>(() => new Set());
   useEffect(() => {
     setUsedPresetIdxs(new Set());
   }, [field]);
   const [location, setLocation] = useState(initialDetails.location ?? "");
-  const [workMode, setWorkMode] = useState<InternshipWorkMode | "">(
-    initialDetails.work_mode ?? "",
-  );
+  const [workMode, setWorkMode] = useState<InternshipWorkMode | "">(initialDetails.work_mode ?? "");
   const [department, setDepartment] = useState(initialDetails.department ?? "");
   const [startDate, setStartDate] = useState(entry?.start_date ?? "");
   const [endDate, setEndDate] = useState(entry?.end_date ?? "");
   const [isCurrent, setIsCurrent] = useState(entry?.is_current ?? false);
-  const [responsibilities, setResponsibilities] = useState(
-    initialDetails.responsibilities ?? "",
-  );
-  const [achievements, setAchievements] = useState(
-    initialDetails.achievements ?? "",
-  );
+  const [responsibilities, setResponsibilities] = useState(initialDetails.responsibilities ?? "");
+  const [achievements, setAchievements] = useState(initialDetails.achievements ?? "");
   const [tools, setTools] = useState<string[]>(initialDetails.tools ?? []);
   const [toolInput, setToolInput] = useState("");
-  const [skillsGained, setSkillsGained] = useState<string[]>(
-    initialDetails.skills_gained ?? [],
-  );
+  const [skillsGained, setSkillsGained] = useState<string[]>(initialDetails.skills_gained ?? []);
   const [skillInput, setSkillInput] = useState("");
   const [url, setUrl] = useState(entry?.url ?? "");
 
   const [aiSummary, setAiSummary] = useState(initialDetails.ai_summary ?? "");
-  const [aiBullets, setAiBullets] = useState<string[]>(
-    initialDetails.ai_bullets ?? [],
-  );
+  const [aiBullets, setAiBullets] = useState<string[]>(initialDetails.ai_bullets ?? []);
   const [followUps, setFollowUps] = useState<string[]>([]);
   const [followUpAnswers, setFollowUpAnswers] = useState<string[]>([]);
 
@@ -95,9 +74,7 @@ export function InternshipCard({
       skillsGained.length > 0);
 
   const dateError =
-    startDate && endDate && startDate > endDate
-      ? "Start date can't be after end date."
-      : null;
+    startDate && endDate && startDate > endDate ? "Start date can't be after end date." : null;
 
   function appendChip(verb: string) {
     setResponsibilities((prev) =>
@@ -107,9 +84,7 @@ export function InternshipCard({
 
   function addPresetTask(task: string, poolIdx: number) {
     setResponsibilities((prev) =>
-      prev.trim().length === 0
-        ? task
-        : `${prev.replace(/\n?$/, "\n")}${task}`,
+      prev.trim().length === 0 ? task : `${prev.replace(/\n?$/, "\n")}${task}`,
     );
     setUsedPresetIdxs((prev) => {
       const next = new Set(prev);
@@ -172,19 +147,12 @@ export function InternshipCard({
       // Fold suggested tools/skills that student didn't already add.
       if (res.tools_suggested.length) {
         setTools((prev) =>
-          Array.from(
-            new Set([...prev, ...res.tools_suggested.map((t) => t.trim())]),
-          ),
+          Array.from(new Set([...prev, ...res.tools_suggested.map((t) => t.trim())])),
         );
       }
       if (res.skills_suggested.length) {
         setSkillsGained((prev) =>
-          Array.from(
-            new Set([
-              ...prev,
-              ...res.skills_suggested.map((s) => s.trim()),
-            ]),
-          ),
+          Array.from(new Set([...prev, ...res.skills_suggested.map((s) => s.trim())])),
         );
       }
       toast.success("Draft ready — edit any line to make it yours.");
@@ -239,7 +207,7 @@ export function InternshipCard({
   }
 
   const busy = create.isPending || update.isPending;
-  const presetPool = field ? INTERNSHIP_FIELD_TASK_PRESETS[field] ?? [] : [];
+  const presetPool = field ? (INTERNSHIP_FIELD_TASK_PRESETS[field] ?? []) : [];
   // Show up to 6 unused preset chips at a time. As the student picks
   // one it disappears and the next unused pool entry fills its slot.
   const visiblePresets = presetPool
@@ -250,12 +218,9 @@ export function InternshipCard({
   return (
     <Card className="rounded-2xl border-border/70">
       <CardHeader className="space-y-1 pb-2">
-        <CardTitle className="text-base">
-          {entry ? "Edit internship" : "New internship"}
-        </CardTitle>
+        <CardTitle className="text-base">{entry ? "Edit internship" : "New internship"}</CardTitle>
         <CardDescription className="text-xs">
-          Answer in plain language — Careero can polish it into
-          professional bullet points for you.
+          Answer in plain language — Careero can polish it into professional bullet points for you.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -285,9 +250,7 @@ export function InternshipCard({
           <Field label="Work mode">
             <Select
               value={workMode}
-              onChange={(e) =>
-                setWorkMode(e.target.value as InternshipWorkMode | "")
-              }
+              onChange={(e) => setWorkMode(e.target.value as InternshipWorkMode | "")}
               options={[
                 { value: "", label: "—" },
                 ...INTERNSHIP_WORK_MODES.map((m) => ({
@@ -318,11 +281,7 @@ export function InternshipCard({
             />
           </Field>
           <Field label="Start date">
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </Field>
           <Field label="End date">
             <Input
@@ -341,9 +300,7 @@ export function InternshipCard({
           />
           Currently ongoing
         </label>
-        {dateError && (
-          <div className="text-xs text-destructive">{dateError}</div>
-        )}
+        {dateError && <div className="text-xs text-destructive">{dateError}</div>}
 
         {/* Preset tasks */}
         {presetPool.length > 0 && (
@@ -403,8 +360,7 @@ export function InternshipCard({
         <Field label="Key achievements">
           <div className="space-y-1">
             <div className="text-xs text-muted-foreground">
-              Did you improve, build, analyze, test, support, document,
-              or present anything?
+              Did you improve, build, analyze, test, support, document, or present anything?
             </div>
             <Textarea
               value={achievements}
@@ -469,11 +425,7 @@ export function InternshipCard({
 
         {/* Certificate URL */}
         <Field label="Certificate / proof link (optional)">
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://…"
-          />
+          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
         </Field>
 
         {/* Improve with AI */}
@@ -487,8 +439,7 @@ export function InternshipCard({
             {improve.isPending ? "Drafting…" : "Improve with AI"}
           </Button>
           <div className="text-xs text-muted-foreground">
-            Careero rewrites your input into 2–4 professional bullet
-            points. Never invents facts.
+            Careero rewrites your input into 2–4 professional bullet points. Never invents facts.
           </div>
         </div>
 
@@ -566,9 +517,7 @@ export function InternshipCard({
                     type="button"
                     size="sm"
                     variant="ghost"
-                    onClick={() =>
-                      setAiBullets(aiBullets.filter((_, j) => j !== i))
-                    }
+                    onClick={() => setAiBullets(aiBullets.filter((_, j) => j !== i))}
                   >
                     Remove
                   </Button>

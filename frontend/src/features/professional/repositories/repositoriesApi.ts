@@ -101,9 +101,7 @@ export function useRepositoryImprovements() {
   return useQuery({
     queryKey: ["repository-improvements"],
     queryFn: async (): Promise<RepositoryImprovementsReport> => {
-      const { data } = await api.get<RepositoryImprovementsReport>(
-        "/repositories/improvements",
-      );
+      const { data } = await api.get<RepositoryImprovementsReport>("/repositories/improvements");
       return data;
     },
     staleTime: 0,

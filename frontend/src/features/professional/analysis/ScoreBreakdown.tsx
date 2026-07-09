@@ -1,5 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { SCORE_DIMENSION_LABELS, SCORE_DIMENSION_MAX, type ScoreBreakdown as ScoreBreakdownT } from "@/features/professional/apiTypes";
+import {
+  SCORE_DIMENSION_LABELS,
+  SCORE_DIMENSION_MAX,
+  type ScoreBreakdown as ScoreBreakdownT,
+} from "@/features/professional/apiTypes";
 
 const ORDER: (keyof ScoreBreakdownT)[] = [
   "technical_fit",

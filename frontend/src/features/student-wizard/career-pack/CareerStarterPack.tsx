@@ -4,13 +4,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
@@ -31,7 +25,8 @@ import type {
   LinkedInReview,
 } from "@/features/student-wizard/career-pack/careerPackTypes";
 
-const LINKEDIN_URL_RE = /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/(in|pub|profile|company)\/[A-Za-z0-9\-_/%.]+\/?$/i;
+const LINKEDIN_URL_RE =
+  /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/(in|pub|profile|company)\/[A-Za-z0-9\-_/%.]+\/?$/i;
 const GITHUB_URL_RE = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/?$/i;
 
 function isLinkedInUrl(url: string): boolean {
@@ -41,7 +36,10 @@ function isGitHubUrl(url: string): boolean {
   return GITHUB_URL_RE.test(url.trim());
 }
 
-const STATUS_META: Record<CareerStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+const STATUS_META: Record<
+  CareerStatus,
+  { label: string; variant: "default" | "secondary" | "outline" | "destructive" }
+> = {
   missing: { label: "Missing", variant: "outline" },
   started: { label: "Started", variant: "secondary" },
   needs_improvement: { label: "Needs improvement", variant: "secondary" },
@@ -55,8 +53,7 @@ export function CareerStarterPack() {
   return (
     <section className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Your CV is ready. These optional steps can make your internship
-        application stronger.
+        Your CV is ready. These optional steps can make your internship application stronger.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         <LinkedInCard />
@@ -119,11 +116,7 @@ function LinkedInCard() {
               >
                 Yes, I have one
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setManualMode("create")}
-              >
+              <Button size="sm" variant="outline" onClick={() => setManualMode("create")}>
                 No, help me create one
               </Button>
             </div>
@@ -191,12 +184,7 @@ function LinkedInCreate({ onAddLink }: { onAddLink: () => void }) {
     <div className="space-y-3">
       {!generated && (
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="brand"
-            onClick={run}
-            disabled={generate.isPending}
-          >
+          <Button size="sm" variant="brand" onClick={run} disabled={generate.isPending}>
             {generate.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -241,11 +229,7 @@ function LinkedInWalkthrough({
   const steps: Step[] = [
     {
       title: "Ready to build your LinkedIn",
-      body: (
-        <StepIntro
-          count={5 + Math.max(projects.length, 1) + 2}
-        />
-      ),
+      body: <StepIntro count={5 + Math.max(projects.length, 1) + 2} />,
     },
     {
       title: "Create your LinkedIn account",
@@ -282,7 +266,10 @@ function LinkedInWalkthrough({
         <StepPasteSection
           instructions="On LinkedIn, click Add profile section → Core → Add education. Fill in the fields — this paragraph fits well in the 'Description' box."
           label="Education entry"
-          text={generated.education_entry || "(No education info in your CV yet — you can skip this and add it later.)"}
+          text={
+            generated.education_entry ||
+            "(No education info in your CV yet — you can skip this and add it later.)"
+          }
           multiline
         />
       ),
@@ -304,8 +291,9 @@ function LinkedInWalkthrough({
             title: "Add projects",
             body: (
               <p className="text-sm text-muted-foreground">
-                No projects listed in your CV yet — you can add some later on
-                LinkedIn under <span className="font-medium">Add profile section → Additional → Add projects</span>.
+                No projects listed in your CV yet — you can add some later on LinkedIn under{" "}
+                <span className="font-medium">Add profile section → Additional → Add projects</span>
+                .
               </p>
             ),
           },
@@ -323,11 +311,9 @@ function LinkedInWalkthrough({
       body: (
         <div className="space-y-3 text-sm">
           <p>
-            That's your LinkedIn built from your CV. When you're ready for
-            polish, come back here and pick{" "}
-            <span className="font-semibold">Yes, I have one</span> — upload
-            your PDF export and Careero will suggest section-by-section
-            improvements.
+            That's your LinkedIn built from your CV. When you're ready for polish, come back here
+            and pick <span className="font-semibold">Yes, I have one</span> — upload your PDF export
+            and Careero will suggest section-by-section improvements.
           </p>
         </div>
       ),
@@ -391,14 +377,13 @@ function StepIntro({ count }: { count: number }) {
   return (
     <div className="space-y-2 text-sm">
       <p>
-        Careero has prepared your LinkedIn content from your CV. We'll walk
-        through <span className="font-semibold">{count} short steps</span> —
-        one section at a time — so you can paste each piece into LinkedIn
-        without feeling overwhelmed.
+        Careero has prepared your LinkedIn content from your CV. We'll walk through{" "}
+        <span className="font-semibold">{count} short steps</span> — one section at a time — so you
+        can paste each piece into LinkedIn without feeling overwhelmed.
       </p>
       <p className="text-muted-foreground">
-        You can jump back and forth any time. Nothing is sent to LinkedIn —
-        you copy and paste yourself.
+        You can jump back and forth any time. Nothing is sent to LinkedIn — you copy and paste
+        yourself.
       </p>
     </div>
   );
@@ -426,8 +411,7 @@ function StepAccount() {
         <li>Verify your email when LinkedIn asks.</li>
       </ol>
       <p className="text-muted-foreground">
-        Come back here when your account is ready. Careero never sees your
-        LinkedIn password.
+        Come back here when your account is ready. Careero never sees your LinkedIn password.
       </p>
     </div>
   );
@@ -512,9 +496,9 @@ function StepSaveUrl({ onSaved }: { onSaved: () => void }) {
   return (
     <div className="space-y-3 text-sm">
       <p>
-        On LinkedIn, copy the URL from your browser once your profile is up
-        (looks like <span className="font-mono">linkedin.com/in/your-name</span>).
-        Paste it below so Careero remembers where your profile lives.
+        On LinkedIn, copy the URL from your browser once your profile is up (looks like{" "}
+        <span className="font-mono">linkedin.com/in/your-name</span>). Paste it below so Careero
+        remembers where your profile lives.
       </p>
       <Input
         value={url}
@@ -522,12 +506,7 @@ function StepSaveUrl({ onSaved }: { onSaved: () => void }) {
         placeholder="https://linkedin.com/in/you"
       />
       <div className="flex justify-end">
-        <Button
-          size="sm"
-          variant="brand"
-          onClick={save}
-          disabled={updateProfile.isPending}
-        >
+        <Button size="sm" variant="brand" onClick={save} disabled={updateProfile.isPending}>
           {updateProfile.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
           Save profile URL
         </Button>
@@ -564,14 +543,12 @@ function LinkedInEnhance() {
   return (
     <div className="space-y-3">
       <div className="rounded-md border border-primary/40 bg-primary/10 p-4 text-sm text-foreground">
-        <p className="mb-2 font-semibold">
-          How to export your LinkedIn profile
-        </p>
+        <p className="mb-2 font-semibold">How to export your LinkedIn profile</p>
         <ol className="list-decimal space-y-1 pl-5">
           <li>Open your LinkedIn profile page.</li>
           <li>
-            Click <span className="font-semibold">Me</span> (top-right avatar)
-            {" "}→ <span className="font-semibold">View Profile</span>.
+            Click <span className="font-semibold">Me</span> (top-right avatar) →{" "}
+            <span className="font-semibold">View Profile</span>.
           </li>
           <li>
             Click <span className="font-semibold">Resources</span> →{" "}
@@ -580,8 +557,8 @@ function LinkedInEnhance() {
           <li>Upload the downloaded PDF below.</li>
         </ol>
         <p className="mt-2 text-xs text-muted-foreground">
-          Careero doesn't fetch or scrape LinkedIn. We only read the PDF you
-          upload, then compare it against your CV.
+          Careero doesn't fetch or scrape LinkedIn. We only read the PDF you upload, then compare it
+          against your CV.
         </p>
       </div>
 
@@ -607,20 +584,11 @@ function LinkedInEnhance() {
           accept="application/pdf,.pdf,.docx"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
-        {file && (
-          <p className="text-xs text-muted-foreground">
-            Selected: {file.name}
-          </p>
-        )}
+        {file && <p className="text-xs text-muted-foreground">Selected: {file.name}</p>}
       </div>
 
       <div className="flex justify-end">
-        <Button
-          size="sm"
-          variant="brand"
-          onClick={submitReview}
-          disabled={review.isPending}
-        >
+        <Button size="sm" variant="brand" onClick={submitReview} disabled={review.isPending}>
           {review.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
           {recs ? "Re-review" : "Review my LinkedIn"}
         </Button>
@@ -659,9 +627,7 @@ function LinkedInReviewView({ data }: { data: LinkedInReview }) {
       {data.projects_to_improve.length > 0 && (
         <BulletList label="Projects to improve" items={data.projects_to_improve} />
       )}
-      {data.checklist.length > 0 && (
-        <BulletList label="Change checklist" items={data.checklist} />
-      )}
+      {data.checklist.length > 0 && <BulletList label="Change checklist" items={data.checklist} />}
     </div>
   );
 }
@@ -718,11 +684,7 @@ function GitHubCard() {
               >
                 Yes, I have one
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setManualMode("create")}
-              >
+              <Button size="sm" variant="outline" onClick={() => setManualMode("create")}>
                 No, help me create one
               </Button>
             </div>
@@ -789,12 +751,7 @@ function GitHubCreate({ onAddLink }: { onAddLink: () => void }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="brand"
-          onClick={run}
-          disabled={generate.isPending}
-        >
+        <Button size="sm" variant="brand" onClick={run} disabled={generate.isPending}>
           {generate.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -814,9 +771,7 @@ function GitHubCreate({ onAddLink }: { onAddLink: () => void }) {
 
 function GitHubEnhance() {
   const { data: pack } = useCareerPack();
-  const [identifier, setIdentifier] = useState(
-    pack?.github_username ?? pack?.github_url ?? "",
-  );
+  const [identifier, setIdentifier] = useState(pack?.github_username ?? pack?.github_url ?? "");
   const [showReviewForm, setShowReviewForm] = useState(false);
   const review = useReviewGitHub();
   const generate = useGenerateGitHub();
@@ -848,19 +803,10 @@ function GitHubEnhance() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="brand"
-          onClick={() => setShowReviewForm((v) => !v)}
-        >
+        <Button size="sm" variant="brand" onClick={() => setShowReviewForm((v) => !v)}>
           Review my GitHub profile
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={runGenerate}
-          disabled={generate.isPending}
-        >
+        <Button size="sm" variant="outline" onClick={runGenerate} disabled={generate.isPending}>
           {generate.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -873,8 +819,8 @@ function GitHubEnhance() {
       {showReviewForm && (
         <div className="space-y-2">
           <Label htmlFor="gh-user" className="text-xs">
-            GitHub username or profile URL. We only read public info from
-            the GitHub API — no password required.
+            GitHub username or profile URL. We only read public info from the GitHub API — no
+            password required.
           </Label>
           <Input
             id="gh-user"
@@ -883,18 +829,10 @@ function GitHubEnhance() {
             placeholder="octocat or https://github.com/octocat"
           />
           <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowReviewForm(false)}
-            >
+            <Button size="sm" variant="ghost" onClick={() => setShowReviewForm(false)}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={submitReview}
-              disabled={review.isPending}
-            >
+            <Button size="sm" onClick={submitReview} disabled={review.isPending}>
               {review.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Review
             </Button>
@@ -915,20 +853,11 @@ function GitHubGeneratedView({ data }: { data: GitHubGenerated }) {
         <ClearButton side="github" kind="generated" />
       </div>
       {data.username_suggestions.length > 0 && (
-        <BulletList
-          label="Username suggestions"
-          items={data.username_suggestions}
-          chip
-        />
+        <BulletList label="Username suggestions" items={data.username_suggestions} chip />
       )}
       {data.bio && <FieldBlock label="Bio" text={data.bio} />}
       {data.profile_readme && (
-        <FieldBlock
-          label="Profile README"
-          text={data.profile_readme}
-          multiline
-          mono
-        />
+        <FieldBlock label="Profile README" text={data.profile_readme} multiline mono />
       )}
       {data.project_readmes.length > 0 && (
         <div className="space-y-2">
@@ -940,9 +869,7 @@ function GitHubGeneratedView({ data }: { data: GitHubGenerated }) {
           ))}
         </div>
       )}
-      {data.checklist.length > 0 && (
-        <BulletList label="Setup checklist" items={data.checklist} />
-      )}
+      {data.checklist.length > 0 && <BulletList label="Setup checklist" items={data.checklist} />}
     </div>
   );
 }
@@ -956,13 +883,10 @@ function GitHubReviewView({ data }: { data: GitHubReview }) {
       <p className="text-sm">{data.profile_summary}</p>
       {data.has_profile_readme === false && (
         <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
-          No profile README found. Adding one is the single highest-impact
-          change you can make.
+          No profile README found. Adding one is the single highest-impact change you can make.
         </p>
       )}
-      {data.suggested_bio && (
-        <FieldBlock label="Suggested bio" text={data.suggested_bio} />
-      )}
+      {data.suggested_bio && <FieldBlock label="Suggested bio" text={data.suggested_bio} />}
       {data.suggested_profile_readme && (
         <FieldBlock
           label="Suggested profile README"
@@ -982,10 +906,7 @@ function GitHubReviewView({ data }: { data: GitHubReview }) {
         </div>
       )}
       {data.cv_projects_to_add.length > 0 && (
-        <BulletList
-          label="CV projects to add as repos"
-          items={data.cv_projects_to_add}
-        />
+        <BulletList label="CV projects to add as repos" items={data.cv_projects_to_add} />
       )}
       {data.repo_checklist.length > 0 && (
         <BulletList label="Repository improvements" items={data.repo_checklist} />
@@ -1040,20 +961,10 @@ function FieldBlock({
   );
 }
 
-function BulletList({
-  label,
-  items,
-  chip,
-}: {
-  label: string;
-  items: string[];
-  chip?: boolean;
-}) {
+function BulletList({ label, items, chip }: { label: string; items: string[]; chip?: boolean }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       {chip ? (
         <div className="mt-1 flex flex-wrap gap-1.5">
           {items.map((s, i) => (
@@ -1148,9 +1059,7 @@ function LinkUrlEditor({
           Cancel
         </Button>
         <Button size="sm" onClick={save} disabled={updateProfile.isPending}>
-          {updateProfile.isPending && (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          )}
+          {updateProfile.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
           Save
         </Button>
       </div>
@@ -1179,12 +1088,7 @@ function ClearButton({
   }
 
   return (
-    <Button
-      size="sm"
-      variant="brand"
-      onClick={run}
-      disabled={clear.isPending}
-    >
+    <Button size="sm" variant="brand" onClick={run} disabled={clear.isPending}>
       {clear.isPending ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
@@ -1198,7 +1102,6 @@ function ClearButton({
 // ---- errors -------------------------------------------------------------
 
 function errText(err: unknown, fallback: string): string {
-  const detail = (err as { response?: { data?: { detail?: string } } })
-    ?.response?.data?.detail;
+  const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
   return typeof detail === "string" && detail ? detail : fallback;
 }

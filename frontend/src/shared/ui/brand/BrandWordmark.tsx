@@ -30,19 +30,11 @@ export function BrandWordmark({
   className,
   markOnly = false,
 }: Props) {
-  const Mark =
-    variant === "careero" ? CareeroMark : PersonaArmoryMark;
+  const Mark = variant === "careero" ? CareeroMark : PersonaArmoryMark;
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 font-semibold tracking-tight",
-        className,
-      )}
-    >
+    <span className={cn("inline-flex items-center gap-2 font-semibold tracking-tight", className)}>
       <Mark size={size} />
-      {!markOnly && (
-        <span className="text-[15px] leading-none">{LABELS[variant]}</span>
-      )}
+      {!markOnly && <span className="text-[15px] leading-none">{LABELS[variant]}</span>}
     </span>
   );
 }

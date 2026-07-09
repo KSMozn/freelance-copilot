@@ -36,27 +36,16 @@ export function PersonaSwitcher() {
 
   return (
     <div className="relative" ref={wrapperRef}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen((o) => !o)}
-        className="gap-2"
-      >
+      <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)} className="gap-2">
         <UserCog className="h-4 w-4" />
-        <span className="hidden sm:inline max-w-[140px] truncate">
-          {active?.name ?? "Persona"}
-        </span>
+        <span className="hidden max-w-[140px] truncate sm:inline">{active?.name ?? "Persona"}</span>
         <ChevronDown className="h-3 w-3" />
       </Button>
       {open && (
-        <div className="absolute right-0 mt-2 w-72 rounded-md border bg-popover shadow-md p-1 z-50">
-          <div className="px-3 py-2 text-xs text-muted-foreground">
-            Acting as
-          </div>
+        <div className="bg-popover absolute right-0 z-50 mt-2 w-72 rounded-md border p-1 shadow-md">
+          <div className="px-3 py-2 text-xs text-muted-foreground">Acting as</div>
           {list.length === 0 && (
-            <div className="px-3 py-2 text-sm text-muted-foreground">
-              No personas yet
-            </div>
+            <div className="px-3 py-2 text-sm text-muted-foreground">No personas yet</div>
           )}
           {list.map((p) => {
             const isActive = p.id === activeId;
@@ -75,16 +64,14 @@ export function PersonaSwitcher() {
                 <span className="flex flex-col">
                   <span className="font-medium">{p.name}</span>
                   {p.target_role && (
-                    <span className="text-xs text-muted-foreground">
-                      {p.target_role}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{p.target_role}</span>
                   )}
                 </span>
                 {isActive && <Check className="h-4 w-4 text-primary" />}
               </button>
             );
           })}
-          <div className="border-t my-1" />
+          <div className="my-1 border-t" />
           <button
             type="button"
             onClick={() => {

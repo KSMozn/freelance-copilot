@@ -79,9 +79,7 @@ export function AdminActivityPage() {
           {isLoading ? (
             <div className="p-6 text-sm text-muted-foreground">Loading…</div>
           ) : !data || data.items.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">
-              No matching events.
-            </div>
+            <div className="p-6 text-sm text-muted-foreground">No matching events.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -117,11 +115,7 @@ export function AdminActivityPage() {
                         </span>
                       </Td>
                       <Td>{r.user_email ?? "—"}</Td>
-                      <Td>
-                        {r.duration_ms !== null
-                          ? `${r.duration_ms}ms`
-                          : "—"}
-                      </Td>
+                      <Td>{r.duration_ms !== null ? `${r.duration_ms}ms` : "—"}</Td>
                       <Td className="max-w-md">
                         {r.error_message && (
                           <div className="whitespace-pre-wrap text-destructive">

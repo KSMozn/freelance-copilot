@@ -11,23 +11,13 @@ interface Props {
  * `admin.personaarmory.com` and in the footer strip. Hex-shield silhouette
  * with a stroked P and the same brand spark inside its counter.
  */
-export function PersonaArmoryMark({
-  size = 28,
-  className,
-  boxed = false,
-}: Props) {
+export function PersonaArmoryMark({ size = 28, className, boxed = false }: Props) {
   const uid = useId().replace(/:/g, "");
   const gradId = `pa-grad-${uid}`;
   const sparkGradId = `pa-spark-${uid}`;
 
   const mark = (
-    <svg
-      viewBox="0 0 64 64"
-      width={size}
-      height={size}
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 64 64" width={size} height={size} className={className} aria-hidden="true">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="hsl(var(--brand-from))" />

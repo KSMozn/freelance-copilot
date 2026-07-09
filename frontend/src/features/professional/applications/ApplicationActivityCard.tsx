@@ -13,13 +13,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -46,8 +40,7 @@ function nowIso() {
 }
 
 function toToast(err: unknown): string {
-  const detail = (err as { response?: { data?: { detail?: string } } })?.response
-    ?.data?.detail;
+  const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
   return detail ?? "Failed";
 }
 
@@ -83,8 +76,7 @@ export function ApplicationActivityCard({ applicationId }: Props) {
       <CardHeader>
         <CardTitle className="text-base">Activity tracker</CardTitle>
         <CardDescription>
-          Recruiter touchpoints, interview rounds, and follow-ups for this
-          application.
+          Recruiter touchpoints, interview rounds, and follow-ups for this application.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -177,11 +169,13 @@ function RemindersSection({
         const overdue = !r.completed_at && due.getTime() < now;
         return (
           <Row key={r.id}>
-            <div className="flex-1 min-w-0 space-y-0.5">
-              <p className={`text-sm ${r.completed_at ? "line-through text-muted-foreground" : ""}`}>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <p
+                className={`text-sm ${r.completed_at ? "text-muted-foreground line-through" : ""}`}
+              >
                 {r.note}
               </p>
-              <p className="text-xs text-muted-foreground flex items-center gap-2">
+              <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <CalendarClock className="h-3 w-3" />
                 {due.toLocaleString()}
                 {overdue && (
@@ -293,7 +287,7 @@ function InterviewsSection({
                 id="format"
                 value={format}
                 onChange={(e) => setFormat(e.target.value as InterviewFormat)}
-                className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
               >
                 {Object.entries(INTERVIEW_FORMAT_LABEL).map(([k, v]) => (
                   <option key={k} value={k}>
@@ -331,8 +325,8 @@ function InterviewsSection({
 
       {interviews.map((ev) => (
         <Row key={ev.id}>
-          <div className="flex-1 min-w-0 space-y-0.5">
-            <p className="text-sm font-medium flex items-center gap-2">
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="flex items-center gap-2 text-sm font-medium">
               {ev.round_label}
               <Badge variant="outline" className="text-[10px]">
                 {INTERVIEW_FORMAT_LABEL[ev.format]}
@@ -340,9 +334,7 @@ function InterviewsSection({
               <OutcomeBadge outcome={ev.outcome} />
             </p>
             <p className="text-xs text-muted-foreground">
-              {ev.scheduled_at
-                ? new Date(ev.scheduled_at).toLocaleString()
-                : "no scheduled time"}
+              {ev.scheduled_at ? new Date(ev.scheduled_at).toLocaleString() : "no scheduled time"}
               {ev.duration_minutes && ` · ${ev.duration_minutes} min`}
               {ev.interviewer_names && ` · ${ev.interviewer_names}`}
             </p>
@@ -390,7 +382,7 @@ function OutcomeBadge({ outcome }: { outcome: InterviewOutcome }) {
     cancelled: "bg-muted text-muted-foreground line-through",
   }[outcome];
   return (
-    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${cfg}`}>
+    <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${cfg}`}>
       {outcome}
     </span>
   );
@@ -456,7 +448,7 @@ function InteractionsSection({
                 id="channel"
                 value={channel}
                 onChange={(e) => setChannel(e.target.value as InteractionChannel)}
-                className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
               >
                 {Object.entries(CHANNEL_LABEL).map(([k, v]) => (
                   <option key={k} value={k}>
@@ -470,10 +462,8 @@ function InteractionsSection({
               <select
                 id="direction"
                 value={direction}
-                onChange={(e) =>
-                  setDirection(e.target.value as "inbound" | "outbound")
-                }
-                className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                onChange={(e) => setDirection(e.target.value as "inbound" | "outbound")}
+                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
               >
                 <option value="inbound">Inbound (they wrote me)</option>
                 <option value="outbound">Outbound (I wrote them)</option>
@@ -516,8 +506,8 @@ function InteractionsSection({
 
       {interactions.map((i) => (
         <Row key={i.id}>
-          <div className="flex-1 min-w-0 space-y-0.5">
-            <p className="text-sm flex items-center gap-2">
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="flex items-center gap-2 text-sm">
               {i.direction === "inbound" ? (
                 <Inbox className="h-3 w-3 text-muted-foreground" />
               ) : (
@@ -573,7 +563,7 @@ function Section({
           <h3 className="text-sm font-semibold">{title}</h3>
         </div>
         <Button size="sm" variant="outline" onClick={onAdd}>
-          <Plus className="h-3 w-3 mr-1" />
+          <Plus className="mr-1 h-3 w-3" />
           Add
         </Button>
       </div>
@@ -592,7 +582,5 @@ function Row({ children }: { children: React.ReactNode }) {
 }
 
 function Form({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border bg-muted/30 p-3 space-y-3">{children}</div>
-  );
+  return <div className="space-y-3 rounded-md border bg-muted/30 p-3">{children}</div>;
 }

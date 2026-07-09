@@ -29,8 +29,7 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       admin: null,
       accessToken: null,
       refreshToken: null,
-      setAuth: (admin, accessToken, refreshToken) =>
-        set({ admin, accessToken, refreshToken }),
+      setAuth: (admin, accessToken, refreshToken) => set({ admin, accessToken, refreshToken }),
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
       logout: () => set({ admin: null, accessToken: null, refreshToken: null }),
     }),

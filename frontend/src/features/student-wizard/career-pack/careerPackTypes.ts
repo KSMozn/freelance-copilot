@@ -1,8 +1,4 @@
-export type CareerStatus =
-  | "missing"
-  | "started"
-  | "needs_improvement"
-  | "completed";
+export type CareerStatus = "missing" | "started" | "needs_improvement" | "completed";
 
 export interface LinkedInProjectSuggestion {
   name: string;

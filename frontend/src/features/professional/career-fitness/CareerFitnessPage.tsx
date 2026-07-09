@@ -11,13 +11,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/shared/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   useCareerFitness,
   type CareerFitness,
@@ -45,10 +39,8 @@ export function CareerFitnessPage() {
         <h1 className="text-2xl font-semibold">Career Fitness</h1>
         <p className="text-sm text-muted-foreground">
           Computed from your {data.total_jobs_analyzed} analyzed job
-          {data.total_jobs_analyzed === 1 ? "" : "s"} and{" "}
-          {data.total_applications} application
-          {data.total_applications === 1 ? "" : "s"}. Refreshes whenever you
-          analyze a new posting.
+          {data.total_jobs_analyzed === 1 ? "" : "s"} and {data.total_applications} application
+          {data.total_applications === 1 ? "" : "s"}. Refreshes whenever you analyze a new posting.
         </p>
       </header>
 
@@ -76,13 +68,12 @@ function TopGapsCard({ data }: { data: CareerFitness }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             No critical gaps
           </CardTitle>
           <CardDescription>
-            Every skill the market is asking for is already in your pot at
-            proficiency 3 or higher.
+            Every skill the market is asking for is already in your pot at proficiency 3 or higher.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -91,13 +82,13 @@ function TopGapsCard({ data }: { data: CareerFitness }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           Top gaps — skills the market wants
         </CardTitle>
         <CardDescription>
-          Severity scales with how often the market asks for each skill and
-          how present (or absent) it is in your pot.
+          Severity scales with how often the market asks for each skill and how present (or absent)
+          it is in your pot.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -111,9 +102,9 @@ function TopGapsCard({ data }: { data: CareerFitness }) {
 
 function GapRow({ gap }: { gap: SkillGap }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-sm py-1 border-b last:border-b-0">
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{gap.name}</p>
+    <div className="flex items-center justify-between gap-3 border-b py-1 text-sm last:border-b-0">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium">{gap.name}</p>
         <p className="text-xs text-muted-foreground">
           market demand {gap.market_count.toFixed(1)}
           {gap.current_proficiency != null
@@ -137,7 +128,7 @@ function SeverityChip({ severity }: { severity: number }) {
   const idx = Math.max(0, Math.min(4, severity - 1));
   return (
     <span
-      className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${palette[idx]}`}
+      className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${palette[idx]}`}
     >
       Severity {severity}
     </span>
@@ -148,13 +139,12 @@ function MarketSkillsCard({ data }: { data: CareerFitness }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <TrendingUp className="h-4 w-4 text-primary" />
           Market demand
         </CardTitle>
         <CardDescription>
-          Top skills across your analyzed jobs, weighted (required 1.0,
-          preferred 0.5).
+          Top skills across your analyzed jobs, weighted (required 1.0, preferred 0.5).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-1">
@@ -168,11 +158,9 @@ function MarketSkillsCard({ data }: { data: CareerFitness }) {
 
 function MarketSkillRow({ m }: { m: MarketSkill }) {
   return (
-    <div className="flex items-center justify-between text-sm py-1">
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className={m.in_your_pot ? "" : "text-muted-foreground"}>
-          {m.name}
-        </span>
+    <div className="flex items-center justify-between py-1 text-sm">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <span className={m.in_your_pot ? "" : "text-muted-foreground"}>{m.name}</span>
         {m.in_your_pot && m.your_proficiency != null && (
           <Badge variant="outline" className="text-[10px]">
             P{m.your_proficiency}
@@ -184,9 +172,7 @@ function MarketSkillRow({ m }: { m: MarketSkill }) {
           </Badge>
         )}
       </div>
-      <div className="text-xs text-muted-foreground tabular-nums">
-        {m.market_count.toFixed(1)}
-      </div>
+      <div className="text-xs tabular-nums text-muted-foreground">{m.market_count.toFixed(1)}</div>
     </div>
   );
 }
@@ -197,25 +183,24 @@ function FeedbackCard({ data }: { data: CareerFitness }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <ThumbsUp className="h-4 w-4 text-emerald-500" />
           Application feedback
         </CardTitle>
         <CardDescription>
-          Weighted by outcome — won/completed = +3, interview = +1,
-          rejected/withdrawn = -1.
+          Weighted by outcome — won/completed = +3, interview = +1, rejected/withdrawn = -1.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {positive.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+            <p className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
               Pulls you in
             </p>
             {positive.map((f) => (
-              <div key={f.name} className="flex justify-between text-sm py-0.5">
+              <div key={f.name} className="flex justify-between py-0.5 text-sm">
                 <span>{f.name}</span>
-                <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">
+                <span className="tabular-nums text-emerald-600 dark:text-emerald-400">
                   +{f.score}
                 </span>
               </div>
@@ -224,22 +209,22 @@ function FeedbackCard({ data }: { data: CareerFitness }) {
         )}
         {negative.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+            <p className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
               <ThumbsDown className="h-3 w-3" />
               Cooler signals
             </p>
             {negative.map((f) => (
-              <div key={f.name} className="flex justify-between text-sm py-0.5">
+              <div key={f.name} className="flex justify-between py-0.5 text-sm">
                 <span className="text-muted-foreground">{f.name}</span>
-                <span className="text-destructive tabular-nums">{f.score}</span>
+                <span className="tabular-nums text-destructive">{f.score}</span>
               </div>
             ))}
           </div>
         )}
         {positive.length === 0 && negative.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No application outcomes yet — feedback shows up once you mark
-            applications as won, interview, or lost.
+            No application outcomes yet — feedback shows up once you mark applications as won,
+            interview, or lost.
           </p>
         )}
       </CardContent>
@@ -251,7 +236,7 @@ function RecurringGapsCard({ data }: { data: CareerFitness }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <TrendingDown className="h-4 w-4 text-amber-500" />
           Recurring critical gaps
         </CardTitle>
@@ -266,7 +251,7 @@ function RecurringGapsCard({ data }: { data: CareerFitness }) {
           </p>
         )}
         {data.recurring_gaps.slice(0, 8).map((r) => (
-          <div key={r.name} className="flex justify-between items-center text-sm py-0.5">
+          <div key={r.name} className="flex items-center justify-between py-0.5 text-sm">
             <span>{r.name}</span>
             <span className="text-xs text-muted-foreground">
               flagged {r.count}× · avg importance {r.avg_importance.toFixed(1)}
@@ -282,7 +267,7 @@ function DomainDemandCard({ data }: { data: CareerFitness }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Briefcase className="h-4 w-4 text-primary" />
           Business domain demand
         </CardTitle>
@@ -290,16 +275,12 @@ function DomainDemandCard({ data }: { data: CareerFitness }) {
       </CardHeader>
       <CardContent className="space-y-1">
         {data.domain_demand.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            No business domain signal yet.
-          </p>
+          <p className="text-sm text-muted-foreground">No business domain signal yet.</p>
         )}
         {data.domain_demand.slice(0, 8).map(([name, count]) => (
-          <div key={name} className="flex justify-between text-sm py-0.5">
+          <div key={name} className="flex justify-between py-0.5 text-sm">
             <span>{name}</span>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {count}
-            </span>
+            <span className="text-xs tabular-nums text-muted-foreground">{count}</span>
           </div>
         ))}
       </CardContent>
@@ -312,24 +293,24 @@ function RepoSuggestionsCard({ data }: { data: CareerFitness }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Github className="h-4 w-4 text-primary" />
           GitHub README suggestions
         </CardTitle>
         <CardDescription>
-          Repos that already demonstrate in-demand skills but whose READMEs
-          don't call them out clearly.
+          Repos that already demonstrate in-demand skills but whose READMEs don't call them out
+          clearly.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {data.repo_suggestions.map((s) => (
-          <div key={s.repository_id} className="rounded-md border bg-muted/30 p-3 space-y-2">
+          <div key={s.repository_id} className="space-y-2 rounded-md border bg-muted/30 p-3">
             <p className="text-sm font-medium">{s.repository_name}</p>
             <p className="text-sm">{s.suggestion}</p>
             {s.skills_covered.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {s.skills_covered.map((sk) => (
-                  <Badge key={sk} variant="outline" className="text-[10px] gap-1">
+                  <Badge key={sk} variant="outline" className="gap-1 text-[10px]">
                     <Sparkles className="h-2.5 w-2.5" />
                     {sk}
                   </Badge>

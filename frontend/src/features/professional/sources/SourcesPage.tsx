@@ -3,13 +3,7 @@ import { Award, FileText, Linkedin, Plus, Sparkles, Trash2, Upload } from "lucid
 import { toast } from "sonner";
 
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
@@ -33,8 +27,8 @@ export function SourcesPage() {
       <div>
         <h1 className="text-2xl font-semibold">Sources</h1>
         <p className="text-sm text-muted-foreground">
-          Everything you add here flows into your knowledge graph and feeds
-          every persona, match, and proposal.
+          Everything you add here flows into your knowledge graph and feeds every persona, match,
+          and proposal.
         </p>
       </div>
 
@@ -83,9 +77,9 @@ function CvSection() {
     );
   }
 
-  const sorted = (uploads ?? []).slice().sort((a, b) =>
-    (b.created_at ?? "").localeCompare(a.created_at ?? ""),
-  );
+  const sorted = (uploads ?? [])
+    .slice()
+    .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
 
   return (
     <Card>
@@ -95,8 +89,8 @@ function CvSection() {
           CV / Resume
         </CardTitle>
         <CardDescription>
-          PDF / DOCX / paste. We&apos;ll extract experiences, skills, and
-          achievements into your graph.
+          PDF / DOCX / paste. We&apos;ll extract experiences, skills, and achievements into your
+          graph.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -120,7 +114,7 @@ function CvSection() {
 
         {mode === "upload" && (
           <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-2 cursor-pointer">
+            <label className="inline-flex cursor-pointer items-center gap-2">
               <input
                 type="file"
                 accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -130,14 +124,12 @@ function CvSection() {
               />
               <Button type="button" disabled={upload.isPending} asChild>
                 <span>
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="mr-2 h-4 w-4" />
                   {upload.isPending ? "Parsing…" : "Choose file"}
                 </span>
               </Button>
             </label>
-            <span className="text-xs text-muted-foreground">
-              PDF or DOCX, up to 5 MB
-            </span>
+            <span className="text-xs text-muted-foreground">PDF or DOCX, up to 5 MB</span>
           </div>
         )}
 
@@ -155,14 +147,14 @@ function CvSection() {
               rows={8}
             />
             <Button onClick={onPaste} disabled={paste.isPending || !pasteText.trim()}>
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkles className="mr-2 h-4 w-4" />
               {paste.isPending ? "Parsing…" : "Parse & ingest"}
             </Button>
           </div>
         )}
 
         {sorted.length > 0 && (
-          <div className="space-y-2 pt-2 border-t">
+          <div className="space-y-2 border-t pt-2">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Previous uploads
             </p>
@@ -187,8 +179,8 @@ function CvRow({ cv }: { cv: CvUpload }) {
       </div>
       {cv.parse_status === "parsed" && (
         <p className="text-xs text-muted-foreground">
-          {experienceCount} experience{experienceCount === 1 ? "" : "s"} ·{" "}
-          {skills.length} skill{skills.length === 1 ? "" : "s"}
+          {experienceCount} experience{experienceCount === 1 ? "" : "s"} · {skills.length} skill
+          {skills.length === 1 ? "" : "s"}
         </p>
       )}
       {cv.parse_status === "failed" && cv.parse_error && (
@@ -202,11 +194,16 @@ function StatusBadge({ status }: { status: CvUpload["parse_status"] }) {
   const cfg = {
     pending: { label: "Pending", className: "bg-muted text-muted-foreground" },
     parsing: { label: "Parsing", className: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
-    parsed: { label: "Parsed", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+    parsed: {
+      label: "Parsed",
+      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    },
     failed: { label: "Failed", className: "bg-destructive/10 text-destructive" },
   }[status];
   return (
-    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${cfg.className}`}>
+    <span
+      className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${cfg.className}`}
+    >
       {cfg.label}
     </span>
   );
@@ -248,12 +245,12 @@ function LinkedInSection() {
           LinkedIn export
         </CardTitle>
         <CardDescription>
-          On LinkedIn → More → "Save to PDF" — upload the result here. We&apos;ll
-          merge it into your graph with dedup against existing experiences.
+          On LinkedIn → More → "Save to PDF" — upload the result here. We&apos;ll merge it into your
+          graph with dedup against existing experiences.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <label className="inline-flex items-center gap-2 cursor-pointer">
+        <label className="inline-flex cursor-pointer items-center gap-2">
           <input
             type="file"
             accept=".pdf,application/pdf"
@@ -263,7 +260,7 @@ function LinkedInSection() {
           />
           <Button type="button" disabled={importMutation.isPending} variant="outline" asChild>
             <span>
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="mr-2 h-4 w-4" />
               {importMutation.isPending ? "Parsing…" : "Upload LinkedIn PDF"}
             </span>
           </Button>
@@ -315,19 +312,18 @@ function CertificatesSection() {
               Certificates
             </CardTitle>
             <CardDescription>
-              AWS, GCP, security, vendor certs — adds credibility to the
-              relevant personas.
+              AWS, GCP, security, vendor certs — adds credibility to the relevant personas.
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setShowForm((s) => !s)}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="mr-1 h-4 w-4" />
             Add
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {showForm && (
-          <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
             <div className="grid gap-2 md:grid-cols-2">
               <div>
                 <Label htmlFor="cert-name">Name</Label>
@@ -429,19 +425,18 @@ function ContentSection() {
               Blog posts, talks, papers
             </CardTitle>
             <CardDescription>
-              Published work that signals expertise. Linked from generated
-              proposals when relevant.
+              Published work that signals expertise. Linked from generated proposals when relevant.
             </CardDescription>
           </div>
           <Button size="sm" variant="outline" onClick={() => setShowForm((s) => !s)}>
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className="mr-1 h-4 w-4" />
             Add
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {showForm && (
-          <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
             <div className="grid gap-2 md:grid-cols-2">
               <div>
                 <Label htmlFor="content-title">Title</Label>

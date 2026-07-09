@@ -2,21 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/app/apiClient";
 
-export type InteractionChannel =
-  | "email"
-  | "linkedin"
-  | "phone"
-  | "in_person"
-  | "other";
+export type InteractionChannel = "email" | "linkedin" | "phone" | "in_person" | "other";
 export type InteractionDirection = "inbound" | "outbound";
 export type InterviewFormat =
-  | "phone_screen"
-  | "technical"
-  | "system_design"
-  | "behavioral"
-  | "onsite"
-  | "final"
-  | "other";
+  "phone_screen" | "technical" | "system_design" | "behavioral" | "onsite" | "final" | "other";
 export type InterviewOutcome = "pending" | "pass" | "fail" | "cancelled";
 
 export interface RecruiterInteraction {
@@ -121,8 +110,7 @@ export function useDeleteInteraction(applicationId: string) {
     mutationFn: async (id: string) => {
       await api.delete(`/applications/${applicationId}/interactions/${id}`);
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
   });
 }
 
@@ -144,8 +132,7 @@ export function useAddInterview(applicationId: string) {
       );
       return data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
   });
 }
 
@@ -157,7 +144,9 @@ export function useUpdateInterview(applicationId: string) {
       patch,
     }: {
       id: string;
-      patch: Partial<Omit<InterviewEvent, "id" | "application_id" | "user_id" | "created_at" | "updated_at">>;
+      patch: Partial<
+        Omit<InterviewEvent, "id" | "application_id" | "user_id" | "created_at" | "updated_at">
+      >;
     }) => {
       const { data } = await api.patch<InterviewEvent>(
         `/applications/${applicationId}/interviews/${id}`,
@@ -165,8 +154,7 @@ export function useUpdateInterview(applicationId: string) {
       );
       return data;
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
   });
 }
 
@@ -176,8 +164,7 @@ export function useDeleteInterview(applicationId: string) {
     mutationFn: async (id: string) => {
       await api.delete(`/applications/${applicationId}/interviews/${id}`);
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["application-activity", applicationId] }),
   });
 }
 

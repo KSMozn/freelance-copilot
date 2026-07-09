@@ -10,13 +10,7 @@ export function EntryRow({ entry, kind }: { entry: StudentEntry; kind: StudentEn
   const [editing, setEditing] = useState(false);
 
   if (editing) {
-    return (
-      <EntryForm
-        kind={kind}
-        entry={entry}
-        onCancel={() => setEditing(false)}
-      />
-    );
+    return <EntryForm kind={kind} entry={entry} onCancel={() => setEditing(false)} />;
   }
 
   return (
@@ -33,7 +27,7 @@ export function EntryRow({ entry, kind }: { entry: StudentEntry; kind: StudentEn
           <div className="text-xs text-muted-foreground">{entry.organization}</div>
         ) : null}
         {entry.description && (
-          <div className="mt-1 text-sm text-muted-foreground line-clamp-2">{entry.description}</div>
+          <div className="mt-1 line-clamp-2 text-sm text-muted-foreground">{entry.description}</div>
         )}
         {kind === "project" && Array.isArray(entry.details?.tech_stack) && (
           <div className="mt-1 flex flex-wrap gap-1">
@@ -48,7 +42,7 @@ export function EntryRow({ entry, kind }: { entry: StudentEntry; kind: StudentEn
           </div>
         )}
       </div>
-      <div className="flex flex-col items-end gap-1 shrink-0">
+      <div className="flex shrink-0 flex-col items-end gap-1">
         <button
           type="button"
           onClick={() => setEditing(true)}

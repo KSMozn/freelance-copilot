@@ -5,10 +5,7 @@ import { logoutCurrentSurface } from "@/app/apiClient";
 import { useAuthStore } from "@/features/auth/authStore";
 import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 import { fetchPhotoDataUri } from "@/features/student-wizard/photoCache";
-import {
-  useStudentProfile,
-  useUpdateStudentProfile,
-} from "@/features/student-wizard/studentApi";
+import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import type { StudentEntryKind } from "@/features/student-wizard/studentTypes";
 import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
 import { Button } from "@/shared/ui/button";
@@ -33,14 +30,17 @@ const STEPS: StepDef[] = [
   { slug: "basics", title: "About you", blurb: "Name, email, where you're based." },
   { slug: "education", title: "Where you study", blurb: "University, department, degree." },
   { slug: "photo", title: "Profile photo", blurb: "Optional — but a clean photo helps." },
-  { slug: "skills", title: "Skills", blurb: "Things you can do. Pick from the list or type your own." },
+  {
+    slug: "skills",
+    title: "Skills",
+    blurb: "Things you can do. Pick from the list or type your own.",
+  },
   { slug: "courses", title: "Coursework", blurb: "Relevant courses you've taken." },
   { slug: "projects", title: "Projects", blurb: "What you've built." },
   {
     slug: "internships",
     title: "Internships",
-    blurb:
-      "Optional — internships, summer training, or practical experience you've done.",
+    blurb: "Optional — internships, summer training, or practical experience you've done.",
   },
   { slug: "volunteer", title: "Volunteer work", blurb: "Where you've contributed." },
   { slug: "languages", title: "Languages", blurb: "Spoken / written languages." },
@@ -121,7 +121,7 @@ export function StudentWizardPage() {
       const next = STEPS.findIndex((s) => s.slug === lastCompleted);
       if (next >= 0 && next < STEPS.length - 1) setStepIndex(next + 1);
     }
-  }, [profile?.completed_steps?.length, requestedStepIndex]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.completed_steps?.length, requestedStepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the /login picker snapshot in sync — name updates and photo
   // uploads from the wizard propagate into localStorage so the next
@@ -181,7 +181,7 @@ export function StudentWizardPage() {
     const already = profile.completed_steps ?? [];
     if (already.includes(step.slug)) return;
     void markStepDone(step.slug);
-  }, [step.slug, profile?.completed_steps]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step.slug, profile?.completed_steps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function goNext() {
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
@@ -216,9 +216,7 @@ export function StudentWizardPage() {
 
         <Card className="mt-6 rounded-2xl border-border/60 shadow-sm">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-semibold tracking-tight">
-              {step.title}
-            </CardTitle>
+            <CardTitle className="text-2xl font-semibold tracking-tight">{step.title}</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               {step.blurb}
             </CardDescription>
@@ -287,7 +285,7 @@ function ProgressBar({
             onClick={() => onJump(i)}
             title={s.title}
             className={
-              "h-2 flex-1 min-w-[14px] rounded-full transition-all " +
+              "h-2 min-w-[14px] flex-1 rounded-full transition-all " +
               (active
                 ? "bg-brand-gradient shadow-[0_0_0_2px_hsl(var(--brand-mid)/0.15)]"
                 : done
@@ -341,9 +339,7 @@ function SignOutButton() {
       <button
         type="button"
         onClick={() => {
-          void logoutCurrentSurface().finally(() =>
-            navigate("/login", { replace: true }),
-          );
+          void logoutCurrentSurface().finally(() => navigate("/login", { replace: true }));
         }}
         className="rounded-md border border-border/60 px-2 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
       >

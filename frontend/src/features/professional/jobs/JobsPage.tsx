@@ -46,10 +46,10 @@ function StatusBadge({ status }: { status: JobStatus }) {
     status === "applied"
       ? "default"
       : status === "shortlisted"
-      ? "secondary"
-      : status === "ignored" || status === "archived"
-      ? "outline"
-      : "secondary";
+        ? "secondary"
+        : status === "ignored" || status === "archived"
+          ? "outline"
+          : "secondary";
   return <Badge variant={variant}>{status}</Badge>;
 }
 
@@ -121,9 +121,7 @@ function SortHeader({
     >
       <span className={`inline-flex items-center gap-1 ${justify}`}>
         {label}
-        {sortable && (
-          <Icon className={`h-3 w-3 ${active ? "text-foreground" : "opacity-50"}`} />
-        )}
+        {sortable && <Icon className={`h-3 w-3 ${active ? "text-foreground" : "opacity-50"}`} />}
       </span>
     </th>
   );
@@ -252,7 +250,13 @@ export function JobsPage() {
                       onSort={onSort}
                       title="Sort by total opportunity score (out of 100)"
                     />
-                    <SortHeader label="Status" align="right" current={sortBy} dir={sortDir} onSort={onSort} />
+                    <SortHeader
+                      label="Status"
+                      align="right"
+                      current={sortBy}
+                      dir={sortDir}
+                      onSort={onSort}
+                    />
                   </tr>
                 </thead>
                 <tbody>
@@ -268,14 +272,17 @@ export function JobsPage() {
                               <ScoreChip score={total} />
                             </div>
                             <div className="truncate text-xs text-muted-foreground">
-                              {j.budget_type ?? "—"} · {j.currency} {j.budget_min ?? "?"}–{j.budget_max ?? "?"} ·{" "}
-                              {j.proposal_count ?? "?"} proposals
+                              {j.budget_type ?? "—"} · {j.currency} {j.budget_min ?? "?"}–
+                              {j.budget_max ?? "?"} · {j.proposal_count ?? "?"} proposals
                             </div>
                           </Link>
                         </td>
                         {BREAKDOWN_COLUMNS.map((c) => (
                           <td key={c.dim} className="px-2 py-3 text-right align-middle">
-                            <BreakdownCell value={breakdown?.[c.dim]} max={SCORE_DIMENSION_MAX[c.dim]} />
+                            <BreakdownCell
+                              value={breakdown?.[c.dim]}
+                              max={SCORE_DIMENSION_MAX[c.dim]}
+                            />
                           </td>
                         ))}
                         <td className="px-2 py-3 text-right align-middle">
@@ -284,7 +291,9 @@ export function JobsPage() {
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
-                          {total != null && <span className="text-xs text-muted-foreground">/100</span>}
+                          {total != null && (
+                            <span className="text-xs text-muted-foreground">/100</span>
+                          )}
                         </td>
                         <td className="px-2 py-3 text-right align-middle">
                           <StatusBadge status={j.status} />

@@ -5,11 +5,7 @@ interface PhotoPositionerProps {
   offsetX: number; // 0-100
   offsetY: number; // 0-100
   zoom: number; // 100-300
-  onChange: (next: {
-    photo_offset_x: number;
-    photo_offset_y: number;
-    photo_zoom: number;
-  }) => void;
+  onChange: (next: { photo_offset_x: number; photo_offset_y: number; photo_zoom: number }) => void;
   sizePx?: number;
 }
 
@@ -17,8 +13,7 @@ const MIN_ZOOM = 100;
 const MAX_ZOOM = 300;
 const WHEEL_STEP = 5; // percent per wheel tick
 
-const clamp = (n: number, lo: number, hi: number) =>
-  Math.max(lo, Math.min(hi, n));
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 /**
  * Facebook-style crop control. Renders the uploaded photo inside a
@@ -124,7 +119,7 @@ export function PhotoPositioner({
         onPointerCancel={endDrag}
         role="img"
         aria-label="Profile photo — drag to reposition, scroll to zoom"
-        className="ring-1 ring-border select-none"
+        className="select-none ring-1 ring-border"
         style={{
           width: sizePx,
           height: sizePx,
@@ -137,9 +132,7 @@ export function PhotoPositioner({
           touchAction: "none",
         }}
       />
-      <p className="text-xs text-muted-foreground">
-        Drag to reposition · scroll to zoom
-      </p>
+      <p className="text-xs text-muted-foreground">Drag to reposition · scroll to zoom</p>
     </div>
   );
 }

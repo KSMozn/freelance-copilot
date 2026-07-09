@@ -19,9 +19,7 @@ export function AdminLayout() {
       <aside className="flex w-56 flex-col border-r bg-card">
         <div className="border-b p-4">
           <BrandWordmark variant="personaarmory-admin" size={22} />
-          <div className="mt-1.5 truncate text-xs text-muted-foreground">
-            {admin.email}
-          </div>
+          <div className="mt-1.5 truncate text-xs text-muted-foreground">{admin.email}</div>
         </div>
         <nav className="flex-1 space-y-1 p-2">
           <SideLink to="/overview" label="Overview" />
@@ -35,9 +33,7 @@ export function AdminLayout() {
           <button
             type="button"
             onClick={() => {
-              void logoutCurrentSurface().finally(() =>
-                navigate("/login", { replace: true }),
-              );
+              void logoutCurrentSurface().finally(() => navigate("/login", { replace: true }));
             }}
             className="block w-full rounded-md px-3 py-2 text-left hover:bg-muted"
           >

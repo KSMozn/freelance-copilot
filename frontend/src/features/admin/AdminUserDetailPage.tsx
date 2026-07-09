@@ -99,10 +99,7 @@ export function AdminUserDetailPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link
-          to="/users"
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
+        <Link to="/users" className="text-xs text-muted-foreground hover:text-foreground">
           ← Users
         </Link>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
@@ -173,8 +170,8 @@ export function AdminUserDetailPage() {
                 await reset.mutateAsync(id);
                 toast.success("Wizard progress reset");
               } catch (err) {
-                const msg = (err as { response?: { data?: { detail?: string } } })
-                  ?.response?.data?.detail;
+                const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data
+                  ?.detail;
                 toast.error(msg ?? "Failed");
               }
             }}
@@ -214,15 +211,12 @@ export function AdminUserDetailPage() {
       {confirmingDelete && (
         <Card className="border-destructive/40 bg-destructive/5">
           <CardHeader>
-            <CardTitle className="text-base text-destructive">
-              Delete {user.email}?
-            </CardTitle>
+            <CardTitle className="text-base text-destructive">Delete {user.email}?</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm">
-              This deletes the user and all cascading data (profile, entries,
-              uploaded files). This cannot be undone. Type the user's email to
-              confirm.
+              This deletes the user and all cascading data (profile, entries, uploaded files). This
+              cannot be undone. Type the user's email to confirm.
             </p>
             <Input
               value={deleteEmail}
@@ -235,8 +229,7 @@ export function AdminUserDetailPage() {
                 size="sm"
                 onClick={() => void confirmDelete()}
                 disabled={
-                  del.isPending ||
-                  deleteEmail.trim().toLowerCase() !== user.email.toLowerCase()
+                  del.isPending || deleteEmail.trim().toLowerCase() !== user.email.toLowerCase()
                 }
               >
                 Delete permanently
@@ -350,10 +343,7 @@ function StudentProfileCard({
               <div className="text-xs text-muted-foreground">Entries by kind</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {Object.entries(student.entries_by_kind).map(([k, c]) => (
-                  <span
-                    key={k}
-                    className="rounded bg-muted px-1.5 py-0.5 text-[10px]"
-                  >
+                  <span key={k} className="rounded bg-muted px-1.5 py-0.5 text-[10px]">
                     {k}: {c}
                   </span>
                 ))}
@@ -395,9 +385,7 @@ function StudentProfileEditForm({
   const [department, setDepartment] = useState(student.department ?? "");
   const [degree, setDegree] = useState(student.degree ?? "");
   const [major, setMajor] = useState(student.major ?? "");
-  const [year, setYear] = useState(
-    student.graduation_year ? String(student.graduation_year) : "",
-  );
+  const [year, setYear] = useState(student.graduation_year ? String(student.graduation_year) : "");
 
   async function save() {
     try {
@@ -416,8 +404,8 @@ function StudentProfileEditForm({
       toast.success("Profile updated");
       onDone();
     } catch (err) {
-      const detail = (err as { response?: { data?: { detail?: unknown } } })
-        ?.response?.data?.detail;
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data
+        ?.detail;
       const msg =
         typeof detail === "string"
           ? detail
@@ -437,12 +425,7 @@ function StudentProfileEditForm({
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Student profile (editing)</CardTitle>
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDone}
-            disabled={mutation.isPending}
-          >
+          <Button variant="ghost" size="sm" onClick={onDone} disabled={mutation.isPending}>
             Cancel
           </Button>
           <Button size="sm" onClick={() => void save()} disabled={mutation.isPending}>
@@ -452,12 +435,7 @@ function StudentProfileEditForm({
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <EditField label="Name" value={fullName} onChange={setFullName} />
-        <EditField
-          label="CV email"
-          value={email}
-          onChange={setEmail}
-          type="email"
-        />
+        <EditField label="CV email" value={email} onChange={setEmail} type="email" />
         <EditField label="Phone" value={phone} onChange={setPhone} />
         <EditField label="Location" value={location} onChange={setLocation} />
         <EditField
@@ -468,11 +446,7 @@ function StudentProfileEditForm({
           placeholder="YYYY-MM-DD"
         />
         <EditField label="University" value={college} onChange={setCollege} />
-        <EditField
-          label="Department"
-          value={department}
-          onChange={setDepartment}
-        />
+        <EditField label="Department" value={department} onChange={setDepartment} />
         <EditField label="Degree" value={degree} onChange={setDegree} />
         <EditField label="Major" value={major} onChange={setMajor} />
         <EditField
@@ -482,8 +456,8 @@ function StudentProfileEditForm({
           placeholder="2027"
         />
         <div className="pt-1 text-[11px] text-muted-foreground">
-          Only fields on this card are editable here. Photo, template choice,
-          summary, headline, and links stay under the student's control.
+          Only fields on this card are editable here. Photo, template choice, summary, headline, and
+          links stay under the student's control.
         </div>
       </CardContent>
     </Card>
@@ -524,19 +498,12 @@ function emptyToNull(v: string): string | null {
 
 // ---- Send email card + preview modal -----------------------------------
 
-function SendEmailCard({
-  userId,
-  userEmail,
-}: {
-  userId: string;
-  userEmail: string;
-}) {
+function SendEmailCard({ userId, userEmail }: { userId: string; userEmail: string }) {
   const { data: templates } = useAdminEmailTemplates();
   const [templateId, setTemplateId] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const options =
-    (templates ?? []).map((t) => ({ value: t.id, label: t.name })) ?? [];
+  const options = (templates ?? []).map((t) => ({ value: t.id, label: t.name })) ?? [];
   const chosen = (templates ?? []).find((t) => t.id === templateId) ?? null;
 
   return (
@@ -548,7 +515,9 @@ function SendEmailCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-xs" htmlFor="tpl">Template</Label>
+          <Label className="text-xs" htmlFor="tpl">
+            Template
+          </Label>
           <Select
             id="tpl"
             value={templateId}
@@ -611,8 +580,7 @@ function EmailPreviewModal({
       toast.success("Email sent.");
       onClose();
     } catch (err) {
-      const msg = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail;
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       toast.error(msg ?? "Failed to send.");
     }
   }
@@ -646,9 +614,7 @@ function EmailPreviewModal({
                 <div className="text-xs text-muted-foreground">To</div>
                 <div>
                   {preview.recipient_name && (
-                    <span className="font-medium">
-                      {preview.recipient_name}
-                    </span>
+                    <span className="font-medium">{preview.recipient_name}</span>
                   )}{" "}
                   &lt;{preview.recipient_email}&gt;
                 </div>
@@ -680,12 +646,7 @@ function EmailPreviewModal({
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            variant="brand"
-            size="sm"
-            onClick={submit}
-            disabled={send.isPending || !preview}
-          >
+          <Button variant="brand" size="sm" onClick={submit} disabled={send.isPending || !preview}>
             {send.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Send email
           </Button>
@@ -728,19 +689,11 @@ function UserLlmSpendCard({ userId }: { userId: string }) {
 // impersonation audit event). Also exposes PDF + DOCX download —
 // same renderers as the student, one audit event per action.
 
-function CvPreviewCard({
-  userId,
-  userFullName,
-}: {
-  userId: string;
-  userFullName: string;
-}) {
+function CvPreviewCard({ userId, userFullName }: { userId: string; userFullName: string }) {
   const [loaded, setLoaded] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [docxBusy, setDocxBusy] = useState(false);
-  const { data, isLoading, error, refetch } = useAdminUserCvPreview(
-    loaded ? userId : undefined,
-  );
+  const { data, isLoading, error, refetch } = useAdminUserCvPreview(loaded ? userId : undefined);
 
   async function download(format: "pdf" | "docx") {
     const setBusy = format === "pdf" ? setPdfBusy : setDocxBusy;
@@ -772,12 +725,7 @@ function CvPreviewCard({
         <CardTitle className="text-base">CV preview</CardTitle>
         <div className="flex gap-2">
           {loaded && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => void refetch()}
-              disabled={isLoading}
-            >
+            <Button variant="ghost" size="sm" onClick={() => void refetch()} disabled={isLoading}>
               Reload
             </Button>
           )}
@@ -803,21 +751,17 @@ function CvPreviewCard({
         {!loaded ? (
           <div className="flex items-center justify-between rounded-md border bg-muted/20 p-3">
             <div className="text-xs text-muted-foreground">
-              Preview renders the CV as it would render for the student — no
-              impersonation, no session side effects.
+              Preview renders the CV as it would render for the student — no impersonation, no
+              session side effects.
             </div>
             <Button size="sm" onClick={() => setLoaded(true)}>
               Load preview
             </Button>
           </div>
         ) : isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Loading…
-          </div>
+          <div className="p-8 text-center text-sm text-muted-foreground">Loading…</div>
         ) : error ? (
-          <div className="p-4 text-sm text-destructive">
-            Could not load preview.
-          </div>
+          <div className="p-4 text-sm text-destructive">Could not load preview.</div>
         ) : data ? (
           <div className="overflow-hidden rounded-md border bg-white">
             <iframe
@@ -852,9 +796,7 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
         {isLoading ? (
           <div className="text-xs text-muted-foreground">Loading…</div>
         ) : items.length === 0 ? (
-          <div className="text-xs text-muted-foreground">
-            No internships yet.
-          </div>
+          <div className="text-xs text-muted-foreground">No internships yet.</div>
         ) : (
           items.map((it) => {
             const d = parseInternshipAuditDetails(it.details);
@@ -885,14 +827,12 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
                     </div>
                     {responsibilities && (
                       <div className="mt-1 whitespace-pre-wrap rounded bg-muted/30 p-2 text-xs">
-                        <span className="font-medium">Responsibilities:</span>{" "}
-                        {responsibilities}
+                        <span className="font-medium">Responsibilities:</span> {responsibilities}
                       </div>
                     )}
                     {achievements && (
                       <div className="mt-1 whitespace-pre-wrap rounded bg-muted/30 p-2 text-xs">
-                        <span className="font-medium">Achievements:</span>{" "}
-                        {achievements}
+                        <span className="font-medium">Achievements:</span> {achievements}
                       </div>
                     )}
                     {tools.length > 0 && (
@@ -902,8 +842,7 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
                     )}
                     {skills.length > 0 && (
                       <div className="mt-1 text-xs">
-                        <span className="font-medium">Skills:</span>{" "}
-                        {skills.join(", ")}
+                        <span className="font-medium">Skills:</span> {skills.join(", ")}
                       </div>
                     )}
                   </div>
@@ -916,9 +855,7 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
                         {aiSummary}
                       </div>
                     ) : (
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        No AI summary saved.
-                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">No AI summary saved.</div>
                     )}
                     {aiBullets.length > 0 ? (
                       <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
@@ -927,9 +864,7 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
                         ))}
                       </ul>
                     ) : (
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        No AI bullets saved.
-                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">No AI bullets saved.</div>
                     )}
                   </div>
                 </div>
@@ -942,12 +877,8 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
   );
 }
 
-function _formatEntryRange(
-  start: string | null,
-  end: string | null,
-  isCurrent: boolean,
-): string {
-  const e = isCurrent ? "Present" : end ?? "";
+function _formatEntryRange(start: string | null, end: string | null, isCurrent: boolean): string {
+  const e = isCurrent ? "Present" : (end ?? "");
   const s = start ?? "";
   if (s && e) return `${s} – ${e}`;
   return s || e;

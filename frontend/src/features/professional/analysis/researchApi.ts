@@ -8,10 +8,7 @@ export function useResearchClient(jobId: string | undefined) {
   return useMutation({
     mutationFn: async (url: string): Promise<CompanyResearch> => {
       if (!jobId) throw new Error("missing job id");
-      const { data } = await api.post<CompanyResearch>(
-        `/jobs/${jobId}/research`,
-        { url },
-      );
+      const { data } = await api.post<CompanyResearch>(`/jobs/${jobId}/research`, { url });
       return data;
     },
     onSuccess: () => {

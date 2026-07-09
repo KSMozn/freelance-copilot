@@ -8,10 +8,7 @@ import type {
   CoachWarning,
 } from "@/features/student-wizard/coaching/coachingTypes";
 import { DateOfBirthPicker } from "@/features/student-wizard/DateOfBirthPicker";
-import {
-  useStudentProfile,
-  useUpdateStudentProfile,
-} from "@/features/student-wizard/studentApi";
+import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import type { StudentProfileUpdate } from "@/features/student-wizard/studentTypes";
 import { useAutoSave } from "@/shared/hooks/useAutoSave";
 import { Button } from "@/shared/ui/button";
@@ -24,12 +21,8 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
   const coachEmail = useCoachEmail();
   const authUser = useAuthStore((s) => s.user);
 
-  const [fullName, setFullName] = useState(
-    profile?.full_name ?? authUser?.full_name ?? "",
-  );
-  const [email, setEmail] = useState(
-    profile?.professional_email ?? authUser?.email ?? "",
-  );
+  const [fullName, setFullName] = useState(profile?.full_name ?? authUser?.full_name ?? "");
+  const [email, setEmail] = useState(profile?.professional_email ?? authUser?.email ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
   const [location, setLocation] = useState(profile?.location ?? "");
   const [dob, setDob] = useState<string | null>(profile?.date_of_birth ?? null);
@@ -44,7 +37,7 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
     setPhone((current) => current || profile.phone || "");
     setLocation((current) => current || profile.location || "");
     setDob((current) => current || profile.date_of_birth || null);
-  }, [profile?.user_id]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useAutoSave(
     { fullName, email, phone, location, dob },
@@ -113,8 +106,8 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
         />
         <p className="text-xs text-muted-foreground">
           Pre-filled with your sign-in email
-          {authUser?.email ? ` (${authUser.email})` : ""}. Edit if you'd
-          rather use a school address.
+          {authUser?.email ? ` (${authUser.email})` : ""}. Edit if you'd rather use a school
+          address.
         </p>
         <CoachWarnings
           warnings={emailWarnings}

@@ -102,18 +102,14 @@ export function useAdminUser(id: string | undefined) {
   });
 }
 
-export function useAdminUserEntries(
-  id: string | undefined,
-  kind?: string,
-) {
+export function useAdminUserEntries(id: string | undefined, kind?: string) {
   return useQuery({
     queryKey: ["admin", "user", id ?? "none", "entries", kind ?? ""] as const,
     enabled: !!id,
     queryFn: async () => {
-      const { data } = await api.get<AdminEntriesResponse>(
-        `/admin/users/${id}/entries`,
-        { params: kind ? { kind } : undefined },
-      );
+      const { data } = await api.get<AdminEntriesResponse>(`/admin/users/${id}/entries`, {
+        params: kind ? { kind } : undefined,
+      });
       return data;
     },
   });
@@ -177,9 +173,7 @@ export function useAdminResetWizard() {
 export function useAdminImpersonate() {
   return useMutation({
     mutationFn: async (id: string): Promise<AdminImpersonateResponse> => {
-      const { data } = await api.post<AdminImpersonateResponse>(
-        `/admin/users/${id}/impersonate`,
-      );
+      const { data } = await api.post<AdminImpersonateResponse>(`/admin/users/${id}/impersonate`);
       return data;
     },
   });
@@ -210,9 +204,7 @@ export function useAdminCvTemplates() {
   return useQuery({
     queryKey: CV_TEMPLATES_KEY,
     queryFn: async () => {
-      const { data } = await api.get<AdminCvTemplateListResponse>(
-        "/admin/cv-templates",
-      );
+      const { data } = await api.get<AdminCvTemplateListResponse>("/admin/cv-templates");
       return data;
     },
   });
@@ -228,10 +220,7 @@ export function useUpdateAdminCvTemplate() {
       slug: string;
       payload: AdminCvTemplateUpdate;
     }): Promise<AdminCvTemplate> => {
-      const { data } = await api.patch<AdminCvTemplate>(
-        `/admin/cv-templates/${slug}`,
-        payload,
-      );
+      const { data } = await api.patch<AdminCvTemplate>(`/admin/cv-templates/${slug}`, payload);
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CV_TEMPLATES_KEY }),
@@ -259,9 +248,7 @@ export interface AdminEditStudentProfilePayload {
 export function useAdminEditStudentProfile(userId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (
-      payload: AdminEditStudentProfilePayload,
-    ): Promise<AdminUserDetail> => {
+    mutationFn: async (payload: AdminEditStudentProfilePayload): Promise<AdminUserDetail> => {
       const { data } = await api.patch<AdminUserDetail>(
         `/admin/users/${userId}/student-profile`,
         payload,
@@ -282,27 +269,20 @@ interface AdminCvPreview {
   template_slug: string;
 }
 
-export function useAdminUserCvPreview(
-  userId: string | undefined,
-  templateSlug?: string,
-) {
+export function useAdminUserCvPreview(userId: string | undefined, templateSlug?: string) {
   return useQuery({
     queryKey: ["admin", "user", userId ?? "none", "cv-preview", templateSlug ?? ""] as const,
     enabled: !!userId,
     queryFn: async () => {
-      const { data } = await api.get<AdminCvPreview>(
-        `/admin/users/${userId}/cv/preview`,
-        { params: templateSlug ? { template: templateSlug } : undefined },
-      );
+      const { data } = await api.get<AdminCvPreview>(`/admin/users/${userId}/cv/preview`, {
+        params: templateSlug ? { template: templateSlug } : undefined,
+      });
       return data;
     },
   });
 }
 
-export async function downloadAdminUserCvPdf(
-  userId: string,
-  templateSlug?: string,
-): Promise<Blob> {
+export async function downloadAdminUserCvPdf(userId: string, templateSlug?: string): Promise<Blob> {
   const res = await api.get(`/admin/users/${userId}/cv.pdf`, {
     responseType: "blob",
     params: templateSlug ? { template: templateSlug } : undefined,
@@ -351,10 +331,7 @@ export function useAdminLlmCalls(params: {
   });
 }
 
-export function useAdminUserLlmSpend(
-  userId: string | undefined,
-  sinceDays: number = 30,
-) {
+export function useAdminUserLlmSpend(userId: string | undefined, sinceDays: number = 30) {
   return useQuery({
     queryKey: ["admin", "user", userId ?? "none", "llm-spend", sinceDays] as const,
     enabled: !!userId,
@@ -381,16 +358,13 @@ export function useAdminEmailSends(params: {
   return useQuery({
     queryKey: EMAILS_KEY(params.templateId, params.status),
     queryFn: async () => {
-      const { data } = await api.get<AdminEmailSendsResponse>(
-        "/admin/emails",
-        {
-          params: {
-            template_id: params.templateId || undefined,
-            status: params.status || undefined,
-            limit: params.limit ?? 200,
-          },
+      const { data } = await api.get<AdminEmailSendsResponse>("/admin/emails", {
+        params: {
+          template_id: params.templateId || undefined,
+          status: params.status || undefined,
+          limit: params.limit ?? 200,
         },
-      );
+      });
       return data;
     },
   });
@@ -398,29 +372,20 @@ export function useAdminEmailSends(params: {
 
 // ---- Feedback triage ---------------------------------------------------
 
-const FEEDBACK_KEY = (
-  kind: string | undefined,
-  resolved: boolean | undefined,
-) => ["admin", "feedback", kind ?? "", resolved ?? "all"] as const;
+const FEEDBACK_KEY = (kind: string | undefined, resolved: boolean | undefined) =>
+  ["admin", "feedback", kind ?? "", resolved ?? "all"] as const;
 
-export function useAdminFeedback(params: {
-  kind?: string;
-  resolved?: boolean;
-  limit?: number;
-}) {
+export function useAdminFeedback(params: { kind?: string; resolved?: boolean; limit?: number }) {
   return useQuery({
     queryKey: FEEDBACK_KEY(params.kind, params.resolved),
     queryFn: async () => {
-      const { data } = await api.get<AdminFeedbackListResponse>(
-        "/admin/feedback",
-        {
-          params: {
-            kind: params.kind || undefined,
-            resolved: params.resolved,
-            limit: params.limit ?? 200,
-          },
+      const { data } = await api.get<AdminFeedbackListResponse>("/admin/feedback", {
+        params: {
+          kind: params.kind || undefined,
+          resolved: params.resolved,
+          limit: params.limit ?? 200,
         },
-      );
+      });
       return data;
     },
   });
@@ -430,9 +395,7 @@ export function useAdminResolveFeedback() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string): Promise<AdminFeedbackItem> => {
-      const { data } = await api.post<AdminFeedbackItem>(
-        `/admin/feedback/${id}/resolve`,
-      );
+      const { data } = await api.post<AdminFeedbackItem>(`/admin/feedback/${id}/resolve`);
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "feedback"] }),
@@ -443,9 +406,7 @@ export function useAdminUnresolveFeedback() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string): Promise<AdminFeedbackItem> => {
-      const { data } = await api.post<AdminFeedbackItem>(
-        `/admin/feedback/${id}/unresolve`,
-      );
+      const { data } = await api.post<AdminFeedbackItem>(`/admin/feedback/${id}/unresolve`);
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "feedback"] }),
@@ -460,27 +421,21 @@ export function useAdminEmailTemplates() {
   return useQuery({
     queryKey: EMAIL_TEMPLATES_KEY,
     queryFn: async () => {
-      const { data } = await api.get<EmailTemplateSpec[]>(
-        "/admin/email-templates",
-      );
+      const { data } = await api.get<EmailTemplateSpec[]>("/admin/email-templates");
       return data;
     },
     staleTime: Infinity,
   });
 }
 
-export function useAdminEmailPreview(
-  userId: string | null,
-  templateId: string | null,
-) {
+export function useAdminEmailPreview(userId: string | null, templateId: string | null) {
   return useQuery({
     queryKey: ["admin", "email-preview", userId, templateId] as const,
     enabled: !!userId && !!templateId,
     queryFn: async () => {
-      const { data } = await api.get<EmailPreviewResponse>(
-        `/admin/users/${userId}/email-preview`,
-        { params: { template_id: templateId } },
-      );
+      const { data } = await api.get<EmailPreviewResponse>(`/admin/users/${userId}/email-preview`, {
+        params: { template_id: templateId },
+      });
       return data;
     },
   });
@@ -496,10 +451,9 @@ export function useAdminSendEmail() {
       userId: string;
       templateId: string;
     }): Promise<AdminActionResult> => {
-      const { data } = await api.post<AdminActionResult>(
-        `/admin/users/${userId}/send-email`,
-        { template_id: templateId },
-      );
+      const { data } = await api.post<AdminActionResult>(`/admin/users/${userId}/send-email`, {
+        template_id: templateId,
+      });
       return data;
     },
     onSuccess: () => {
@@ -524,13 +478,14 @@ export function useAdminSendEmailBulk() {
       templateId: string;
       dryRun: boolean;
     }): Promise<SendEmailBulkResponse | SendEmailBulkDryRunResponse> => {
-      const { data } = await api.post<
-        SendEmailBulkResponse | SendEmailBulkDryRunResponse
-      >("/admin/users/send-email-bulk", {
-        user_ids: userIds,
-        template_id: templateId,
-        dry_run: dryRun,
-      });
+      const { data } = await api.post<SendEmailBulkResponse | SendEmailBulkDryRunResponse>(
+        "/admin/users/send-email-bulk",
+        {
+          user_ids: userIds,
+          template_id: templateId,
+          dry_run: dryRun,
+        },
+      );
       return data;
     },
     onSuccess: (_data, variables) => {

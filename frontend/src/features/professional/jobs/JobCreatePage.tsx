@@ -129,7 +129,9 @@ export function JobCreatePage() {
                   type="number"
                   step="0.01"
                   value={form.budget_min ?? ""}
-                  onChange={(e) => set("budget_min", e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) =>
+                    set("budget_min", e.target.value ? Number(e.target.value) : null)
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -139,7 +141,9 @@ export function JobCreatePage() {
                   type="number"
                   step="0.01"
                   value={form.budget_max ?? ""}
-                  onChange={(e) => set("budget_max", e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) =>
+                    set("budget_max", e.target.value ? Number(e.target.value) : null)
+                  }
                 />
               </div>
               <div className="space-y-2">

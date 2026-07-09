@@ -124,7 +124,10 @@ export function ApplicationDetailPage() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <Link to="/applications" className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground">
+          <Link
+            to="/applications"
+            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Applications
           </Link>
           <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight">
@@ -132,9 +135,7 @@ export function ApplicationDetailPage() {
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary">{STATUS_LABEL[app.status]}</Badge>
-            {app.contract_amount && (
-              <span>contract ${app.contract_amount}</span>
-            )}
+            {app.contract_amount && <span>contract ${app.contract_amount}</span>}
             <Link
               to={`/jobs/${app.job_id}`}
               className="inline-flex items-center text-primary hover:underline"
@@ -332,16 +333,16 @@ export function ApplicationDetailPage() {
             )}
             {snapshot.portfolio.length > 0 && (
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Portfolio</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Portfolio
+                </div>
                 <ul className="space-y-2">
                   {snapshot.portfolio.map((p) => (
                     <li key={p.id} className="rounded-md border border-border/70 p-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium">{p.title}</span>
                         {p.match_score != null && (
-                          <Badge variant="outline">
-                            match {Math.round(p.match_score * 100)}%
-                          </Badge>
+                          <Badge variant="outline">match {Math.round(p.match_score * 100)}%</Badge>
                         )}
                       </div>
                       {p.talking_points.length > 0 && (
@@ -372,9 +373,7 @@ export function ApplicationDetailPage() {
               {history.map((h) => (
                 <li
                   key={h.id}
-                  className={cn(
-                    "rounded-md border border-border/70 px-3 py-2 text-sm",
-                  )}
+                  className={cn("rounded-md border border-border/70 px-3 py-2 text-sm")}
                 >
                   <div className="flex items-baseline justify-between">
                     <span>

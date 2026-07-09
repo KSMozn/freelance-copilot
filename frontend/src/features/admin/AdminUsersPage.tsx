@@ -60,7 +60,7 @@ export function AdminUsersPage() {
   const college = params.get("college") ?? "";
   const signedUpAfter = params.get("signed_up_after") ?? "";
   const signedUpBefore = params.get("signed_up_before") ?? "";
-  const stuckAtLabel = stuckAt ? STUCK_AT_LABELS[stuckAt] ?? stuckAt : null;
+  const stuckAtLabel = stuckAt ? (STUCK_AT_LABELS[stuckAt] ?? stuckAt) : null;
 
   function updateFilter(key: string, value: string | null) {
     const next = new URLSearchParams(params);
@@ -105,12 +105,8 @@ export function AdminUsersPage() {
     emailVerified,
     hasCv,
     college: college || undefined,
-    signedUpAfter: signedUpAfter
-      ? new Date(signedUpAfter).toISOString()
-      : undefined,
-    signedUpBefore: signedUpBefore
-      ? new Date(signedUpBefore).toISOString()
-      : undefined,
+    signedUpAfter: signedUpAfter ? new Date(signedUpAfter).toISOString() : undefined,
+    signedUpBefore: signedUpBefore ? new Date(signedUpBefore).toISOString() : undefined,
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -118,8 +114,7 @@ export function AdminUsersPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / size)) : 1;
 
   const pageIds = useMemo(() => (data?.items ?? []).map((u) => u.id), [data]);
-  const allSelectedOnPage =
-    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const someSelectedOnPage = pageIds.some((id) => selected.has(id));
 
   function toggleOne(id: string, checked: boolean) {
@@ -183,9 +178,7 @@ export function AdminUsersPage() {
           </div>
           <div className="w-40">
             <Select
-              value={
-                emailVerified === undefined ? "" : String(emailVerified)
-              }
+              value={emailVerified === undefined ? "" : String(emailVerified)}
               onChange={(e) => updateFilter("email_verified", e.target.value)}
               options={[
                 { value: "", label: "Any verification" },
@@ -255,19 +248,11 @@ export function AdminUsersPage() {
         {selected.size > 0 && (
           <div className="ml-auto flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="font-medium">{selected.size}</span> selected
-            <Button
-              size="sm"
-              variant="brand"
-              onClick={() => setBulkOpen(true)}
-            >
+            <Button size="sm" variant="brand" onClick={() => setBulkOpen(true)}>
               <Mail className="h-4 w-4" />
               Send email…
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setSelected(new Set())}
-            >
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
               Clear
             </Button>
           </div>
@@ -290,9 +275,7 @@ export function AdminUsersPage() {
                         type="checkbox"
                         checked={allSelectedOnPage}
                         ref={(el) => {
-                          if (el)
-                            el.indeterminate =
-                              !allSelectedOnPage && someSelectedOnPage;
+                          if (el) el.indeterminate = !allSelectedOnPage && someSelectedOnPage;
                         }}
                         onChange={(e) => toggleAllOnPage(e.target.checked)}
                         aria-label="Select all on this page"
@@ -322,10 +305,7 @@ export function AdminUsersPage() {
                         />
                       </Td>
                       <Td>
-                        <Link
-                          to={`/users/${u.id}`}
-                          className="text-primary hover:underline"
-                        >
+                        <Link to={`/users/${u.id}`} className="text-primary hover:underline">
                           {u.email}
                         </Link>
                         {u.is_superuser && (
@@ -349,9 +329,15 @@ export function AdminUsersPage() {
                           "—"
                         )}
                       </Td>
-                      <Td><PresenceBadge value={u.has_linkedin} /></Td>
-                      <Td><PresenceBadge value={u.has_github} /></Td>
-                      <Td><PresenceBadge value={u.has_downloaded_cv} /></Td>
+                      <Td>
+                        <PresenceBadge value={u.has_linkedin} />
+                      </Td>
+                      <Td>
+                        <PresenceBadge value={u.has_github} />
+                      </Td>
+                      <Td>
+                        <PresenceBadge value={u.has_downloaded_cv} />
+                      </Td>
                       <Td className="whitespace-nowrap">
                         {u.last_login_at ? fmtRelative(u.last_login_at) : "—"}
                       </Td>
@@ -446,14 +432,11 @@ function BulkEmailModal({
       if (res.sent > 0) {
         toast.success(`Sent ${res.sent} email${res.sent === 1 ? "" : "s"}.`);
       } else {
-        toast.error(
-          `0 sent. ${res.skipped} skipped, ${res.failed.length} failed.`,
-        );
+        toast.error(`0 sent. ${res.skipped} skipped, ${res.failed.length} failed.`);
       }
       onSent();
     } catch (err) {
-      const msg = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail;
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       toast.error(msg ?? "Bulk send failed.");
     }
   }
@@ -471,8 +454,7 @@ function BulkEmailModal({
       >
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div className="text-sm font-semibold">
-            Send email to {userIds.length}{" "}
-            {userIds.length === 1 ? "user" : "users"}
+            Send email to {userIds.length} {userIds.length === 1 ? "user" : "users"}
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
             Close
@@ -543,18 +525,18 @@ function BulkEmailModal({
               {recipients && (
                 <div className="space-y-2">
                   <div className="rounded-md border border-primary/40 bg-primary/10 p-3 text-xs">
-                    <span className="font-semibold">Preview only —</span>{" "}
-                    nothing has been sent yet. Review the list below, then
-                    click <span className="font-semibold">Send to {recipients.length}</span>{" "}
-                    at the bottom to deliver.
+                    <span className="font-semibold">Preview only —</span> nothing has been sent yet.
+                    Review the list below, then click{" "}
+                    <span className="font-semibold">Send to {recipients.length}</span> at the bottom
+                    to deliver.
                   </div>
                   {recentCount > 0 && (
                     <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
                       <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
                       <div>
-                        <span className="font-medium">{recentCount}</span> of
-                        these users received this template in the last 7 days.
-                        Sending again is allowed — just double-check first.
+                        <span className="font-medium">{recentCount}</span> of these users received
+                        this template in the last 7 days. Sending again is allowed — just
+                        double-check first.
                       </div>
                     </div>
                   )}

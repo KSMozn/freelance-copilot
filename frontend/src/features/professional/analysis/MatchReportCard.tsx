@@ -2,13 +2,7 @@ import { Award, BookOpen, GitPullRequest, Lightbulb, RefreshCw, Star, Wrench } f
 
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   useMatchReport,
   useRebuildMatchReport,
@@ -52,9 +46,7 @@ export function MatchReportCard({ jobId }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Match Report</CardTitle>
-          <CardDescription>
-            Could not compute a report (analyse the job first).
-          </CardDescription>
+          <CardDescription>Could not compute a report (analyse the job first).</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -65,7 +57,7 @@ export function MatchReportCard({ jobId }: Props) {
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               Match Report
               <ChanceBadge chance={data.interview_chance} />
             </CardTitle>
@@ -81,7 +73,7 @@ export function MatchReportCard({ jobId }: Props) {
             onClick={() => rebuild.mutate(activePersonaId ?? null)}
             disabled={rebuild.isPending}
           >
-            <RefreshCw className={`h-3 w-3 mr-1 ${rebuild.isPending ? "animate-spin" : ""}`} />
+            <RefreshCw className={`mr-1 h-3 w-3 ${rebuild.isPending ? "animate-spin" : ""}`} />
             Re-run
           </Button>
         </div>
@@ -90,9 +82,7 @@ export function MatchReportCard({ jobId }: Props) {
         <OverallScore data={data} />
         <DimensionGrid data={data} />
         <Recommendations recommendations={data.missing_recommendations} />
-        {data.rationale.length > 0 && (
-          <Rationale rationale={data.rationale} />
-        )}
+        {data.rationale.length > 0 && <Rationale rationale={data.rationale} />}
       </CardContent>
     </Card>
   );
@@ -103,11 +93,9 @@ export function MatchReportCard({ jobId }: Props) {
 function OverallScore({ data }: { data: MatchReport }) {
   const score = data.overall_match;
   return (
-    <div className="flex items-end justify-between gap-4 pb-3 border-b">
+    <div className="flex items-end justify-between gap-4 border-b pb-3">
       <div>
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          Overall match
-        </p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Overall match</p>
         <p className="text-4xl font-semibold tabular-nums">
           {score}
           <span className="text-xl text-muted-foreground">/100</span>
@@ -143,25 +131,19 @@ function DimensionRow({ label, value }: { label: string; value: number | null })
     return (
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="text-xs text-muted-foreground italic">
-          not scored for this role
-        </span>
+        <span className="text-xs italic text-muted-foreground">not scored for this role</span>
       </div>
     );
   }
-  const color =
-    value >= 70 ? "bg-emerald-500" : value >= 40 ? "bg-amber-500" : "bg-destructive";
+  const color = value >= 70 ? "bg-emerald-500" : value >= 40 ? "bg-amber-500" : "bg-destructive";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
         <span>{label}</span>
-        <span className="tabular-nums font-medium">{value}</span>
+        <span className="font-medium tabular-nums">{value}</span>
       </div>
-      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className={`h-full ${color} transition-[width]`}
-          style={{ width: `${value}%` }}
-        />
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className={`h-full ${color} transition-[width]`} style={{ width: `${value}%` }} />
       </div>
     </div>
   );
@@ -169,13 +151,19 @@ function DimensionRow({ label, value }: { label: string; value: number | null })
 
 function ChanceBadge({ chance }: { chance: MatchReport["interview_chance"] }) {
   const cfg = {
-    high: { label: "High chance", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
-    medium: { label: "Medium chance", className: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+    high: {
+      label: "High chance",
+      className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    },
+    medium: {
+      label: "Medium chance",
+      className: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    },
     low: { label: "Low chance", className: "bg-destructive/10 text-destructive" },
   }[chance];
   return (
     <span
-      className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full ${cfg.className}`}
+      className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${cfg.className}`}
     >
       {cfg.label}
     </span>
@@ -194,17 +182,15 @@ function Recommendations({ recommendations }: { recommendations: GapRecommendati
   }
   return (
     <div className="space-y-2">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-        Close the gap
-      </p>
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">Close the gap</p>
       <ul className="space-y-2">
         {recommendations.map((rec, i) => (
           <li
             key={`${rec.skill}-${rec.kind}-${i}`}
-            className="rounded-md border bg-muted/30 p-3 text-sm space-y-1"
+            className="space-y-1 rounded-md border bg-muted/30 p-3 text-sm"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium flex items-center gap-2">
+              <span className="flex items-center gap-2 font-medium">
                 <KindIcon kind={rec.kind} />
                 {rec.skill}
               </span>
@@ -252,7 +238,7 @@ function kindLabel(kind: RecommendationKind): string {
 function Rationale({ rationale }: { rationale: string[] }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+      <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
         <Lightbulb className="h-3 w-3" />
         Rationale
       </p>

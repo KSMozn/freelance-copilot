@@ -10,9 +10,7 @@ export function useMatchPortfolio(jobId: string | undefined) {
   return useMutation({
     mutationFn: async (): Promise<PortfolioMatchesResponse> => {
       if (!jobId) throw new Error("missing job id");
-      const { data } = await api.post<PortfolioMatchesResponse>(
-        `/jobs/${jobId}/match-portfolio`,
-      );
+      const { data } = await api.post<PortfolioMatchesResponse>(`/jobs/${jobId}/match-portfolio`);
       return data;
     },
     onSuccess: (data) => {

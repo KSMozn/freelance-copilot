@@ -25,9 +25,7 @@ export function useGenerateLinkedIn() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (): Promise<LinkedInGenerated> => {
-      const { data } = await api.post<LinkedInGenerated>(
-        "/students/career-pack/linkedin/generate",
-      );
+      const { data } = await api.post<LinkedInGenerated>("/students/career-pack/linkedin/generate");
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CAREER_PACK_KEY }),
@@ -37,10 +35,7 @@ export function useGenerateLinkedIn() {
 export function useReviewLinkedIn() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: {
-      linkedinUrl: string;
-      file: File;
-    }): Promise<LinkedInReview> => {
+    mutationFn: async (payload: { linkedinUrl: string; file: File }): Promise<LinkedInReview> => {
       const form = new FormData();
       form.append("linkedin_url", payload.linkedinUrl);
       form.append("file", payload.file);
@@ -59,9 +54,7 @@ export function useGenerateGitHub() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (): Promise<GitHubGenerated> => {
-      const { data } = await api.post<GitHubGenerated>(
-        "/students/career-pack/github/generate",
-      );
+      const { data } = await api.post<GitHubGenerated>("/students/career-pack/github/generate");
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CAREER_PACK_KEY }),
@@ -72,10 +65,9 @@ export function useReviewGitHub() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (identifier: string): Promise<GitHubReview> => {
-      const { data } = await api.post<GitHubReview>(
-        "/students/career-pack/github/review",
-        { identifier },
-      );
+      const { data } = await api.post<GitHubReview>("/students/career-pack/github/review", {
+        identifier,
+      });
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: CAREER_PACK_KEY }),
@@ -89,10 +81,7 @@ export function useClearCareerPack() {
       side: "linkedin" | "github";
       kind: "generated" | "recommendations";
     }): Promise<CareerPack> => {
-      const { data } = await api.post<CareerPack>(
-        "/students/career-pack/clear",
-        payload,
-      );
+      const { data } = await api.post<CareerPack>("/students/career-pack/clear", payload);
       return data;
     },
     onSuccess: (data) => qc.setQueryData(CAREER_PACK_KEY, data),

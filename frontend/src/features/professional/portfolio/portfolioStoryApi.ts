@@ -10,11 +10,9 @@ export function usePortfolioStory(jobId: string | undefined) {
   return useMutation({
     mutationFn: async (): Promise<PortfolioStory | null> => {
       if (!jobId) throw new Error("missing job id");
-      const resp = await api.post<PortfolioStory>(
-        `/jobs/${jobId}/portfolio-story`,
-        undefined,
-        { validateStatus: (s) => s === 200 || s === 204 },
-      );
+      const resp = await api.post<PortfolioStory>(`/jobs/${jobId}/portfolio-story`, undefined, {
+        validateStatus: (s) => s === 200 || s === 204,
+      });
       if (resp.status === 204) return null;
       return resp.data;
     },

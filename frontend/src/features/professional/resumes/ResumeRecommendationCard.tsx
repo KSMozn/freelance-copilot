@@ -5,7 +5,10 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
-import type { ResumeRecommendation, ResumeRecommendationsResponse } from "@/features/professional/apiTypes";
+import type {
+  ResumeRecommendation,
+  ResumeRecommendationsResponse,
+} from "@/features/professional/apiTypes";
 
 function pctColor(score: number): string {
   if (score >= 0.7) return "text-emerald-400";
@@ -21,19 +24,13 @@ function pct(score: number): string {
 function Component({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-foreground/80 tabular-nums">{pct(value)}</div>
+      <div className="tabular-nums text-foreground/80">{pct(value)}</div>
       <div>{label}</div>
     </div>
   );
 }
 
-function RecommendationRow({
-  rec,
-  isTop,
-}: {
-  rec: ResumeRecommendation;
-  isTop: boolean;
-}) {
+function RecommendationRow({ rec, isTop }: { rec: ResumeRecommendation; isTop: boolean }) {
   return (
     <div
       className={cn(
@@ -91,12 +88,8 @@ function RecommendationRow({
 
       {rec.missing_or_weak_skills.length > 0 && (
         <div className="mt-3 text-sm">
-          <span className="text-xs uppercase tracking-wider text-amber-400">
-            Missing / weak:
-          </span>{" "}
-          <span className="text-muted-foreground">
-            {rec.missing_or_weak_skills.join(", ")}
-          </span>
+          <span className="text-xs uppercase tracking-wider text-amber-400">Missing / weak:</span>{" "}
+          <span className="text-muted-foreground">{rec.missing_or_weak_skills.join(", ")}</span>
         </div>
       )}
 
@@ -170,8 +163,8 @@ export function ResumeRecommendationCard({
           </div>
         ) : !data ? (
           <div className="text-sm text-muted-foreground">
-            Click <span className="font-medium text-foreground">Recommend resume</span> to rank
-            your resume profiles against this job.
+            Click <span className="font-medium text-foreground">Recommend resume</span> to rank your
+            resume profiles against this job.
           </div>
         ) : data.recommendations.length === 0 ? (
           <div className="text-sm text-muted-foreground">

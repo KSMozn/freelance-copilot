@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {
-  useStudentProfile,
-  useUpdateStudentProfile,
-} from "@/features/student-wizard/studentApi";
+import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import {
   DEGREES,
   loadUniversities,
@@ -53,7 +50,7 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
     setDegree((cur) => cur || profile.degree || "");
     setMajor((cur) => cur || profile.major || "");
     setYear((cur) => cur || (profile.graduation_year ? String(profile.graduation_year) : ""));
-  }, [profile?.user_id]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useAutoSave(
     { university, department, degree, major, year },
@@ -94,9 +91,7 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
           placeholder="Start typing…"
           maxResults={25}
         />
-        {!uniLoaded && (
-          <p className="text-xs text-muted-foreground">Loading more suggestions…</p>
-        )}
+        {!uniLoaded && <p className="text-xs text-muted-foreground">Loading more suggestions…</p>}
       </div>
       <div className="space-y-2">
         <Label>Faculty / department (optional)</Label>
@@ -113,10 +108,7 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
             value={degree}
             onChange={(e) => setDegree(e.target.value)}
             placeholder="Select a degree…"
-            options={[
-              { value: "", label: "—" },
-              ...DEGREES.map((d) => ({ value: d, label: d })),
-            ]}
+            options={[{ value: "", label: "—" }, ...DEGREES.map((d) => ({ value: d, label: d }))]}
           />
         </div>
         <div className="space-y-2">

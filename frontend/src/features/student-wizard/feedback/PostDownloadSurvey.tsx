@@ -16,10 +16,7 @@ interface PostDownloadSurveyProps {
  * student downloads a CV. Asks for a 1..5 star rating + optional
  * comment. Both Send and Skip dismiss the card for the current session.
  */
-export function PostDownloadSurvey({
-  templateSlug,
-  onDismiss,
-}: PostDownloadSurveyProps) {
+export function PostDownloadSurvey({ templateSlug, onDismiss }: PostDownloadSurveyProps) {
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [hover, setHover] = useState<number | null>(null);
@@ -65,11 +62,7 @@ export function PostDownloadSurvey({
             onClick={() => setRating(n)}
             className="text-2xl leading-none transition"
           >
-            <span
-              className={
-                n <= highlightTo ? "text-amber-500" : "text-muted-foreground/40"
-              }
-            >
+            <span className={n <= highlightTo ? "text-amber-500" : "text-muted-foreground/40"}>
               ★
             </span>
           </button>
@@ -85,11 +78,7 @@ export function PostDownloadSurvey({
         className="mt-3 min-h-[64px]"
       />
       <div className="mt-3 flex justify-end">
-        <Button
-          size="sm"
-          onClick={() => void send()}
-          disabled={!rating || submit.isPending}
-        >
+        <Button size="sm" onClick={() => void send()} disabled={!rating || submit.isPending}>
           {submit.isPending ? "Sending…" : "Send"}
         </Button>
       </div>

@@ -4,11 +4,7 @@ import { api } from "@/app/apiClient";
 import { useAuthStore } from "@/features/auth/authStore";
 
 export type ProposalTone =
-  | "pragmatic"
-  | "technical_deep"
-  | "executive"
-  | "consultative"
-  | "empathetic";
+  "pragmatic" | "technical_deep" | "executive" | "consultative" | "empathetic";
 
 export interface PersonaArchetype {
   id: string;
@@ -109,9 +105,7 @@ export function useSetDefaultPersona() {
   const setActivePersonaId = useAuthStore((s) => s.setActivePersonaId);
   return useMutation({
     mutationFn: async (personaId: string) => {
-      const { data } = await api.post<Persona>(
-        `/personas/${personaId}/set-default`,
-      );
+      const { data } = await api.post<Persona>(`/personas/${personaId}/set-default`);
       return data;
     },
     onSuccess: (data) => {

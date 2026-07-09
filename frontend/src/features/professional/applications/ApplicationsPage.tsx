@@ -69,28 +69,22 @@ function ApplicationCard({ app }: { app: Application }) {
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
         {oppScore != null && <Badge variant="outline">Score {oppScore}</Badge>}
-        {qualityScore != null && (
-          <Badge variant="outline">Quality {qualityScore}</Badge>
-        )}
+        {qualityScore != null && <Badge variant="outline">Quality {qualityScore}</Badge>}
       </div>
     </Link>
   );
 }
 
-function StatusColumn({
-  status,
-  apps,
-}: {
-  status: ApplicationStatus;
-  apps: Application[];
-}) {
+function StatusColumn({ status, apps }: { status: ApplicationStatus; apps: Application[] }) {
   return (
     <div className="flex w-72 shrink-0 flex-col rounded-md border border-border/70 bg-card/40">
       <div className="flex items-center justify-between px-3 py-2">
-        <span className={cn("rounded px-2 py-0.5 text-xs font-semibold", STATUS_BADGE_STYLE[status])}>
+        <span
+          className={cn("rounded px-2 py-0.5 text-xs font-semibold", STATUS_BADGE_STYLE[status])}
+        >
           {STATUS_LABEL[status]}
         </span>
-        <span className="text-xs text-muted-foreground tabular-nums">{apps.length}</span>
+        <span className="text-xs tabular-nums text-muted-foreground">{apps.length}</span>
       </div>
       <div className="space-y-2 p-2">
         {apps.length === 0 ? (
@@ -136,8 +130,8 @@ export function ApplicationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Applications</h1>
           <p className="text-sm text-muted-foreground">
-            Track applications from drafted to completed. Snapshots preserve the
-            exact proposal, resume, and portfolio context used at submission.
+            Track applications from drafted to completed. Snapshots preserve the exact proposal,
+            resume, and portfolio context used at submission.
           </p>
         </div>
       </div>
@@ -179,8 +173,7 @@ export function ApplicationsPage() {
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             No applications yet. Generate a proposal on a job and click
-            <span className="font-medium text-foreground"> Mark as Applied</span> to
-            create one.
+            <span className="font-medium text-foreground"> Mark as Applied</span> to create one.
           </CardContent>
         </Card>
       ) : (

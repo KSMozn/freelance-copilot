@@ -28,9 +28,7 @@ export function ImpersonateLanding() {
       return;
     }
     try {
-      const decoded = JSON.parse(
-        decodeURIComponent(escape(atob(encoded))),
-      ) as {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(encoded)))) as {
         id: string;
         email: string;
         full_name: string | null;

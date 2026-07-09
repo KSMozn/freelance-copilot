@@ -21,7 +21,7 @@ function pct(score: number): string {
 function Component({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-foreground/80 tabular-nums">{pct(value)}</div>
+      <div className="tabular-nums text-foreground/80">{pct(value)}</div>
       <div>{label}</div>
     </div>
   );
@@ -94,7 +94,7 @@ function MatchRow({ match }: { match: RepositoryMatch }) {
           <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
             <FileCode2 className="h-3.5 w-3.5" /> Relevant files
           </div>
-          <ul className="space-y-0.5 text-xs font-mono">
+          <ul className="space-y-0.5 font-mono text-xs">
             {match.relevant_paths.map((p) => (
               <li key={p}>
                 <a
@@ -197,8 +197,8 @@ export function RepositoryMatchesCard({
           </div>
         ) : !data ? (
           <div className="text-sm text-muted-foreground">
-            Click <span className="font-medium text-foreground">Match repositories</span> to
-            compare this job against your scanned repos.
+            Click <span className="font-medium text-foreground">Match repositories</span> to compare
+            this job against your scanned repos.
           </div>
         ) : data.matches.length === 0 ? (
           <div className="text-sm text-muted-foreground">

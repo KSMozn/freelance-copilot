@@ -5,7 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { cn } from "@/shared/lib/utils";
 import type { JobAnalysis, Severity } from "@/features/professional/apiTypes";
 
-function ChipList({ items, variant = "secondary" }: { items: string[]; variant?: "default" | "secondary" | "outline" }) {
+function ChipList({
+  items,
+  variant = "secondary",
+}: {
+  items: string[];
+  variant?: "default" | "secondary" | "outline";
+}) {
   if (!items.length) return <span className="text-sm text-muted-foreground">—</span>;
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -33,7 +39,8 @@ export function SummaryCard({ analysis }: { analysis: JobAnalysis }) {
           Summary
         </CardTitle>
         <CardDescription className="text-xs">
-          {analysis.provider ? `${analysis.provider} · ${analysis.model ?? ""}` : "n/a"} · prompt {analysis.prompt_version ?? "?"}
+          {analysis.provider ? `${analysis.provider} · ${analysis.model ?? ""}` : "n/a"} · prompt{" "}
+          {analysis.prompt_version ?? "?"}
         </CardDescription>
       </CardHeader>
       <CardContent className="text-sm leading-relaxed">{analysis.summary ?? "—"}</CardContent>
@@ -49,17 +56,23 @@ export function ExtractionCard({ analysis }: { analysis: JobAnalysis }) {
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div>
-          <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Required skills</div>
+          <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+            Required skills
+          </div>
           <ChipList items={analysis.required_skills} />
         </div>
         {analysis.preferred_skills.length > 0 && (
           <div>
-            <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Preferred skills</div>
+            <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+              Preferred skills
+            </div>
             <ChipList items={analysis.preferred_skills} variant="outline" />
           </div>
         )}
         <div>
-          <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Technologies</div>
+          <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+            Technologies
+          </div>
           <ChipList items={analysis.technologies} variant="outline" />
         </div>
         <div className="grid grid-cols-2 gap-3 pt-1 md:grid-cols-4">
@@ -80,7 +93,9 @@ export function ExtractionCard({ analysis }: { analysis: JobAnalysis }) {
         </div>
         {analysis.expected_deliverables.length > 0 && (
           <div>
-            <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">Deliverables</div>
+            <div className="mb-1.5 text-xs uppercase tracking-wide text-muted-foreground">
+              Deliverables
+            </div>
             <ul className="list-disc space-y-1 pl-5">
               {analysis.expected_deliverables.map((d) => (
                 <li key={d}>{d}</li>

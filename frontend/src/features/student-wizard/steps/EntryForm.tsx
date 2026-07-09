@@ -2,10 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useCoachText } from "@/features/student-wizard/coaching/coachingApi";
-import {
-  useCreateStudentEntry,
-  useUpdateStudentEntry,
-} from "@/features/student-wizard/studentApi";
+import { useCreateStudentEntry, useUpdateStudentEntry } from "@/features/student-wizard/studentApi";
 import {
   CERTIFICATE_ISSUERS,
   CERTIFICATES,
@@ -45,20 +42,14 @@ export function EntryForm({
     ? (entry!.details.tech_stack as unknown[]).map(String)
     : [];
   const initialProficiency =
-    typeof entry?.details?.proficiency === "string"
-      ? (entry!.details.proficiency as string)
-      : "";
+    typeof entry?.details?.proficiency === "string" ? (entry!.details.proficiency as string) : "";
   const initialRoles = Array.isArray(entry?.details?.roles)
     ? (entry!.details.roles as unknown[]).map(String)
     : [];
   const initialFeatures =
-    typeof entry?.details?.features === "string"
-      ? (entry!.details.features as string)
-      : "";
+    typeof entry?.details?.features === "string" ? (entry!.details.features as string) : "";
   const initialHardest =
-    typeof entry?.details?.hardest_part === "string"
-      ? (entry!.details.hardest_part as string)
-      : "";
+    typeof entry?.details?.hardest_part === "string" ? (entry!.details.hardest_part as string) : "";
 
   const [title, setTitle] = useState(entry?.title ?? "");
   const [description, setDescription] = useState(entry?.description ?? "");
@@ -138,10 +129,8 @@ export function EntryForm({
       kind,
       title,
       organization: kind === "volunteer" || kind === "certificate" ? organization || null : null,
-      description:
-        kind === "project" || kind === "volunteer" ? description || null : null,
-      url:
-        kind === "project" || kind === "certificate" ? url || null : null,
+      description: kind === "project" || kind === "volunteer" ? description || null : null,
+      url: kind === "project" || kind === "certificate" ? url || null : null,
       details,
       is_current: kind === "volunteer" ? isCurrent : false,
       start_date: kind === "volunteer" ? startDate || null : null,
@@ -163,9 +152,11 @@ export function EntryForm({
       return;
     }
     const field =
-      kind === "project" ? "project_description"
-      : kind === "volunteer" ? "volunteer_description"
-      : "summary";
+      kind === "project"
+        ? "project_description"
+        : kind === "volunteer"
+          ? "volunteer_description"
+          : "summary";
     const res = await coach.mutateAsync({
       field,
       text: description,
@@ -248,11 +239,7 @@ export function EntryForm({
           />
         </Field>
         <Field label="URL (optional)">
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://…"
-          />
+          <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" />
         </Field>
       </>
     );
@@ -361,11 +348,7 @@ export function EntryForm({
     body = (
       <>
         <Field label="Role">
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Mentor"
-          />
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Mentor" />
         </Field>
         <Field label="Organization">
           <Input
@@ -376,11 +359,7 @@ export function EntryForm({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Start date">
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
+            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </Field>
           <Field label="End date">
             <Input
@@ -448,14 +427,14 @@ export function EntryForm({
     body = (
       <>
         <Field label="Title">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={`${singular} name`} />
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={`${singular} name`}
+          />
         </Field>
         <Field label="Description (optional)">
-          <Textarea
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Field>
       </>
     );

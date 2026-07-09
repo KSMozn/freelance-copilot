@@ -3,11 +3,7 @@ import { Link } from "react-router-dom";
 import { LlmSpendCardBody } from "@/features/admin/LlmSpendCard";
 import { useAdminOverview } from "@/features/admin/adminApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import type {
-  AdminOverview,
-  SignupsPoint,
-  WizardFunnel,
-} from "@/features/admin/adminTypes";
+import type { AdminOverview, SignupsPoint, WizardFunnel } from "@/features/admin/adminTypes";
 
 export function AdminOverviewPage() {
   const { data, isLoading, isError } = useAdminOverview();
@@ -23,9 +19,7 @@ export function AdminOverviewPage() {
 
       {isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
       {isError && (
-        <div className="text-sm text-destructive">
-          Could not load overview. Check backend logs.
-        </div>
+        <div className="text-sm text-destructive">Could not load overview. Check backend logs.</div>
       )}
       {data && (
         <>
@@ -55,9 +49,7 @@ export function AdminOverviewPage() {
               </CardHeader>
               <CardContent>
                 {data.entries_by_kind.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    No entries created yet.
-                  </div>
+                  <div className="text-sm text-muted-foreground">No entries created yet.</div>
                 ) : (
                   <table className="w-full text-sm">
                     <tbody>
@@ -80,9 +72,7 @@ export function AdminOverviewPage() {
               </CardHeader>
               <CardContent>
                 {data.usage_by_kind_7d.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    No usage events yet.
-                  </div>
+                  <div className="text-sm text-muted-foreground">No usage events yet.</div>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
@@ -138,9 +128,7 @@ function TopStats({ overview }: { overview: AdminOverview }) {
       {cells.map(([label, value, sub]) => (
         <div key={label} className="rounded-md border bg-card p-3">
           <div className="text-xs text-muted-foreground">{label}</div>
-          <div className="mt-1 text-2xl font-semibold tabular-nums">
-            {value.toLocaleString()}
-          </div>
+          <div className="mt-1 text-2xl font-semibold tabular-nums">{value.toLocaleString()}</div>
           {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
         </div>
       ))}
@@ -194,13 +182,7 @@ function SignupsChart({ series }: { series: SignupsPoint[] }) {
           const x = P + i * step;
           const y = H - P - (s.count / max) * (H - 2 * P);
           return (
-            <circle
-              key={i}
-              cx={x}
-              cy={y}
-              r={2.5}
-              className="fill-primary"
-            >
+            <circle key={i} cx={x} cy={y} r={2.5} className="fill-primary">
               <title>{`${s.day}: ${s.count}`}</title>
             </circle>
           );
@@ -243,9 +225,7 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
       {steps.map(([label, count, slug], i) => {
         const pct = (count / max) * 100;
         const dropoff =
-          i > 0 && steps[i - 1][1] > 0
-            ? Math.round(100 - (count / steps[i - 1][1]) * 100)
-            : null;
+          i > 0 && steps[i - 1][1] > 0 ? Math.round(100 - (count / steps[i - 1][1]) * 100) : null;
         const to = slug ? `/users?stuck_at=${slug}` : null;
         const rowClass =
           "grid grid-cols-[130px_1fr_60px] items-center gap-2 rounded transition-colors";
@@ -261,9 +241,7 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
             <div className="text-right text-xs tabular-nums">
               {count.toLocaleString()}
               {dropoff !== null && dropoff > 0 && (
-                <span className="ml-1 text-[10px] text-destructive">
-                  -{dropoff}%
-                </span>
+                <span className="ml-1 text-[10px] text-destructive">-{dropoff}%</span>
               )}
             </div>
           </>
@@ -272,7 +250,7 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
           <Link
             key={label}
             to={to}
-            className={`${rowClass} px-1 -mx-1 hover:bg-muted/40`}
+            className={`${rowClass} -mx-1 px-1 hover:bg-muted/40`}
             title={`View users stuck at ${label}`}
           >
             {body}
@@ -286,4 +264,3 @@ function FunnelBars({ funnel }: { funnel: WizardFunnel }) {
     </div>
   );
 }
-

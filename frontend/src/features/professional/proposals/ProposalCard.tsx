@@ -1,4 +1,14 @@
-import { AlertTriangle, CheckCircle2, Copy, FileText, Loader2, RefreshCw, Save, Send, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Save,
+  Send,
+  Sparkles,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -78,7 +88,6 @@ function DiagramsCard({ diagrams }: { diagrams: ProposalDiagram[] }) {
   );
 }
 
-
 function ImplementationPlanCard({ weeks }: { weeks: ImplementationWeek[] }) {
   if (!weeks.length) return null;
   const sorted = [...weeks].sort((a, b) => a.week - b.week);
@@ -102,7 +111,7 @@ function ImplementationPlanCard({ weeks }: { weeks: ImplementationWeek[] }) {
               </div>
               <div className="mt-0.5 text-sm text-muted-foreground">{w.summary}</div>
               {w.deliverables.length > 0 && (
-                <ul className="mt-1 ml-4 list-disc space-y-0.5 text-xs text-foreground/90">
+                <ul className="ml-4 mt-1 list-disc space-y-0.5 text-xs text-foreground/90">
                   {w.deliverables.map((d) => (
                     <li key={d}>{d}</li>
                   ))}
@@ -115,7 +124,6 @@ function ImplementationPlanCard({ weeks }: { weeks: ImplementationWeek[] }) {
     </Card>
   );
 }
-
 
 function StrategyPanel({ strategy }: { strategy: ProposalStrategy }) {
   return (
@@ -137,7 +145,6 @@ function StrategyPanel({ strategy }: { strategy: ProposalStrategy }) {
     </div>
   );
 }
-
 
 function QualityBars({ breakdown }: { breakdown: ProposalQualityBreakdown }) {
   return (
@@ -174,13 +181,7 @@ async function copyText(text: string, label: string): Promise<void> {
   }
 }
 
-function ProposalView({
-  jobId,
-  proposal,
-}: {
-  jobId: string;
-  proposal: Proposal;
-}) {
+function ProposalView({ jobId, proposal }: { jobId: string; proposal: Proposal }) {
   const [title, setTitle] = useState(proposal.title ?? "");
   const [body, setBody] = useState(proposal.body);
   const [shortBody, setShortBody] = useState(proposal.short_body ?? "");
@@ -283,7 +284,9 @@ function ProposalView({
         <div className="flex items-center justify-between">
           <Label htmlFor="proposal-body">Body</Label>
           <div className="flex gap-1">
-            <span className="text-xs text-muted-foreground">{body.split(/\s+/).filter(Boolean).length} words</span>
+            <span className="text-xs text-muted-foreground">
+              {body.split(/\s+/).filter(Boolean).length} words
+            </span>
             <Button size="sm" variant="ghost" onClick={() => copyText(body, "body")}>
               <Copy className="mr-1 h-3.5 w-3.5" />
               Copy
@@ -305,7 +308,9 @@ function ProposalView({
         <div className="flex items-center justify-between">
           <Label htmlFor="proposal-short">Short version</Label>
           <div className="flex gap-1">
-            <span className="text-xs text-muted-foreground">{shortBody.split(/\s+/).filter(Boolean).length} words</span>
+            <span className="text-xs text-muted-foreground">
+              {shortBody.split(/\s+/).filter(Boolean).length} words
+            </span>
             <Button size="sm" variant="ghost" onClick={() => copyText(shortBody, "short version")}>
               <Copy className="mr-1 h-3.5 w-3.5" />
               Copy
@@ -457,12 +462,11 @@ export function ProposalCard({
 
   const onGenerate = () =>
     generate.mutate(undefined, {
-      onSuccess: (p) =>
-        toast.success(`Proposal generated — quality ${p.quality_score ?? "—"}/100`),
+      onSuccess: (p) => toast.success(`Proposal generated — quality ${p.quality_score ?? "—"}/100`),
       onError: (err: unknown) => {
         const detail =
-          (err as { response?: { data?: { detail?: string } } } | undefined)?.response
-            ?.data?.detail ?? "Generation failed";
+          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+            ?.detail ?? "Generation failed";
         toast.error(detail);
       },
     });
@@ -510,8 +514,9 @@ export function ProposalCard({
           <div className="text-sm text-muted-foreground">Checking for existing proposal…</div>
         ) : !proposal ? (
           <div className="text-sm text-muted-foreground">
-            No proposal yet. Click <span className="font-medium text-foreground">Generate proposal</span>{" "}
-            to draft one from the analysis, top portfolio matches, and recommended resume.
+            No proposal yet. Click{" "}
+            <span className="font-medium text-foreground">Generate proposal</span> to draft one from
+            the analysis, top portfolio matches, and recommended resume.
           </div>
         ) : jobId ? (
           <ProposalView jobId={jobId} proposal={proposal} />

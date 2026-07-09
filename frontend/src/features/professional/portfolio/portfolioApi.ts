@@ -9,8 +9,7 @@ import type {
 } from "@/features/professional/apiTypes";
 
 const LIST_KEY = (params: Record<string, unknown>) => ["portfolio", "list", params] as const;
-const ITEM_KEY = (id: string | undefined) =>
-  ["portfolio", "item", id ?? "none"] as const;
+const ITEM_KEY = (id: string | undefined) => ["portfolio", "item", id ?? "none"] as const;
 
 export function usePortfolioList(params: { search?: string; domain?: string }) {
   const qParams = {

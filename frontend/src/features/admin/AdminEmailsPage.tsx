@@ -55,8 +55,7 @@ export function AdminEmailsPage() {
       });
       toast.success(`Resent to ${row.target_email ?? "user"}`);
     } catch (err) {
-      const msg = (err as { response?: { data?: { detail?: string } } })
-        ?.response?.data?.detail;
+      const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       toast.error(msg ?? "Resend failed");
     } finally {
       setResendingId(null);
@@ -115,15 +114,11 @@ export function AdminEmailsPage() {
                 <tbody>
                   {data.items.map((r) => (
                     <tr key={r.id} className="border-b align-top hover:bg-muted/30">
-                      <Td className="whitespace-nowrap">
-                        {new Date(r.sent_at).toLocaleString()}
-                      </Td>
+                      <Td className="whitespace-nowrap">{new Date(r.sent_at).toLocaleString()}</Td>
                       <Td>
                         <div className="font-medium">
                           {r.template_name ?? (
-                            <span className="text-muted-foreground italic">
-                              unknown template
-                            </span>
+                            <span className="italic text-muted-foreground">unknown template</span>
                           )}
                         </div>
                         <div className="font-mono text-[10px] text-muted-foreground">
@@ -173,11 +168,7 @@ export function AdminEmailsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={
-                            resendingId === r.id ||
-                            !r.target_user_id ||
-                            !r.template_id
-                          }
+                          disabled={resendingId === r.id || !r.target_user_id || !r.template_id}
                           onClick={() => void handleResend(r)}
                         >
                           {resendingId === r.id ? "Sending…" : "Resend"}
@@ -199,12 +190,6 @@ function Th({ children }: { children?: React.ReactNode }) {
   return <th className="px-3 py-2 text-left font-medium">{children}</th>;
 }
 
-function Td({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={cn("px-3 py-2", className)}>{children}</td>;
 }

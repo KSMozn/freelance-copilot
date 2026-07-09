@@ -18,13 +18,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   OUTPUT_KIND_LABELS,
   type Citation,
@@ -86,9 +80,8 @@ export function OutputsCard({ jobId }: Props) {
           setExpanded(o.id);
         },
         onError: (err: unknown) => {
-          const detail = (
-            err as { response?: { data?: { detail?: string } } }
-          )?.response?.data?.detail;
+          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
+            ?.detail;
           toast.error(detail ?? "Generation failed");
         },
       },
@@ -98,23 +91,20 @@ export function OutputsCard({ jobId }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           Generate output
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Phase F
-          </span>
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Phase F</span>
         </CardTitle>
         <CardDescription>
-          One click to draft a tailored artifact. Every claim cites a graph
-          node — switch personas in the topbar to re-tone the output.
+          One click to draft a tailored artifact. Every claim cites a graph node — switch personas
+          in the topbar to re-tone the output.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {KIND_ORDER.map((kind) => {
             const Icon = KIND_ICONS[kind];
-            const isPending =
-              generate.isPending && generate.variables?.kind === kind;
+            const isPending = generate.isPending && generate.variables?.kind === kind;
             return (
               <Button
                 key={kind}
@@ -123,20 +113,18 @@ export function OutputsCard({ jobId }: Props) {
                 onClick={() => onGenerate(kind)}
                 disabled={generate.isPending}
               >
-                <Icon className="h-4 w-4 mr-2" />
+                <Icon className="mr-2 h-4 w-4" />
                 {isPending ? "Generating…" : OUTPUT_KIND_LABELS[kind]}
-                {!isPending && <Plus className="h-3 w-3 ml-1 opacity-50" />}
+                {!isPending && <Plus className="ml-1 h-3 w-3 opacity-50" />}
               </Button>
             );
           })}
         </div>
 
-        {isLoading && (
-          <p className="text-sm text-muted-foreground">Loading drafts…</p>
-        )}
+        {isLoading && <p className="text-sm text-muted-foreground">Loading drafts…</p>}
 
         {(outputs ?? []).length === 0 && !isLoading && (
-          <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground text-center">
+          <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
             No drafts yet. Pick a format above to generate one.
           </div>
         )}
@@ -147,9 +135,7 @@ export function OutputsCard({ jobId }: Props) {
               key={output.id}
               output={output}
               expanded={expanded === output.id}
-              onToggle={() =>
-                setExpanded((prev) => (prev === output.id ? null : output.id))
-              }
+              onToggle={() => setExpanded((prev) => (prev === output.id ? null : output.id))}
               onDelete={() => {
                 if (!confirm(`Delete this ${OUTPUT_KIND_LABELS[output.kind]}?`)) return;
                 remove.mutate(output.id);
@@ -180,11 +166,11 @@ function OutputRow({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full px-3 py-2 flex items-center gap-3 text-left hover:bg-muted/50"
+        className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-muted/50"
       >
-        <Icon className="h-4 w-4 text-primary shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">
+        <Icon className="h-4 w-4 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">
             {output.title ?? OUTPUT_KIND_LABELS[output.kind]}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -194,19 +180,15 @@ function OutputRow({
               ` · ${output.citations.length} citation${output.citations.length === 1 ? "" : "s"}`}
           </p>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {expanded ? "Hide" : "Open"}
-        </span>
+        <span className="text-xs text-muted-foreground">{expanded ? "Hide" : "Open"}</span>
       </button>
       {expanded && (
-        <div className="px-3 pb-3 space-y-3 border-t pt-3">
+        <div className="space-y-3 border-t px-3 pb-3 pt-3">
           <Markdown text={output.content_markdown} />
 
           {output.citations.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Evidence
-              </p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Evidence</p>
               <div className="flex flex-wrap gap-1.5">
                 {output.citations.map((c, i) => (
                   <CitationChip key={`${c.evidence_id ?? c.evidence_label}-${i}`} c={c} />
@@ -224,7 +206,7 @@ function OutputRow({
                 toast.success("Copied markdown");
               }}
             >
-              <Copy className="h-3 w-3 mr-1" />
+              <Copy className="mr-1 h-3 w-3" />
               Copy
             </Button>
             <Button size="sm" variant="ghost" className="text-destructive" onClick={onDelete}>
@@ -242,7 +224,7 @@ function CitationChip({ c }: { c: Citation }) {
   return (
     <Badge
       variant="outline"
-      className="text-[11px] gap-1 cursor-help"
+      className="cursor-help gap-1 text-[11px]"
       title={c.snippet ? `${c.claim} — "${c.snippet}"` : c.claim}
     >
       <Icon className="h-3 w-3" />
@@ -258,7 +240,7 @@ function Markdown({ text }: { text: string }) {
   // `##` as h3, `- ` as bullets, leave the rest as <p>. No external dep.
   const blocks = text.split(/\n{2,}/);
   return (
-    <div className="space-y-3 text-sm leading-relaxed whitespace-pre-wrap">
+    <div className="space-y-3 whitespace-pre-wrap text-sm leading-relaxed">
       {blocks.map((block, i) => {
         const trimmed = block.trim();
         if (trimmed.startsWith("### ")) {
@@ -278,7 +260,7 @@ function Markdown({ text }: { text: string }) {
         if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
           const items = trimmed.split(/\n(?=- |\* )/);
           return (
-            <ul key={i} className="list-disc pl-5 space-y-1">
+            <ul key={i} className="list-disc space-y-1 pl-5">
               {items.map((it, j) => (
                 <li key={j}>{it.replace(/^[-*]\s+/, "")}</li>
               ))}

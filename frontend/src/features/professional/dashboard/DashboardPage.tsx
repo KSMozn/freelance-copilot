@@ -47,7 +47,9 @@ export function DashboardPage() {
         </CardHeader>
         <CardContent>
           {!data?.items.length ? (
-            <div className="text-sm text-muted-foreground">No jobs yet. Import one to get started.</div>
+            <div className="text-sm text-muted-foreground">
+              No jobs yet. Import one to get started.
+            </div>
           ) : (
             <ul className="divide-y">
               {data.items.map((j) => (

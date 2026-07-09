@@ -1,11 +1,6 @@
 export type BudgetType = "fixed" | "hourly";
 
-export type JobStatus =
-  | "new"
-  | "shortlisted"
-  | "applied"
-  | "ignored"
-  | "archived";
+export type JobStatus = "new" | "shortlisted" | "applied" | "ignored" | "archived";
 
 export interface CompanyResearch {
   source_url: string;

@@ -42,3 +42,4 @@ backend/dist/
 # Playwright
 playwright-report/
 test-results/
+storybook-static/

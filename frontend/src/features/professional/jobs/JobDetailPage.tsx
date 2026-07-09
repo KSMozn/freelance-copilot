@@ -96,8 +96,8 @@ export function JobDetailPage() {
       onSuccess: () => toast.success("Analysis complete"),
       onError: (err: unknown) => {
         const detail =
-          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-          "Analysis failed";
+          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+            ?.detail ?? "Analysis failed";
         toast.error(detail);
       },
     });
@@ -263,9 +263,9 @@ export function JobDetailPage() {
             <CardTitle className="text-base">No analysis yet</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            Click <span className="font-medium text-foreground">Analyze job</span> to extract structured
-            information and compute an opportunity score. No data leaves your machine unless you have
-            configured a real AI provider.
+            Click <span className="font-medium text-foreground">Analyze job</span> to extract
+            structured information and compute an opportunity score. No data leaves your machine
+            unless you have configured a real AI provider.
           </CardContent>
         </Card>
       )}
@@ -318,7 +318,12 @@ export function JobDetailPage() {
               <dt className="text-muted-foreground">Source URL</dt>
               <dd className="truncate">
                 {job.source_url ? (
-                  <a className="text-primary hover:underline" href={job.source_url} target="_blank" rel="noreferrer">
+                  <a
+                    className="text-primary hover:underline"
+                    href={job.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {job.source_url}
                   </a>
                 ) : (

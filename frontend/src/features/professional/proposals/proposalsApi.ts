@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 
 import { api } from "@/app/apiClient";
-import type { Proposal, ProposalReviewResult, ProposalUpdateRequest } from "@/features/professional/apiTypes";
+import type {
+  Proposal,
+  ProposalReviewResult,
+  ProposalUpdateRequest,
+} from "@/features/professional/apiTypes";
 
 const LATEST_KEY = (jobId: string) => ["proposals", "latest", jobId] as const;
 
@@ -58,9 +62,7 @@ export function useReviewProposal(jobId: string | undefined, proposalId: string 
   return useMutation({
     mutationFn: async (): Promise<ProposalReviewResult> => {
       if (!proposalId) throw new Error("missing proposal id");
-      const { data } = await api.post<ProposalReviewResult>(
-        `/proposals/${proposalId}/review`,
-      );
+      const { data } = await api.post<ProposalReviewResult>(`/proposals/${proposalId}/review`);
       return data;
     },
     onSuccess: (review) => {

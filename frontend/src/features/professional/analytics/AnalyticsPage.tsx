@@ -90,10 +90,22 @@ function OverviewSection({ data }: { data: AnalyticsDashboardResponse }) {
   const o = data.overview;
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <Stat label="Applications" value={String(o.total_applications)} hint={`${o.active_applications} active`} />
+      <Stat
+        label="Applications"
+        value={String(o.total_applications)}
+        hint={`${o.active_applications} active`}
+      />
       <Stat label="Interviews" value={String(o.interviewed_count)} />
-      <Stat label="Wins" value={String(o.won_count)} hint={`${o.completed_count} completed · ${o.lost_count} lost`} />
-      <Stat label="Revenue" value={money(o.total_revenue)} hint={`avg contract ${money(o.average_contract_amount)}`} />
+      <Stat
+        label="Wins"
+        value={String(o.won_count)}
+        hint={`${o.completed_count} completed · ${o.lost_count} lost`}
+      />
+      <Stat
+        label="Revenue"
+        value={money(o.total_revenue)}
+        hint={`avg contract ${money(o.average_contract_amount)}`}
+      />
       <Stat label="Avg opportunity score" value={num(o.average_opportunity_score)} />
       <Stat label="Avg proposal quality" value={num(o.average_proposal_quality_score)} />
     </div>
@@ -167,9 +179,13 @@ function BucketTable({
               <td className="py-2 pr-3 text-right tabular-nums">{pct(b.interview_rate)}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{pct(b.win_rate)}</td>
               {showQuality && (
-                <td className="py-2 pr-3 text-right tabular-nums">{num(b.average_quality_score)}</td>
+                <td className="py-2 pr-3 text-right tabular-nums">
+                  {num(b.average_quality_score)}
+                </td>
               )}
-              <td className="py-2 pr-3 text-right tabular-nums">{money(b.average_contract_amount)}</td>
+              <td className="py-2 pr-3 text-right tabular-nums">
+                {money(b.average_contract_amount)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -201,7 +217,9 @@ function TechnologySection({ items }: { items: TechnologyPerformance[] }) {
               <td className="py-2 pr-3 text-right tabular-nums">{t.interviews}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{t.wins}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{pct(t.win_rate)}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{num(t.average_opportunity_score)}</td>
+              <td className="py-2 pr-3 text-right tabular-nums">
+                {num(t.average_opportunity_score)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -233,7 +251,9 @@ function DomainSection({ items }: { items: DomainPerformance[] }) {
               <td className="py-2 pr-3 text-right tabular-nums">{d.interviews}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{d.wins}</td>
               <td className="py-2 pr-3 text-right tabular-nums">{pct(d.win_rate)}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{money(d.average_contract_amount)}</td>
+              <td className="py-2 pr-3 text-right tabular-nums">
+                {money(d.average_contract_amount)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -256,12 +276,12 @@ function BudgetSection({ items }: { items: BudgetPerformance[] }) {
       <ResponsiveContainer>
         <BarChart data={chartData} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis
-            dataKey="bucket"
+          <XAxis dataKey="bucket" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
+          <YAxis
             stroke="hsl(var(--muted-foreground))"
             tick={{ fontSize: 11 }}
+            allowDecimals={false}
           />
-          <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} allowDecimals={false} />
           <Tooltip
             contentStyle={{
               background: "hsl(var(--card))",
@@ -298,7 +318,11 @@ function RevenueSection({ data }: { data: AnalyticsDashboardResponse }) {
           <ResponsiveContainer>
             <LineChart data={points} margin={{ left: 0, right: 10, top: 10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
+              <XAxis
+                dataKey="month"
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 11 }}
+              />
               <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
               <Tooltip
                 contentStyle={{
@@ -421,7 +445,9 @@ export function AnalyticsPage() {
         </div>
         <div className="flex items-end gap-2">
           <div className="space-y-1">
-            <Label htmlFor="from" className="text-xs">From</Label>
+            <Label htmlFor="from" className="text-xs">
+              From
+            </Label>
             <Input
               id="from"
               type="date"
@@ -431,7 +457,9 @@ export function AnalyticsPage() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="to" className="text-xs">To</Label>
+            <Label htmlFor="to" className="text-xs">
+              To
+            </Label>
             <Input
               id="to"
               type="date"
@@ -463,9 +491,9 @@ export function AnalyticsPage() {
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
             No applications in this date range yet. Generate a proposal and click{" "}
-            <span className="font-medium text-foreground">Mark as Applied</span> on any job — or
-            run <code className="rounded bg-muted px-1.5 py-0.5">make seed</code> for a richer
-            demo dataset.
+            <span className="font-medium text-foreground">Mark as Applied</span> on any job — or run{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5">make seed</code> for a richer demo
+            dataset.
           </CardContent>
         </Card>
       ) : (
@@ -477,7 +505,8 @@ export function AnalyticsPage() {
               <CardHeader>
                 <CardTitle className="text-base">Funnel</CardTitle>
                 <CardDescription>
-                  Counts use timestamps, so a current win still contributes to viewed/interview/offer.
+                  Counts use timestamps, so a current win still contributes to
+                  viewed/interview/offer.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -513,7 +542,10 @@ export function AnalyticsPage() {
                 <CardDescription>And does a higher quality proposal?</CardDescription>
               </CardHeader>
               <CardContent>
-                <BucketTable buckets={data.proposal_quality_effectiveness.buckets} showQuality={false} />
+                <BucketTable
+                  buckets={data.proposal_quality_effectiveness.buckets}
+                  showQuality={false}
+                />
               </CardContent>
             </Card>
           </div>
@@ -581,4 +613,3 @@ export function AnalyticsPage() {
     </div>
   );
 }
-

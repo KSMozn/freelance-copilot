@@ -9,13 +9,8 @@ import type {
 
 export function useSubmitFeedback() {
   return useMutation({
-    mutationFn: async (
-      payload: GeneralFeedbackCreate,
-    ): Promise<FeedbackEntry> => {
-      const { data } = await api.post<FeedbackEntry>(
-        "/students/feedback",
-        payload,
-      );
+    mutationFn: async (payload: GeneralFeedbackCreate): Promise<FeedbackEntry> => {
+      const { data } = await api.post<FeedbackEntry>("/students/feedback", payload);
       return data;
     },
   });
@@ -24,10 +19,7 @@ export function useSubmitFeedback() {
 export function useSubmitSurvey() {
   return useMutation({
     mutationFn: async (payload: SurveyCreate): Promise<FeedbackEntry> => {
-      const { data } = await api.post<FeedbackEntry>(
-        "/students/survey",
-        payload,
-      );
+      const { data } = await api.post<FeedbackEntry>("/students/survey", payload);
       return data;
     },
   });

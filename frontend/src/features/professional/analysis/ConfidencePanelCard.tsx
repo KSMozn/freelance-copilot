@@ -30,15 +30,10 @@ function MetricBar({ label, value }: { label: string; value: number }) {
     <div className="space-y-1">
       <div className="flex items-baseline justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className={cn("text-base font-semibold tabular-nums", pctTone(value))}>
-          {value}%
-        </span>
+        <span className={cn("text-base font-semibold tabular-nums", pctTone(value))}>{value}%</span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn("h-full rounded-full", barTone(value))}
-          style={{ width: `${pct}%` }}
-        />
+        <div className={cn("h-full rounded-full", barTone(value))} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -61,8 +56,8 @@ export function ConfidencePanelCard({
           Proposal confidence
         </CardTitle>
         <CardDescription className="text-xs">
-          Multi-dimensional fit signal — derived from analyzer skills, portfolio + repo matches,
-          and the opportunity score.
+          Multi-dimensional fit signal — derived from analyzer skills, portfolio + repo matches, and
+          the opportunity score.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -77,7 +72,12 @@ export function ConfidencePanelCard({
           <>
             <div className="flex items-end justify-between gap-4 rounded-md border border-border/70 p-4">
               <div>
-                <div className={cn("text-5xl font-semibold leading-none tabular-nums", pctTone(report.overall_match))}>
+                <div
+                  className={cn(
+                    "text-5xl font-semibold tabular-nums leading-none",
+                    pctTone(report.overall_match),
+                  )}
+                >
                   {report.overall_match}%
                 </div>
                 <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">

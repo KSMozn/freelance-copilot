@@ -50,8 +50,8 @@ export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Optional — a clean, well-lit head-and-shoulders photo helps recruiters put a
-        face to your name. Selfies at odd angles or party photos read as casual.
+        Optional — a clean, well-lit head-and-shoulders photo helps recruiters put a face to your
+        name. Selfies at odd angles or party photos read as casual.
       </p>
       <div className="flex items-center gap-4">
         {photoUrl ? (
@@ -97,10 +97,7 @@ export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) 
         </label>
       )}
       <div>
-        <Button
-          onClick={() => void onSaved()}
-          disabled={warnings.length > 0 && !confirmed}
-        >
+        <Button onClick={() => void onSaved()} disabled={warnings.length > 0 && !confirmed}>
           Continue
         </Button>
       </div>

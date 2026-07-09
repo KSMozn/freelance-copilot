@@ -65,7 +65,12 @@ export function Select({
             e.preventDefault();
             if (!open) {
               setOpen(true);
-              setHighlight(Math.max(0, options.findIndex((o) => o.value === value)));
+              setHighlight(
+                Math.max(
+                  0,
+                  options.findIndex((o) => o.value === value),
+                ),
+              );
               return;
             }
             if (e.key === "Enter") {
@@ -89,12 +94,7 @@ export function Select({
           "disabled:cursor-not-allowed disabled:opacity-50",
         )}
       >
-        <span
-          className={cn(
-            "truncate",
-            !selected && "text-muted-foreground",
-          )}
-        >
+        <span className={cn("truncate", !selected && "text-muted-foreground")}>
           {selected ? selected.label : (placeholder ?? "Select…")}
         </span>
         <svg

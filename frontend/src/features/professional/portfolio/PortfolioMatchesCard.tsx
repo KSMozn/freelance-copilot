@@ -46,9 +46,7 @@ function MatchRow({ match }: { match: PortfolioMatch }) {
           <div className={cn("text-2xl font-semibold tabular-nums", pctColor(match.match_score))}>
             {pct(match.match_score)}
           </div>
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            match
-          </div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">match</div>
         </div>
       </div>
 
@@ -95,7 +93,7 @@ function MatchRow({ match }: { match: PortfolioMatch }) {
 function Component({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-foreground/80 tabular-nums">{pct(value)}</div>
+      <div className="tabular-nums text-foreground/80">{pct(value)}</div>
       <div>{label}</div>
     </div>
   );

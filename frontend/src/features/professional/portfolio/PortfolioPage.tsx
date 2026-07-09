@@ -7,7 +7,10 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
-import { useDeletePortfolio, usePortfolioList } from "@/features/professional/portfolio/portfolioApi";
+import {
+  useDeletePortfolio,
+  usePortfolioList,
+} from "@/features/professional/portfolio/portfolioApi";
 
 export function PortfolioPage() {
   const [search, setSearch] = useState("");
@@ -74,9 +77,7 @@ export function PortfolioPage() {
                     >
                       {p.title}
                     </Link>
-                    {p.role && (
-                      <div className="text-xs text-muted-foreground">{p.role}</div>
-                    )}
+                    {p.role && <div className="text-xs text-muted-foreground">{p.role}</div>}
                   </div>
                   {p.highlight && (
                     <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" />
@@ -86,9 +87,7 @@ export function PortfolioPage() {
                   <p className="text-sm text-muted-foreground">{p.short_description}</p>
                 )}
                 <div className="flex flex-wrap gap-1.5">
-                  {p.business_domain && (
-                    <Badge variant="secondary">{p.business_domain}</Badge>
-                  )}
+                  {p.business_domain && <Badge variant="secondary">{p.business_domain}</Badge>}
                   {p.technologies.slice(0, 4).map((t) => (
                     <Badge key={t} variant="outline">
                       {t}

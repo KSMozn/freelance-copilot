@@ -4,13 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
@@ -50,8 +44,8 @@ export function PersonaNewPage() {
           navigate("/personas");
         },
         onError: (err: unknown) => {
-          const detail = (err as { response?: { data?: { detail?: string } } })
-            ?.response?.data?.detail;
+          const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data
+            ?.detail;
           toast.error(detail ?? "Could not create persona");
         },
       },
@@ -59,7 +53,7 @@ export function PersonaNewPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">New persona</h1>
@@ -69,7 +63,7 @@ export function PersonaNewPage() {
         </div>
         <Button variant="ghost" asChild>
           <Link to="/personas">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to personas
           </Link>
         </Button>
@@ -82,17 +76,15 @@ export function PersonaNewPage() {
             {(archetypes ?? []).map((a) => (
               <Card
                 key={a.id}
-                className="cursor-pointer hover:border-primary transition"
+                className="cursor-pointer transition hover:border-primary"
                 onClick={() => pick(a)}
               >
                 <CardHeader>
                   <CardTitle className="text-base">{a.name}</CardTitle>
-                  <CardDescription className="line-clamp-3">
-                    {a.description}
-                  </CardDescription>
+                  <CardDescription className="line-clamp-3">{a.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="space-y-1 text-xs text-muted-foreground">
                     <div>
                       <strong>Tone:</strong>{" "}
                       <span className="capitalize">
@@ -106,8 +98,7 @@ export function PersonaNewPage() {
                     )}
                     {a.default_target_roles.length > 0 && (
                       <div className="pt-1">
-                        <strong>Roles:</strong>{" "}
-                        {a.default_target_roles.slice(0, 2).join(", ")}
+                        <strong>Roles:</strong> {a.default_target_roles.slice(0, 2).join(", ")}
                       </div>
                     )}
                   </div>
@@ -136,8 +127,8 @@ export function PersonaNewPage() {
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                A friendly label you'll see in the persona switcher. Must be
-                unique across your personas.
+                A friendly label you'll see in the persona switcher. Must be unique across your
+                personas.
               </p>
             </div>
             <div className="space-y-2">
@@ -150,16 +141,16 @@ export function PersonaNewPage() {
                 maxLength={255}
               />
               <p className="text-xs text-muted-foreground">
-                The job titles you're targeting under this persona — feeds the
-                match score and tailored outputs.
+                The job titles you're targeting under this persona — feeds the match score and
+                tailored outputs.
               </p>
             </div>
-            <div className="flex gap-2 justify-end">
+            <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setStep(1)}>
                 Back
               </Button>
               <Button onClick={submit} disabled={create.isPending}>
-                <Check className="h-4 w-4 mr-2" />
+                <Check className="mr-2 h-4 w-4" />
                 {create.isPending ? "Creating…" : "Create persona"}
               </Button>
             </div>

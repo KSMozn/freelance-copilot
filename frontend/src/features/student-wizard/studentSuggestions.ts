@@ -94,9 +94,7 @@ export async function loadUniversities(): Promise<string[]> {
     const hipo = (hipolabs as unknown as { default: { universities: Row[] } }).default.universities;
     const extra = (supp as unknown as { default: { universities: Row[] } }).default.universities;
     // Featured list wins on collision (keeps acronyms visible).
-    const seen = new Set(
-      UNIVERSITIES.map((s) => stripAcronym(s).toLowerCase()),
-    );
+    const seen = new Set(UNIVERSITIES.map((s) => stripAcronym(s).toLowerCase()));
     const merged: string[] = [...UNIVERSITIES];
     const push = (r: Row) => {
       const label = `${r.name} — ${r.country}`;
@@ -854,12 +852,7 @@ export const LANGUAGES: string[] = [
   "Persian (Farsi)",
 ];
 
-export const LANGUAGE_PROFICIENCIES: string[] = [
-  "Basic",
-  "Intermediate",
-  "Fluent",
-  "Native",
-];
+export const LANGUAGE_PROFICIENCIES: string[] = ["Basic", "Intermediate", "Fluent", "Native"];
 
 export const SKILL_PROFICIENCIES: { value: string; label: string }[] = [
   { value: "1", label: "1 — Beginner" },

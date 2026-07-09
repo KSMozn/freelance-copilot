@@ -6,10 +6,7 @@ import type { JobImportResponse } from "@/features/professional/apiTypes";
 export function useImportJobFromImage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      file: File;
-      sourceUrl?: string;
-    }): Promise<JobImportResponse> => {
+    mutationFn: async (input: { file: File; sourceUrl?: string }): Promise<JobImportResponse> => {
       const form = new FormData();
       form.append("image", input.file);
       if (input.sourceUrl) form.append("source_url", input.sourceUrl);

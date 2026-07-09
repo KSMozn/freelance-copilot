@@ -29,7 +29,9 @@ import type {
   RepositoryScanStatus,
 } from "@/features/professional/apiTypes";
 
-function statusVariant(status: RepositoryScanStatus): "default" | "secondary" | "destructive" | "outline" {
+function statusVariant(
+  status: RepositoryScanStatus,
+): "default" | "secondary" | "destructive" | "outline" {
   if (status === "scanned") return "default";
   if (status === "failed") return "destructive";
   return "secondary";
@@ -63,8 +65,8 @@ function StarStorySection({ repo }: { repo: Repository }) {
       onSuccess: () => toast.success(`STAR story ready for ${repo.owner}/${repo.name}`),
       onError: (err: unknown) => {
         const detail =
-          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-          "STAR generation failed";
+          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+            ?.detail ?? "STAR generation failed";
         toast.error(detail);
       },
     });
@@ -119,8 +121,8 @@ function StarStorySection({ repo }: { repo: Repository }) {
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Generate an interview-ready Situation / Task / Action / Result story
-          for this repo. Useful as a proposal hook + interview talking-point.
+          Generate an interview-ready Situation / Task / Action / Result story for this repo. Useful
+          as a proposal hook + interview talking-point.
         </p>
       )}
     </div>
@@ -170,14 +172,18 @@ function RepoCard({ repo }: { repo: Repository }) {
                 onSuccess: () => toast.success(`Re-scanned ${repo.owner}/${repo.name}`),
                 onError: (err: unknown) => {
                   const detail =
-                    (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-                    "Rescan failed";
+                    (err as { response?: { data?: { detail?: string } } } | undefined)?.response
+                      ?.data?.detail ?? "Rescan failed";
                   toast.error(detail);
                 },
               })
             }
           >
-            {rescan.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {rescan.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
           </Button>
           <Button
             size="sm"
@@ -254,7 +260,8 @@ function RepoCard({ repo }: { repo: Repository }) {
             {repo.has_docker ? "✓" : "·"} Docker
           </span>
           <span className={repo.has_ci ? "text-emerald-500" : "text-muted-foreground"}>
-            {repo.has_ci ? "✓" : "·"} CI {repo.ci_systems.length > 0 && `(${repo.ci_systems.join(", ")})`}
+            {repo.has_ci ? "✓" : "·"} CI{" "}
+            {repo.ci_systems.length > 0 && `(${repo.ci_systems.join(", ")})`}
           </span>
           <span className={repo.has_tests ? "text-emerald-500" : "text-muted-foreground"}>
             {repo.has_tests ? "✓" : "·"} Tests
@@ -295,10 +302,8 @@ function ImprovementsBlock({ repo }: { repo: RepositoryImprovementsT }) {
             <div className="min-w-0">
               <div className="font-medium">{imp.suggestion}</div>
               <div className="text-xs text-muted-foreground">
-                <span className="rounded-md border border-muted px-1.5 py-0.5">
-                  {imp.skill}
-                </span>{" "}
-                · {imp.job_frequency} jobs ({pct}%)
+                <span className="rounded-md border border-muted px-1.5 py-0.5">{imp.skill}</span> ·{" "}
+                {imp.job_frequency} jobs ({pct}%)
               </div>
             </div>
           </li>
@@ -329,8 +334,9 @@ function ImprovementsCard() {
           <div className="text-sm text-muted-foreground">Building improvement report…</div>
         ) : data.analyzed_job_count === 0 ? (
           <div className="text-sm text-muted-foreground">
-            No analyzed jobs yet — run <span className="font-medium text-foreground">Analyze job</span> on
-            a few jobs first so we have a skill-frequency tally to compare against.
+            No analyzed jobs yet — run{" "}
+            <span className="font-medium text-foreground">Analyze job</span> on a few jobs first so
+            we have a skill-frequency tally to compare against.
           </div>
         ) : !data.repositories.length ? (
           <div className="text-sm text-muted-foreground">
@@ -357,7 +363,6 @@ function ImprovementsCard() {
   );
 }
 
-
 export function RepositoriesPage() {
   const [search, setSearch] = useState("");
   const [url, setUrl] = useState("");
@@ -380,8 +385,8 @@ export function RepositoriesPage() {
       },
       onError: (err: unknown) => {
         const detail =
-          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-          "Failed to register repository";
+          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+            ?.detail ?? "Failed to register repository";
         toast.error(detail);
       },
     });
@@ -392,8 +397,7 @@ export function RepositoriesPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Repositories</h1>
         <p className="text-sm text-muted-foreground">
-          Auto-scanned GitHub repositories. Used as concrete technical evidence when
-          matching jobs.
+          Auto-scanned GitHub repositories. Used as concrete technical evidence when matching jobs.
         </p>
       </div>
 

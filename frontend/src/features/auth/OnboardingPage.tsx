@@ -2,13 +2,7 @@ import { ArrowRight, FileUp, Github, SkipForward, Sparkles } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
 /**
  * Compact "one thing" onboarding page. The user has just verified their email
@@ -27,7 +21,7 @@ export function OnboardingPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-3xl space-y-6">
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold">Welcome — let&apos;s build your profile.</h1>
           <p className="text-sm text-muted-foreground">
             Pick one thing to start with. You can add the others anytime.
@@ -63,15 +57,16 @@ export function OnboardingPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="h-4 w-4 text-primary" />
               What happens next
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-1">
+          <CardContent className="space-y-1 text-sm text-muted-foreground">
             <p>
-              Whatever you add today becomes part of your <strong>professional knowledge graph</strong> —
-              experiences, projects, skills, and certificates that future personas draw from.
+              Whatever you add today becomes part of your{" "}
+              <strong>professional knowledge graph</strong> — experiences, projects, skills, and
+              certificates that future personas draw from.
             </p>
             <p>
               When you paste your first job, we&apos;ll match it against the graph and generate a
@@ -81,7 +76,7 @@ export function OnboardingPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          <Link to="/" className="hover:underline inline-flex items-center gap-1">
+          <Link to="/" className="inline-flex items-center gap-1 hover:underline">
             Skip everything and explore the dashboard <ArrowRight className="h-3 w-3" />
           </Link>
         </p>
@@ -122,17 +117,12 @@ function SourceCard({
             </span>
           )}
         </div>
-        <CardTitle className="text-base mt-3">{title}</CardTitle>
+        <CardTitle className="mt-3 text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
         {cta && (
-          <Button
-            variant={variant}
-            className="w-full"
-            disabled={disabled}
-            onClick={onClick}
-          >
+          <Button variant={variant} className="w-full" disabled={disabled} onClick={onClick}>
             {cta}
           </Button>
         )}

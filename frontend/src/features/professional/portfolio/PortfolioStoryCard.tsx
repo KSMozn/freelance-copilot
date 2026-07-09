@@ -26,8 +26,8 @@ export function PortfolioStoryCard({
       },
       onError: (err: unknown) => {
         const detail =
-          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data?.detail ??
-          "Story generation failed";
+          (err as { response?: { data?: { detail?: string } } } | undefined)?.response?.data
+            ?.detail ?? "Story generation failed";
         toast.error(detail);
       },
     });
@@ -73,13 +73,13 @@ export function PortfolioStoryCard({
       <CardContent className="space-y-4">
         {!hasAnalysis ? (
           <div className="text-sm text-muted-foreground">
-            Run <span className="font-medium text-foreground">Analyze job</span> first — picking uses the
-            extracted skills + portfolio matches.
+            Run <span className="font-medium text-foreground">Analyze job</span> first — picking
+            uses the extracted skills + portfolio matches.
           </div>
         ) : !story ? (
           <div className="text-sm text-muted-foreground">
-            Click <span className="font-medium text-foreground">Build story</span> to pick the strongest
-            portfolio for this job and tailor a lead-with paragraph.
+            Click <span className="font-medium text-foreground">Build story</span> to pick the
+            strongest portfolio for this job and tailor a lead-with paragraph.
           </div>
         ) : (
           <>
@@ -94,9 +94,7 @@ export function PortfolioStoryCard({
                 {story.business_domain && (
                   <Badge variant="secondary">{story.business_domain}</Badge>
                 )}
-                <Badge variant="outline">
-                  {Math.round(story.match_score * 100)}% match
-                </Badge>
+                <Badge variant="outline">{Math.round(story.match_score * 100)}% match</Badge>
               </div>
             </div>
 
@@ -133,7 +131,8 @@ export function PortfolioStoryCard({
             </div>
 
             <div className="text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Why this fit:</span> {story.why_this_fit}
+              <span className="font-medium text-foreground">Why this fit:</span>{" "}
+              {story.why_this_fit}
             </div>
 
             {story.relevant_skills.length > 0 && (

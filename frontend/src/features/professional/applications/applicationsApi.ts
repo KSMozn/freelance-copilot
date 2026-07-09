@@ -12,8 +12,7 @@ import type {
 
 const LIST_KEY = (params: Record<string, unknown>) => ["applications", "list", params] as const;
 const ITEM_KEY = (id: string | undefined) => ["applications", "item", id ?? "none"] as const;
-const HISTORY_KEY = (id: string | undefined) =>
-  ["applications", "history", id ?? "none"] as const;
+const HISTORY_KEY = (id: string | undefined) => ["applications", "history", id ?? "none"] as const;
 const BY_JOB_KEY = (jobId: string | undefined) =>
   ["applications", "by-job", jobId ?? "none"] as const;
 
@@ -49,9 +48,7 @@ export function useApplicationHistory(id: string | undefined) {
     queryKey: HISTORY_KEY(id),
     enabled: !!id,
     queryFn: async () => {
-      const { data } = await api.get<ApplicationHistoryEntry[]>(
-        `/applications/${id}/history`,
-      );
+      const { data } = await api.get<ApplicationHistoryEntry[]>(`/applications/${id}/history`);
       return data;
     },
   });
@@ -88,10 +85,9 @@ export function useCreateApplicationFromProposal(jobId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (proposalId: string): Promise<Application> => {
-      const { data } = await api.post<Application>(
-        `/applications/from-proposal/${proposalId}`,
-        { status: "applied" },
-      );
+      const { data } = await api.post<Application>(`/applications/from-proposal/${proposalId}`, {
+        status: "applied",
+      });
       return data;
     },
     onSuccess: () => {
@@ -125,10 +121,7 @@ export function useUpdateApplicationDetails(applicationId: string | undefined) {
   return useMutation({
     mutationFn: async (payload: ApplicationDetailsUpdate) => {
       if (!applicationId) throw new Error("missing application id");
-      const { data } = await api.patch<Application>(
-        `/applications/${applicationId}`,
-        payload,
-      );
+      const { data } = await api.patch<Application>(`/applications/${applicationId}`, payload);
       return data;
     },
     onSuccess: (data) => {

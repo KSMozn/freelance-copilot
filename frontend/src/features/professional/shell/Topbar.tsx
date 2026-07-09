@@ -20,7 +20,12 @@ export function Topbar() {
       <div className="text-sm text-muted-foreground">Engineering Career OS</div>
       <div className="flex items-center gap-3">
         <PersonaSwitcher />
-        <Button variant="ghost" size="icon" onClick={() => setDark((d) => !d)} aria-label="toggle theme">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setDark((d) => !d)}
+          aria-label="toggle theme"
+        >
           {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
         <div className="hidden text-sm md:block">{user?.email}</div>
