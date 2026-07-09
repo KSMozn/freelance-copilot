@@ -21,6 +21,7 @@ from app.core.rate_limit import (
     otp_request_ip_limiter,
     otp_verify_limiter,
     refresh_ip_limiter,
+    register_ip_limiter,
 )
 from app.domain.exceptions import (
     AlreadyExistsError,
@@ -33,7 +34,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register(payload: RegisterRequest, auth: AuthServiceDep) -> AuthResponse:
+async def register(
+    payload: RegisterRequest, auth: AuthServiceDep, request: Request
+) -> AuthResponse:
+    # Registration hashes a password (CPU) and creates rows — limit per-IP
+    # like every other auth surface (it was the only unlimited one).
+    register_ip_limiter.check(f"register:{client_ip(request)}")
     try:
         return await auth.register(payload)
     except AlreadyExistsError as exc:

@@ -72,3 +72,6 @@ login_account_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
 refresh_ip_limiter = SlidingWindowLimiter(limit=40, window_s=60.0)
 otp_verify_limiter = SlidingWindowLimiter(limit=10, window_s=60.0)
 otp_request_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
+# Password registration does a bcrypt hash per call and creates rows — it was
+# the only unlimited auth endpoint (account-spam / CPU vector).
+register_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
