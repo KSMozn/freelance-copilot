@@ -1,8 +1,8 @@
 import { AlertTriangle, CheckCircle2, HelpCircle, Sparkles } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 import type { JobAnalysis, Severity } from "@/types/api";
 
 function ChipList({ items, variant = "secondary" }: { items: string[]; variant?: "default" | "secondary" | "outline" }) {

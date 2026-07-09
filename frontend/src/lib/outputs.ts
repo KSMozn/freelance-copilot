@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 
 export type OutputKind =
   | "upwork_proposal"

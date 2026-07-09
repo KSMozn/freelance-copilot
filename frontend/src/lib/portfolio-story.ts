@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { PortfolioStory } from "@/types/api";
 
 const STORY_KEY = (jobId: string) => ["portfolio-story", jobId] as const;

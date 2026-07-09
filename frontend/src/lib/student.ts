@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type {
   CvTemplateListResponse,
   DraftSummaryResponse,

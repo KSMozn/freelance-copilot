@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { AuthShell } from "@/components/brand/AuthShell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
+import { AuthShell } from "@/shared/ui/brand/AuthShell";
+import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { api } from "@/app/apiClient";
 import { useAdminAuthStore, type AdminUser } from "@/stores/adminAuth";
 
 interface AdminLoginResponse {

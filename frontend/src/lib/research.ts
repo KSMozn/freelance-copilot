@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { CompanyResearch } from "@/types/api";
 
 export function useResearchClient(jobId: string | undefined) {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { JobAnalysisResponse } from "@/types/api";
 
 const QUERY_KEY = (jobId: string) => ["job-analysis", jobId] as const;

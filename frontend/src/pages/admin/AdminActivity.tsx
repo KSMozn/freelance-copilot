@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Select } from "@/shared/ui/select";
 import { useAdminActivity } from "@/lib/admin";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 const KIND_OPTIONS = [
   { value: "", label: "All kinds" },

@@ -2,8 +2,8 @@ import { LogOut, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PersonaSwitcher } from "@/components/PersonaSwitcher";
-import { Button } from "@/components/ui/button";
-import { logoutCurrentSurface } from "@/lib/api";
+import { Button } from "@/shared/ui/button";
+import { logoutCurrentSurface } from "@/app/apiClient";
 import { useAuthStore } from "@/stores/auth";
 
 export function Topbar() {

@@ -1,10 +1,10 @@
 import { Check, ExternalLink, FileCode2, Github, Lightbulb, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 import type { RepositoryMatch, RepositoryMatchesResponse } from "@/types/api";
 
 function pctColor(score: number): string {

@@ -2,23 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import { logoutCurrentSurface } from "@/lib/api";
+import { logoutCurrentSurface } from "@/app/apiClient";
 import { fetchPhotoDataUri } from "@/lib/photoCache";
 import { useLastProfileStore } from "@/stores/lastProfile";
-import { AboutFooter } from "@/components/brand/AboutFooter";
-import { BrandWordmark } from "@/components/brand/BrandWordmark";
+import { AboutFooter } from "@/shared/ui/brand/AboutFooter";
+import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
 import { CoachWarnings } from "@/components/student/CoachWarnings";
 import { DateOfBirthPicker } from "@/components/student/DateOfBirthPicker";
 import { PhotoPositioner } from "@/components/student/PhotoPositioner";
 import { CareerStarterPack } from "@/components/student/CareerStarterPack";
 import { PostDownloadSurvey } from "@/components/student/PostDownloadSurvey";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Combobox } from "@/components/ui/combobox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Combobox } from "@/shared/ui/combobox";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
+import { Select } from "@/shared/ui/select";
+import { Textarea } from "@/shared/ui/textarea";
 import {
   downloadStudentCv,
   downloadStudentCvDocx,
@@ -57,7 +57,7 @@ import {
   TECH_STACK,
   UNIVERSITIES,
 } from "@/lib/studentSuggestions";
-import { useAutoSave } from "@/lib/useAutoSave";
+import { useAutoSave } from "@/shared/hooks/useAutoSave";
 import { useAuthStore } from "@/stores/auth";
 import type {
   CoachSuggestion,

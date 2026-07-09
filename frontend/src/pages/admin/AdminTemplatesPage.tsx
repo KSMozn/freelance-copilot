@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 import { useAdminCvTemplates, useUpdateAdminCvTemplate } from "@/lib/admin";
 
 export function AdminTemplatesPage() {

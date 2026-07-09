@@ -2,7 +2,7 @@ import { Check, ChevronDown, Plus, UserCog } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   useCurrentPersona,
   usePersonas,

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Input } from "@/shared/ui/input";
+import { cn } from "@/shared/lib/utils";
 
 interface ComboboxProps {
   value: string;

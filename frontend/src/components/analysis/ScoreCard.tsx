@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 import type { OpportunityScore, Recommendation } from "@/types/api";
 
 const REC_STYLES: Record<Recommendation, string> = {

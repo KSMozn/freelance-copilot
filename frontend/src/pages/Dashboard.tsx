@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/lib/api";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { api } from "@/app/apiClient";
 import type { JobListResponse } from "@/types/api";
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {

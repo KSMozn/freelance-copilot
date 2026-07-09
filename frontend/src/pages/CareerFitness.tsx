@@ -10,14 +10,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/shared/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/shared/ui/card";
 import {
   useCareerFitness,
   type CareerFitness,

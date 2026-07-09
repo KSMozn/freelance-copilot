@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { logoutCurrentSurface } from "@/lib/api";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Textarea } from "@/shared/ui/textarea";
+import { logoutCurrentSurface } from "@/app/apiClient";
 import { useSubmitFeedback } from "@/lib/feedback";
 
 const MIN_LEN = 10;

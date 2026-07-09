@@ -3,11 +3,11 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ImageDown, Plus, Search } from "lucide
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import { api } from "@/app/apiClient";
 import {
   SCORE_DIMENSION_LABELS,
   SCORE_DIMENSION_MAX,

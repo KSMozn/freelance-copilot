@@ -2,14 +2,14 @@ import { Plus, Star, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/shared/ui/card";
 import { useDeletePersona, usePersonas, useSetDefaultPersona } from "@/lib/personas";
 
 export function PersonasPage() {

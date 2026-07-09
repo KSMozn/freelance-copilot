@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 
 // Cap the base64-encoded photo we cache in localStorage. The average
 // student uses a headshot around 30-80 KB; anything much bigger than this

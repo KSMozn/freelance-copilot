@@ -1,14 +1,14 @@
 import { ArrowRight, FileUp, Github, SkipForward, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/shared/ui/card";
 
 /**
  * Compact "one thing" onboarding page. The user has just verified their email

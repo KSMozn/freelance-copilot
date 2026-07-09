@@ -2,9 +2,9 @@ import { FormEvent, useState } from "react";
 import { Building2, ExternalLink, Loader2, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
 import { useResearchClient } from "@/lib/research";
 import type { CompanyResearch } from "@/types/api";
 

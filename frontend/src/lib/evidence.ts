@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { EvidenceReport } from "@/types/api";
 
 const EVIDENCE_KEY = (jobId: string) => ["evidence", jobId] as const;

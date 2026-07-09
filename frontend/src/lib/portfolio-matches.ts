@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { PortfolioMatchesResponse } from "@/types/api";
 
 const MATCHES_KEY = (jobId: string) => ["portfolio-matches", jobId] as const;

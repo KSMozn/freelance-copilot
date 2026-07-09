@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { Select } from "@/components/ui/select";
+import { Select } from "@/shared/ui/select";
 
 interface DateOfBirthPickerProps {
   // ISO date "YYYY-MM-DD" or null.

@@ -1,8 +1,8 @@
 import { BarChart3, Briefcase, FileText, FolderGit2, Github, Heart, LayoutDashboard, Sparkles, Settings, UserCog } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
-import { BrandWordmark } from "@/components/brand/BrandWordmark";
-import { cn } from "@/lib/utils";
+import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
+import { cn } from "@/shared/lib/utils";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },

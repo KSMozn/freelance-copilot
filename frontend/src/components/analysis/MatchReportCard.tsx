@@ -1,14 +1,14 @@
 import { Award, BookOpen, GitPullRequest, Lightbulb, RefreshCw, Star, Wrench } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/shared/ui/card";
 import {
   useMatchReport,
   useRebuildMatchReport,

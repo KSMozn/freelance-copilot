@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { SCORE_DIMENSION_LABELS, SCORE_DIMENSION_MAX, type ScoreBreakdown as ScoreBreakdownT } from "@/types/api";
 
 const ORDER: (keyof ScoreBreakdownT)[] = [

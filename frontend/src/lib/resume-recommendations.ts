@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { ResumeRecommendationsResponse } from "@/types/api";
 
 const KEY = (jobId: string) => ["resume-recommendations", jobId] as const;

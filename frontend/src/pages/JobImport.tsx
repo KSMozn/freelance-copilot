@@ -3,13 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { useImportJobFromImage } from "@/lib/job-import";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import type { JobImportPreview } from "@/types/api";
 
 const ACCEPTED = "image/png,image/jpeg,image/jpg,image/webp";

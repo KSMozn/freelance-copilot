@@ -2,15 +2,15 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Select } from "@/components/ui/select";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Select } from "@/shared/ui/select";
 import {
   useAdminFeedback,
   useAdminResolveFeedback,
   useAdminUnresolveFeedback,
 } from "@/lib/admin";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import type { AdminFeedbackItem } from "@/types/admin";
 
 const KIND_OPTIONS = [

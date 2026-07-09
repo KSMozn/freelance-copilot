@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { api } from "@/lib/api";
+import { api } from "@/app/apiClient";
 import type { JobConfidenceReport } from "@/types/api";
 
 const CONFIDENCE_KEY = (jobId: string) => ["confidence", jobId] as const;

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 import { LlmSpendCardBody } from "@/components/admin/LlmSpendCard";
 import { useAdminOverview } from "@/lib/admin";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import type {
   AdminOverview,
   SignupsPoint,

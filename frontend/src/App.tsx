@@ -3,8 +3,8 @@ import { Toaster } from "sonner";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { RequireAuth } from "@/components/RequireAuth";
-import { isAdminSurface } from "@/lib/api";
-import { queryClient } from "@/lib/queryClient";
+import { isAdminSurface } from "@/app/apiClient";
+import { queryClient } from "@/app/queryClient";
 import { ImpersonateLanding } from "@/pages/ImpersonateLanding";
 import { LoginPage } from "@/pages/Login";
 import { OnboardingPage } from "@/pages/Onboarding";

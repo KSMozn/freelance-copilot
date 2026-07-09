@@ -1,6 +1,6 @@
 import { Layers } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   STACK_CATEGORY_LABELS,
   STACK_CATEGORY_ORDER,

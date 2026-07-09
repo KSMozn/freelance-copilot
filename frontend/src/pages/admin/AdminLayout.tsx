@@ -1,9 +1,9 @@
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 
-import { BrandWordmark } from "@/components/brand/BrandWordmark";
-import { logoutCurrentSurface } from "@/lib/api";
+import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
+import { logoutCurrentSurface } from "@/app/apiClient";
 import { useAdminAuthStore } from "@/stores/adminAuth";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 export function AdminLayout() {
   const admin = useAdminAuthStore((s) => s.admin);

@@ -1,7 +1,7 @@
 import { Gauge } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { cn } from "@/shared/lib/utils";
 import type { InterviewChance, JobConfidenceReport } from "@/types/api";
 
 function pctTone(value: number): string {
