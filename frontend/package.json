@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
-    "clean": "node scripts/clean.js"
+    "clean": "node scripts/clean.js",
+    "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -45,6 +46,8 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.15.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.8.0",
@@ -53,5 +56,9 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.7.2",
     "vite": "^6.0.5"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": "eslint --quiet --fix",
+    "src/**/*.{ts,tsx,css}": "prettier --write --ignore-unknown"
   }
 }
