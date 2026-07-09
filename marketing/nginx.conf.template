@@ -5,6 +5,13 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Cloud Run terminates TLS and forwards to this container on http:8080, so
+    # nginx would otherwise build redirect Location headers as
+    # http://careero.app:8080/... . Emit relative redirects instead — the
+    # browser resolves them against the real https://careero.app origin.
+    absolute_redirect off;
+    port_in_redirect off;
+
     # Security headers (mirrors the app hardening). This site has no
     # executable JS of its own; the CSP allows inline JSON-LD structured data
     # and the external stylesheet, nothing else.
