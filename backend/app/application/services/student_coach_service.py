@@ -113,7 +113,21 @@ def _build_suggested_addresses(full_name: str | None, domain: str) -> list[str]:
         out.append(f"{first}@{domain}")
     # Deduplicate while preserving order.
     seen: set[str] = set()
-    return [a for a in out if not (a in seen or seen.add(a))]
+    deduped: list[str] = []
+    for a in out:
+        if a not in seen:
+            seen.add(a)
+            deduped.append(a)
+    return deduped
+
+
+# Digit groups that read as internet slang rather than a birth year. The
+# digit-count rule needs >=4 digits and the year rule only fires at the
+# local-part boundary, so "xx420x@..." style addresses used to sail
+# through every check. Matched against maximal digit runs, so "1969"
+# (a year) does NOT trip the "69" entry.
+_SLANG_NUMBERS = frozenset({"420", "666", "1337", "69", "6969", "69420"})
+_DIGIT_RUNS = re.compile(r"\d+")
 
 
 def check_email(req: EmailCoachRequest) -> EmailCoachResponse:
@@ -154,6 +168,17 @@ def check_email(req: EmailCoachRequest) -> EmailCoachResponse:
                 message=(
                     "Lots of digits can make addresses look generated. A "
                     "firstname.lastname@ address is usually safer."
+                ),
+            )
+        )
+
+    if any(run in _SLANG_NUMBERS for run in _DIGIT_RUNS.findall(local_lc)):
+        warnings.append(
+            CoachWarning(
+                code="email_slang_number",
+                message=(
+                    "That number combination reads as a joke to recruiters — "
+                    "a name-based address is a safer look."
                 ),
             )
         )
@@ -680,7 +705,7 @@ class StudentCoachService:
                 str(q) for q in (data.get("follow_ups") or []) if isinstance(q, str)
             ]
             if not follow_ups:
-                follow_ups = _INTERNSHIP_FOLLOW_UPS[:2]
+                follow_ups = list(_INTERNSHIP_FOLLOW_UPS[:2])
             return InternshipCoachResponse(
                 ok=True, vague=True, follow_ups=follow_ups[:3],
                 notes=["Need a few more details before drafting bullets."],

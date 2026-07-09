@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { logoutCurrentSurface } from "@/app/apiClient";
@@ -114,14 +114,27 @@ export function StudentWizardPage() {
 
   // Land returning students on the step after the last one they completed —
   // unless a `?step=` deep-link is present, in which case the URL wins.
+  //
+  // Resume is an INITIAL-HYDRATION behavior: it fires exactly once, when the
+  // profile first arrives. It must NOT re-fire on later completed_steps
+  // changes — Preview auto-marks itself complete on first land, and the old
+  // every-change version re-triggered here and yanked the student straight
+  // to the Starter Pack (the "preview auto-advance" bug).
+  const resumedRef = useRef(false);
   useEffect(() => {
-    if (requestedStepIndex >= 0) return;
-    if (profile && profile.completed_steps?.length) {
+    if (resumedRef.current) return;
+    if (requestedStepIndex >= 0) {
+      resumedRef.current = true; // deep link wins — never auto-resume afterwards
+      return;
+    }
+    if (!profile) return;
+    resumedRef.current = true;
+    if (profile.completed_steps?.length) {
       const lastCompleted = profile.completed_steps[profile.completed_steps.length - 1];
       const next = STEPS.findIndex((s) => s.slug === lastCompleted);
       if (next >= 0 && next < STEPS.length - 1) setStepIndex(next + 1);
     }
-  }, [profile?.completed_steps?.length, requestedStepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profile, requestedStepIndex]);
 
   // Keep the /login picker snapshot in sync — name updates and photo
   // uploads from the wizard propagate into localStorage so the next
