@@ -21,7 +21,7 @@ export const site = {
   googleSiteVerification: "",
   // Cloudflare Web Analytics (cookieless, no banner): paste the beacon token
   // from Cloudflare dashboard → Analytics & Logs → Web Analytics.
-  cloudflareAnalyticsToken: "",
+  cloudflareAnalyticsToken: "8b93777272884655b4cfabdbca3ecd76",
   // Brand palette (mirrors app.careero.app: blue → indigo → violet).
   brand: {
     from: "#3B82F6",
