@@ -2,7 +2,7 @@
  * Central brand constants. The product currently ships under two names —
  * "Careero" for the student surface, "PersonaArmory" for the company and
  * the admin surface — while the repo/package keep legacy names
- * (freelance-copilot / upwork-intel-frontend). This file makes that drift
+ * (the repo is still named freelance-copilot). This file makes that drift
  * deliberate and single-sourced instead of scattered string literals.
  */
 export const BRAND = {

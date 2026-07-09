@@ -36,6 +36,10 @@ jobs:
           pip install -e ".[dev]"
       - working-directory: backend
         run: ruff check .
+      # Strict mypy with the explicit ratchet baseline in pyproject.toml —
+      # exits 0 today; the baseline may only shrink.
+      - working-directory: backend
+        run: mypy app
       - working-directory: backend
         run: pytest -q
 
@@ -55,3 +59,29 @@ jobs:
         run: npm run typecheck
       - working-directory: frontend
         run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - name: Start the stack
+        run: docker compose up -d --build
+      - name: Wait for backend health
+        run: timeout 180 bash -c 'until curl -sf http://localhost:8000/api/v1/health; do sleep 3; done'
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - working-directory: frontend
+        run: npm ci || npm install
+      - working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      # global-setup creates the E2E admin via docker compose exec; OTP codes
+      # are read from the mock mailbox at backend/var/dev-emails.jsonl.
+      - working-directory: frontend
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 7
