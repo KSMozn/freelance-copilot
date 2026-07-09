@@ -111,8 +111,9 @@ refactor, not a drive-by.
   `tests/test_api_students.py` / `test_api_admin.py` / `test_api_auth_live.py`
   are the live-surface suite; extend them, don't regress them.
 - CI (`.github/workflows/ci.yml`) gates: `ruff check .` + `pytest -q`.
-  mypy strict is configured but not gated — treat its error count as debt to
-  ratchet down, and never introduce `Any` in new code.
+  mypy strict is configured but not gated — measured 2026-07 at **159 errors
+  in 44 of 262 files**; treat as debt to ratchet down, and never introduce
+  `Any` in new code.
 
 ---
 

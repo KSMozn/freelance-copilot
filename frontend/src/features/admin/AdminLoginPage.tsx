@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { BRAND } from "@/shared/config/brand";
+import { getApiErrorMessage } from "@/shared/lib/getApiErrorMessage";
 import { AuthShell } from "@/shared/ui/brand/AuthShell";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -35,9 +36,7 @@ export function AdminLoginPage() {
       navigate("/overview", { replace: true });
     },
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
-        ?.data?.detail;
-      toast.error(detail ?? "Invalid credentials");
+      toast.error(getApiErrorMessage(err, "Invalid credentials"));
     },
   });
 

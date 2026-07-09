@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { getApiErrorMessage } from "@/shared/lib/getApiErrorMessage";
 import { AuthShell } from "@/shared/ui/brand/AuthShell";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -78,8 +79,7 @@ export function LoginPage() {
       setStep("code");
     },
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(detail ?? "Could not send code");
+      toast.error(getApiErrorMessage(err, "Could not send code"));
     },
   });
 
@@ -99,8 +99,7 @@ export function LoginPage() {
     },
     onSuccess: redirectAfter,
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      toast.error(detail ?? "Invalid code");
+      toast.error(getApiErrorMessage(err, "Invalid code"));
     },
   });
 

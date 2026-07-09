@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { getApiErrorMessage } from "@/shared/lib/getApiErrorMessage";
 import { AuthShell } from "@/shared/ui/brand/AuthShell";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -76,9 +77,7 @@ export function RegisterPage() {
     },
     onSuccess: redirectAfter,
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
-        ?.data?.detail;
-      toast.error(detail ?? "Could not register");
+      toast.error(getApiErrorMessage(err, "Could not register"));
     },
   });
 
@@ -95,9 +94,7 @@ export function RegisterPage() {
       setStep("code");
     },
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
-        ?.data?.detail;
-      toast.error(detail ?? "Could not send code");
+      toast.error(getApiErrorMessage(err, "Could not send code"));
     },
   });
 
@@ -114,9 +111,7 @@ export function RegisterPage() {
     },
     onSuccess: redirectAfter,
     onError: (err: unknown) => {
-      const detail = (err as { response?: { data?: { detail?: string } } } | undefined)?.response
-        ?.data?.detail;
-      toast.error(detail ?? "Invalid code");
+      toast.error(getApiErrorMessage(err, "Invalid code"));
     },
   });
 

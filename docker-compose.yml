@@ -18,6 +18,11 @@ services:
 
   backend:
     build: ./backend
+    # Dev-only: the image runs as non-root appuser (Cloud Run hardening), but
+    # Windows/macOS bind mounts surface as root-owned inside the container —
+    # appuser then cannot write var/ (dev-emails.jsonl, uploads). Compose is
+    # dev-only, so run as root here; production does not use compose.
+    user: root
     restart: unless-stopped
     depends_on:
       db:
@@ -46,8 +51,8 @@ services:
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mock}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS:-no-reply@example.com}
-      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Freelance Copilot}
-      APP_NAME: ${APP_NAME:-Freelance Copilot}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Careero}
+      APP_NAME: ${APP_NAME:-Careero}
       OTP_EXPIRES_MINUTES: ${OTP_EXPIRES_MINUTES:-10}
       OTP_MAX_ATTEMPTS: ${OTP_MAX_ATTEMPTS:-5}
       OTP_RATE_LIMIT_PER_15MIN: ${OTP_RATE_LIMIT_PER_15MIN:-3}
@@ -67,6 +72,10 @@ services:
       - backend
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+      # Windows/macOS bind mounts don't deliver file events into the Linux
+      # container — without polling, in-container Vite serves stale modules
+      # and HMR never fires on host-side edits.
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:

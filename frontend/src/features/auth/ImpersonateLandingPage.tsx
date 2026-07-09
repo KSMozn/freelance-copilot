@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -17,11 +17,21 @@ import { useAuthStore, type AuthUser } from "@/features/auth/authStore";
 export function ImpersonateLanding() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
+  // The effect consumes (and wipes) the fragment, so it must run exactly
+  // once — under React 18 StrictMode dev double-mounting, the second run
+  // would find an empty hash and bounce to /login, clobbering the success
+  // navigation from the first run.
+  const consumed = useRef(false);
 
   useEffect(() => {
+    if (consumed.current) return;
+    consumed.current = true;
     const raw = window.location.hash.replace(/^#/, "");
-    const params = new URLSearchParams(raw);
-    const encoded = params.get("p");
+    // Do NOT parse with URLSearchParams: it decodes "+" as a space, which
+    // corrupts base64 payloads that happen to contain "+" (atob then throws
+    // — an intermittent, content-dependent failure). The sender writes the
+    // fragment literally as "#p=<base64>", so slice it out verbatim.
+    const encoded = raw.startsWith("p=") ? raw.slice(2) : null;
     if (!encoded) {
       toast.error("No impersonation payload found");
       navigate("/login", { replace: true });
