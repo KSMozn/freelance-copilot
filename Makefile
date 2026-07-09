@@ -1,4 +1,4 @@
-.PHONY: help up down logs build migrate revision seed backend-dev frontend-dev backend-test fmt lint
+.PHONY: help up down logs build migrate revision seed create-admin backend-dev frontend-dev backend-test fmt lint
 
 help:
 	@echo "Targets:"
@@ -7,7 +7,8 @@ help:
 	@echo "  logs           tail compose logs"
 	@echo "  migrate        run alembic upgrade head inside backend container"
 	@echo "  revision m=... create a new alembic revision (autogenerate)"
-	@echo "  seed           insert a demo user"
+	@echo "  seed           seed the DORMANT professional demo (job/portfolios/resumes)"
+	@echo "  create-admin   create/reset an admin user (email=... password=... [name=...])"
 	@echo "  backend-dev    run backend locally with reload (no docker)"
 	@echo "  frontend-dev   run vite dev server locally (no docker)"
 	@echo "  backend-test   pytest inside backend container"
@@ -33,8 +34,16 @@ revision:
 	@test -n "$(m)" || (echo "usage: make revision m=\"add foo\"" && exit 1)
 	docker compose exec backend alembic revision --autogenerate -m "$(m)"
 
+# Seeds the DORMANT professional surface's demo data (job, portfolios,
+# resumes, applications). For the live product, use create-admin instead.
 seed:
 	docker compose exec backend python -m app.scripts.seed
+
+# Create (or reset the password of) a PersonaArmory admin user. Idempotent.
+create-admin:
+	@test -n "$(email)" || (echo 'usage: make create-admin email=you@example.com password=secret [name="Full Name"]' && exit 1)
+	@test -n "$(password)" || (echo 'usage: make create-admin email=you@example.com password=secret [name="Full Name"]' && exit 1)
+	docker compose exec -e ADMIN_EMAIL=$(email) -e ADMIN_PASSWORD=$(password) -e ADMIN_FULL_NAME=$(name) backend python -m app.scripts.create_admin
 
 backend-dev:
 	cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

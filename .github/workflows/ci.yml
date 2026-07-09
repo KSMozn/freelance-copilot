@@ -47,6 +47,10 @@ jobs:
         with: { node-version: "22" }
       - working-directory: frontend
         run: npm ci || npm install
+      # Lint enforces the feature-boundary zones (import-x/no-restricted-paths)
+      # — without this step the architecture rules are only checked locally.
+      - working-directory: frontend
+        run: npm run lint
       - working-directory: frontend
         run: npm run typecheck
       - working-directory: frontend

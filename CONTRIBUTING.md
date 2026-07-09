@@ -37,7 +37,7 @@ journey: register → wizard → preview → download.
 Every contributor should have:
 - A GitHub account with 2FA enabled.
 - Docker Desktop (or Colima) installed.
-- Node 20+, Python 3.13+.
+- Node 22+, Python 3.13+.
 - Familiarity with the CV creation journey before touching anything on it.
 
 ---

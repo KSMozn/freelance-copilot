@@ -43,3 +43,4 @@ backend/dist/
 playwright-report/
 test-results/
 storybook-static/
+.playwright-mcp/

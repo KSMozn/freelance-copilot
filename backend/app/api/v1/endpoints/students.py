@@ -306,7 +306,10 @@ async def delete_entry(
 
 
 @router.post("/coach/email", response_model=EmailCoachResponse)
-async def coach_email(payload: EmailCoachRequest) -> EmailCoachResponse:
+async def coach_email(user: CurrentUser, payload: EmailCoachRequest) -> EmailCoachResponse:
+    # Gated like every other /students route — the wizard is the only
+    # caller and always sends a token. (This was the lone unauthenticated
+    # /students endpoint; rule-based, but no reason to serve it anonymously.)
     return StudentCoachService.check_email(payload)
 
 

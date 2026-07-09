@@ -269,7 +269,7 @@ npm run format && npm run lint && npm run typecheck
 
 ## Docker / running the full stack
 
-The frontend has no standalone Dockerfile — the **repo root** `docker-compose.yml` runs the whole platform (Postgres + FastAPI backend + this frontend). See the root `Makefile` (`make up`, `make migrate`, `make backend-dev`, `make frontend-dev`).
+Two images live here: `Dockerfile` (dev — used by the repo-root `docker-compose.yml`, bind-mounts the source and runs `npm run dev`) and `Dockerfile.prod` (Cloud Run — `npm ci` → `tsc -b && vite build` → nginx-unprivileged, built via `cloudbuild.yaml`). Neither runs ESLint; typecheck happens in the prod build via `tsc -b`. The full local stack (Postgres + FastAPI backend + this frontend) runs from the repo root: `make up`, `make migrate`, `make create-admin` (see the root `Makefile`).
 
 ---
 

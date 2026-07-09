@@ -1,0 +1,9 @@
+node_modules
+dist
+storybook-static
+.husky
+.storybook/node_modules
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

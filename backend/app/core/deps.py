@@ -699,23 +699,6 @@ async def get_current_user(
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-async def require_superuser(user: CurrentUser) -> User:
-    """LEGACY superuser gate (Phase L.1).
-
-    Superseded by `require_admin_user` — kept in case a caller still
-    references it. New admin endpoints should use `SuperAdmin`.
-    """
-    if not user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Superuser access required",
-        )
-    return user
-
-
-SuperUser = Annotated[User, Depends(require_superuser)]
-
-
 # ---- Admin identity (Phase L.2) --------------------------------------
 # admin_users is a completely separate identity space from users. Admin
 # JWTs carry `pt=admin`. The two gates below enforce that split:
