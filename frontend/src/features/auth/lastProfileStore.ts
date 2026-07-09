@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from "@/shared/config/brand";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -68,6 +69,6 @@ export const useLastProfileStore = create<LastProfileState>()(
         ),
       forget: () => set({ profile: null }),
     }),
-    { name: "careero-last-profile" },
+    { name: STORAGE_KEYS.lastProfile },
   ),
 );

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { BRAND } from "@/shared/config/brand";
 import { AuthShell } from "@/shared/ui/brand/AuthShell";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -43,9 +44,9 @@ export function AdminLoginPage() {
   return (
     <AuthShell
       variant="personaarmory-admin"
-      title="PersonaArmory Admin"
+      title={BRAND.adminProduct}
       subtitle="Operate the platform. Curate templates. Watch the numbers."
-      slogan="Signal in. Insight out."
+      slogan={BRAND.adminTagline}
     >
       <div className="mb-6 space-y-1">
         <h2 className="text-2xl font-semibold tracking-tight">Admin sign-in</h2>

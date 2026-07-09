@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { BRAND } from "@/shared/config/brand";
+
 import { AboutFooter } from "./AboutFooter";
 import { CareeroMark } from "./CareeroMark";
 import { PersonaArmoryMark } from "./PersonaArmoryMark";
@@ -22,11 +24,11 @@ export function AuthShell({
   variant = "careero",
   title = "Your AI Career Intelligence Platform",
   subtitle = "Careero helps you build the career you're capable of — from skills to opportunities, resumes to interviews.",
-  slogan = "Equip. Empower. Elevate.",
+  slogan = BRAND.tagline,
   children,
 }: Props) {
   const Mark = variant === "careero" ? CareeroMark : PersonaArmoryMark;
-  const brandName = variant === "careero" ? "Careero" : "PersonaArmory";
+  const brandName = variant === "careero" ? BRAND.product : BRAND.company;
 
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -54,7 +56,7 @@ export function AuthShell({
           <p className="mt-4 text-base text-white/70">{subtitle}</p>
         </div>
         <p className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} PersonaArmory
+          © {new Date().getFullYear()} {BRAND.company}
         </p>
       </aside>
 

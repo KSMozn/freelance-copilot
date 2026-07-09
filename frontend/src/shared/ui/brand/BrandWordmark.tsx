@@ -1,3 +1,4 @@
+import { BRAND } from "@/shared/config/brand";
 import { cn } from "@/shared/lib/utils";
 
 import { CareeroMark } from "./CareeroMark";
@@ -14,9 +15,9 @@ interface Props {
 }
 
 const LABELS: Record<Variant, string> = {
-  careero: "Careero",
-  personaarmory: "PersonaArmory",
-  "personaarmory-admin": "PersonaArmory · Admin",
+  careero: BRAND.product,
+  personaarmory: BRAND.company,
+  "personaarmory-admin": BRAND.adminWordmark,
 };
 
 /**

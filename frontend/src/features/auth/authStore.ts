@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from "@/shared/config/brand";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -48,6 +49,6 @@ export const useAuthStore = create<AuthState>()(
           activePersonaId: null,
         }),
     }),
-    { name: "upwork-intel-auth" },
+    { name: STORAGE_KEYS.auth },
   ),
 );

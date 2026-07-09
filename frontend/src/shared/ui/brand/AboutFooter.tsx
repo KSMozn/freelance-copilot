@@ -1,3 +1,4 @@
+import { BRAND } from "@/shared/config/brand";
 import { cn } from "@/shared/lib/utils";
 
 /**
@@ -13,9 +14,9 @@ export function AboutFooter({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="font-medium text-foreground/80">Careero</span> is a{" "}
-      <span className="text-brand-gradient font-semibold">PersonaArmory</span>{" "}
-      product · Equip. Empower. Elevate.
+      <span className="font-medium text-foreground/80">{BRAND.product}</span> is a{" "}
+      <span className="text-brand-gradient font-semibold">{BRAND.company}</span>{" "}
+      product · {BRAND.tagline}
     </p>
   );
 }

@@ -16,8 +16,11 @@ import {
  * starting source. Whichever they pick (or skip), they land on the dashboard
  * and can add more sources in-context later.
  *
- * Phase A scope: GitHub Connect + Skip are functional. CV upload is shown
- * with a "coming soon" badge — wired in Phase D.
+ * The CV-upload and GitHub cards target the professional surface
+ * (/sources, /repositories), which is dormant — its routes are not
+ * registered, so those cards are shown disabled with a "Coming soon"
+ * badge instead of navigating into the wildcard redirect. Re-enable them
+ * when the professional surface is mounted again.
  */
 export function OnboardingPage() {
   const navigate = useNavigate();
@@ -37,14 +40,16 @@ export function OnboardingPage() {
             title="Upload your CV"
             description="PDF, DOCX, or paste plain text. We'll extract experiences, skills, and projects into your graph."
             cta="Upload CV"
-            onClick={() => navigate("/sources")}
+            badge="Coming soon"
+            disabled
           />
           <SourceCard
             icon={<Github className="h-6 w-6" />}
             title="Connect GitHub"
             description="We'll scan your repos for languages, frameworks, and architecture patterns."
             cta="Connect GitHub"
-            onClick={() => navigate("/repositories")}
+            badge="Coming soon"
+            disabled
           />
           <SourceCard
             icon={<SkipForward className="h-6 w-6" />}

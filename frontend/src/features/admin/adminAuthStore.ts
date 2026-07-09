@@ -1,3 +1,4 @@
+import { STORAGE_KEYS } from "@/shared/config/brand";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -33,6 +34,6 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
       logout: () => set({ admin: null, accessToken: null, refreshToken: null }),
     }),
-    { name: "persona-armory-admin-auth" },
+    { name: STORAGE_KEYS.adminAuth },
   ),
 );
