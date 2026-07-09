@@ -107,4 +107,12 @@ export default [
       ],
     },
   },
+  // Storybook stories export a default meta object (framework requirement),
+  // which react-refresh's only-export-components heuristic misreads.
+  {
+    files: ["**/*.stories.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
 ];
