@@ -1,49 +1,884 @@
 {
   "_source": {
     "provider": "Careero hand-curated MENA supplement",
-    "note": "Universities missing from the Hipolabs upstream dataset. Add entries here (not in universities.json) so a Hipolabs refresh stays clean. Dedupe against Hipolabs happens at load time via (name.lower(), country.lower())."
+    "note": "Universities missing from the Hipolabs upstream dataset. Add entries here (not in universities.json) so a Hipolabs refresh stays clean. Deduped by normalized (name, country). Pakistan set enriched from Wikidata (higher-ed institution types), filtered to degree-awarding institutions."
   },
   "universities": [
-    {"name": "Aswan University", "country": "Egypt"},
-    {"name": "Port Said University", "country": "Egypt"},
-    {"name": "Suez University", "country": "Egypt"},
-    {"name": "University of Sadat City", "country": "Egypt"},
-    {"name": "New Valley University", "country": "Egypt"},
-    {"name": "Arish University", "country": "Egypt"},
-    {"name": "Luxor University", "country": "Egypt"},
-    {"name": "Matrouh University", "country": "Egypt"},
-    {"name": "Beni Suef Technological University", "country": "Egypt"},
-    {"name": "Cairo Technological University", "country": "Egypt"},
-    {"name": "New Mansoura University", "country": "Egypt"},
-    {"name": "New Cairo Technological University", "country": "Egypt"},
-    {"name": "New Assiut Technological University", "country": "Egypt"},
-    {"name": "Egyptian University of Informatics (EUI)", "country": "Egypt"},
-    {"name": "Egypt-Japan University of Science and Technology (E-JUST)", "country": "Egypt"},
-    {"name": "Zewail City of Science and Technology", "country": "Egypt"},
-    {"name": "Egyptian Chinese University", "country": "Egypt"},
-    {"name": "El Alamein International University", "country": "Egypt"},
-    {"name": "Galala University", "country": "Egypt"},
-    {"name": "King Salman International University", "country": "Egypt"},
-    {"name": "Egyptian Academy for Engineering and Advanced Technology", "country": "Egypt"},
-    {"name": "Coventry University Egypt", "country": "Egypt"},
-    {"name": "British University in Egypt (BUE)", "country": "Egypt"},
-    {"name": "Egyptian Russian University (ERU)", "country": "Egypt"},
-    {"name": "Nahda University in Beni Suef (NUB)", "country": "Egypt"},
-    {"name": "Ahram Canadian University (ACU)", "country": "Egypt"},
-    {"name": "Heliopolis University for Sustainable Development", "country": "Egypt"},
-    {"name": "Egyptian E-Learning University (EELU)", "country": "Egypt"},
-    {"name": "Egyptian International University for Health Sciences", "country": "Egypt"},
-    {"name": "Newgiza University (NGU)", "country": "Egypt"},
-    {"name": "Merit University", "country": "Egypt"},
-    {"name": "Al-Ryada University for Science and Technology", "country": "Egypt"},
-    {"name": "Delta University for Science and Technology", "country": "Egypt"},
-    {"name": "El Sewedy University of Technology", "country": "Egypt"},
-    {"name": "Sphinx University", "country": "Egypt"},
-    {"name": "Modern Technology University (MTU)", "country": "Egypt"},
-    {"name": "Egyptian Chinese University for Technology", "country": "Egypt"},
-    {"name": "Horus University", "country": "Egypt"},
-    {"name": "MET Higher Institute of Engineering and Technology", "country": "Egypt"},
-    {"name": "Modern Academy for Engineering and Technology", "country": "Egypt"},
-    {"name": "Higher Technological Institute — 10th of Ramadan City", "country": "Egypt"}
+    {
+      "name": "Ahram Canadian University (ACU)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Al-Ryada University for Science and Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Arish University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Aswan University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Beni Suef Technological University",
+      "country": "Egypt"
+    },
+    {
+      "name": "British University in Egypt (BUE)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Cairo Technological University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Coventry University Egypt",
+      "country": "Egypt"
+    },
+    {
+      "name": "Delta University for Science and Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egypt-Japan University of Science and Technology (E-JUST)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian Academy for Engineering and Advanced Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian Chinese University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian Chinese University for Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian E-Learning University (EELU)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian International University for Health Sciences",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian Russian University (ERU)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Egyptian University of Informatics (EUI)",
+      "country": "Egypt"
+    },
+    {
+      "name": "El Alamein International University",
+      "country": "Egypt"
+    },
+    {
+      "name": "El Sewedy University of Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Galala University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Heliopolis University for Sustainable Development",
+      "country": "Egypt"
+    },
+    {
+      "name": "Higher Technological Institute — 10th of Ramadan City",
+      "country": "Egypt"
+    },
+    {
+      "name": "Horus University",
+      "country": "Egypt"
+    },
+    {
+      "name": "King Salman International University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Luxor University",
+      "country": "Egypt"
+    },
+    {
+      "name": "MET Higher Institute of Engineering and Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Matrouh University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Merit University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Modern Academy for Engineering and Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Modern Technology University (MTU)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Nahda University in Beni Suef (NUB)",
+      "country": "Egypt"
+    },
+    {
+      "name": "New Assiut Technological University",
+      "country": "Egypt"
+    },
+    {
+      "name": "New Cairo Technological University",
+      "country": "Egypt"
+    },
+    {
+      "name": "New Mansoura University",
+      "country": "Egypt"
+    },
+    {
+      "name": "New Valley University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Newgiza University (NGU)",
+      "country": "Egypt"
+    },
+    {
+      "name": "Port Said University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Sphinx University",
+      "country": "Egypt"
+    },
+    {
+      "name": "Suez University",
+      "country": "Egypt"
+    },
+    {
+      "name": "University of Sadat City",
+      "country": "Egypt"
+    },
+    {
+      "name": "Zewail City of Science and Technology",
+      "country": "Egypt"
+    },
+    {
+      "name": "Abasyn University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Abbottabad University of Science and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Abdul Wali Khan University Mardan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Ahsan-Ul-Uloom",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Al-Ghazali University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Al-Hamd Islamic University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Al-Qadir University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Ali Institute of Education",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Arabic Open University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Army Public College of Management Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Azad Jammu and Kashmir Medical College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Baba Guru Nanak University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Bahauddin Zakariya University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Balochistan Agriculture College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Balochistan University of Engineering and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Balochistan University of Information Technology, Engineering and Management Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Beaconhouse National University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Begum Nusrat Bhutto Women University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Benazir Bhutto Shaheed Institute of Management Science",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Benazir Bhutto Shaheed University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Benazir Bhutto Shaheed University of Technology and Skill Development",
+      "country": "Pakistan"
+    },
+    {
+      "name": "CECOS University of IT and Emerging Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "City University of Science and Information Technology, Peshawar",
+      "country": "Pakistan"
+    },
+    {
+      "name": "College of Aeronautical Engineering",
+      "country": "Pakistan"
+    },
+    {
+      "name": "College of Physicians & Surgeons Pakistan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Dawood University of Engineering and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Fatima Jinnah Medical College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Fatima Jinnah Women University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Federal Urdu University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Forman Christian College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Forward Degree College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Foundation University Islamabad",
+      "country": "Pakistan"
+    },
+    {
+      "name": "GM College Faisalabad",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Gambat Institute of Medical Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Ghazi University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Ghulam Ishaq Khan Institute of Engineering Sciences and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College Asghar Mall Rawalpindi",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College Gujranwala",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College Women University (Faisalabad)",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College Women University (Sialkot)",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College for Men, Nazimabad",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College for Women Dhoke Kala Khan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College of Science, Lahore",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College of Technology, Faisalabad",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government College of Technology, Rasul",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Degree College Attock",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Degree College Jhelum",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Degree College Memon Goth",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Degree College Shakargarh",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Degree Girls College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Islamia Graduate College Sangla Hill",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Khawaja Farid College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government M.A.O College Lahore",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Post Graduate College Sahiwal",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Post Graduate College, Abbottabad",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Premier College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Government Sadiq College Women University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Green International University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Habib University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Hajvery University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Hyderabad Institute of Arts, Science and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "ILMA University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "IMSciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "IQRA National University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Ibn. Imam Degree Science College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Imperial College of Business Studies",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Information Technology University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Institute of Engineering and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Institute of Southern Punjab Multan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Iqra University - Islamabad Campus",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Islamia College University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Islamia Science College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia Baitussalam",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia Faridia",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia Islamia Imdadia",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia Qasim Ul Uloom",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia Siddiqia",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia Tur Rasheed, Karachi",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Jamia al-Dawa al-Islamiyya Markaz Tayyaba",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Johar College of Science and Commerce",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Karachi School of Business and Leadership",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Khadim Ali Shah Bukhari Institute of Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Khushal Khan Khattak University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Khwaja Fareed University of Engineering & Information Technology, Rahim Yar Khan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "King Edward Medical University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Kinnaird College for Women",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Kohat University of Science and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Kohsar University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Lahore Garrison University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Lahore Leads University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Lahore School of Fashion Design",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Lasbela University of Agriculture, Water and Marine Science",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Liaquat University of Medical and Health Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Makran Medical College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Mardan Institute of Management Studies",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Military College of Signals",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Minhaj International University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Mir Chakar Khan Rind University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Mirpur University of Science and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Muhammad Nawaz Sharif University of Agriculture",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Multan University of Science & Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Murray College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "NED University of Engineering and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National College of Arts, Gilgit",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National College of Arts, Rawalpindi",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National Institute of Banking and Finance",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National Institute of Technology, Lahore",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National Skills University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National Textile University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National University of Computer and Emerging Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "National University of Pakistan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Nazeer Hussain University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Newports Institute of Communications and Economics",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Nishtar Medical University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Northern University, Nowshera",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Pakistan Institute of Development Economics",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Pakistan Institute of Engineering and Applied Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Pakistan Institute of Fashion and Design",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Pakistan Navy Engineering College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "People's University of Medical & Health Sciences for Women",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Preston University, Pakistan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Professionals' Academy of Commerce",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Punjab Tianjin University of Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Punjab University College of Information Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Rawalpindi Women University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Riphah International University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Roots Ivy International University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Sardar Bahadur Khan Women's University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Sarhad University of Science and Information Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shah Abdul Latif University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shaheed Benazir Bhutto City University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shaheed Benazir Bhutto University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shaheed Benazir Bhutto University of Veterinary and Animal Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shaheed Benazir Bhutto University, Sheringal",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shaheed Zulfikar Ali Bhutto Institute of Science and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shaheed Zulfiqar Ali Bhutto University of Law",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Shifa Tameer-e-Millat University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Sindh Agriculture University",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Sir Syed CASE Institute of Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Sir Syed Government Girls College",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Tameer-e-Nau Public College, Quetta",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Thal University Bhakkar",
+      "country": "Pakistan"
+    },
+    {
+      "name": "The University of Larkano",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University College Lahore",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University College of Islamabad",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Agriculture, Dera Ismail Khan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Azad Jammu and Kashmir",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Baltistan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Biological and Applied Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Child Health Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Dir",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Engineering & Technology, Rasul",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Engineering and Technology",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Engineering and Technology, Mardan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of FATA",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Gwadar",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Haripur",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Islamic Studies",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Kotli",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Loralai",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Mianwali",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Mirpurkhas",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Narowal",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Okara",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Poonch",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Sahiwal",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Science & Technology, Lakki Marwat",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Sialkot",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of South Asia, Lahore",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Swabi",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Swat",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Turbat",
+      "country": "Pakistan"
+    },
+    {
+      "name": "University of Veterinary and Animal Sciences",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Wafaq ul Madaris Al-Arabia, Pakistan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Women University Mardan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Women University Multan",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Women University of Azad Jammu and Kashmir",
+      "country": "Pakistan"
+    },
+    {
+      "name": "Women's Institute of Science & Humanities",
+      "country": "Pakistan"
+    }
   ]
 }
