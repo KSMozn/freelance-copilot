@@ -10,17 +10,20 @@ export const site = {
   // The authenticated CV builder. Every primary CTA points here.
   appUrl: "https://app.careero.app",
   loginUrl: "https://app.careero.app/login",
+  linkedin: "https://www.linkedin.com/company/136044566",
   tagline: "AI CV Builder for Students",
+  // Short meta-description default (per-page ones override this).
   description:
     "Careero helps students build their first professional, ATS-friendly CV with AI — describe projects and internships clearly, pick a modern template, and download as PDF or DOCX.",
+  // Canonical one-paragraph product description — reused verbatim across
+  // homepage, About, metadata, SoftwareApplication schema, llms.txt, FAQ and
+  // footer so the brand story never drifts (playbook Phase 8).
+  productDescription:
+    "Careero is an AI-powered CV builder for students and fresh graduates. It helps students create professional CVs even when they have limited work experience by guiding them through education, projects, internships, skills, activities, LinkedIn, GitHub, and ready-to-download CV templates.",
   twitter: "@careero",
   locale: "en_US",
   // --- integrations (fill in, then rebuild + redeploy) -------------------
-  // Google Search Console "HTML tag" verification: paste ONLY the content
-  // value of the <meta name="google-site-verification"> tag Google gives you.
   googleSiteVerification: "",
-  // Cloudflare Web Analytics (cookieless, no banner): paste the beacon token
-  // from Cloudflare dashboard → Analytics & Logs → Web Analytics.
   cloudflareAnalyticsToken: "8b93777272884655b4cfabdbca3ecd76",
   // Brand palette (mirrors app.careero.app: blue → indigo → violet).
   brand: {
@@ -31,42 +34,50 @@ export const site = {
   },
 };
 
-// Navigation model. Each dropdown item resolves to a real destination — an
-// internal SEO page (path starting with "/") or the app (absolute URL). No
-// dead links: feature/resource items without a dedicated marketing page point
-// to the closest relevant guide or to the app.
+// Navigation model. A group with `items` renders as a dropdown; a group with
+// `href` and no items renders as a plain link. Every destination is a real,
+// built page (no dead links, no duplicate slugs).
 export const nav = [
   {
     label: "For Students",
     items: [
-      { label: "Student CV Builder", href: "/student-cv-builder" },
-      { label: "First CV Guide", href: "/first-cv" },
+      { label: "Create My CV", href: "/create-cv-for-students" },
+      { label: "AI CV Builder for Students", href: "/ai-cv-builder-for-students" },
+      { label: "CV With No Experience", href: "/student-cv-with-no-experience" },
       { label: "CV for Internship", href: "/cv-for-internship" },
-      { label: "Student CV Templates", href: "/student-cv-templates" },
       { label: "ATS-Friendly CV", href: "/ats-friendly-student-cv" },
+      { label: "Student CV Builder", href: "/student-cv-builder" },
     ],
   },
   {
-    label: "Features",
+    label: "Guides",
     items: [
-      { label: "AI CV Writing", href: "/ai-cv-builder" },
-      {
-        label: "Project Description Helper",
-        href: "/blog/how-to-describe-student-projects",
-      },
-      { label: "Internship Summary Helper", href: "/cv-for-internship" },
-      { label: "PDF Download", href: "/download-cv-pdf" },
-      { label: "DOCX Download", href: "/download-cv-pdf#docx" },
-      { label: "LinkedIn Profile Helper", href: "/linkedin-profile-for-students" },
+      { label: "How to Write a Student CV", href: "/guides/how-to-write-a-student-cv" },
+      { label: "CV With No Experience", href: "/guides/student-cv-with-no-experience" },
+      { label: "Writing Projects in a CV", href: "/guides/how-to-write-projects-in-a-cv" },
+      { label: "Adding Internships to a CV", href: "/guides/how-to-add-internships-to-a-cv" },
+      { label: "Best CV Format for Students", href: "/guides/best-cv-format-for-students" },
+      { label: "LinkedIn for Students", href: "/guides/linkedin-profile-for-students" },
+      { label: "GitHub for Students", href: "/guides/github-profile-for-students" },
     ],
   },
   {
-    label: "Resources",
+    label: "Compare",
     items: [
-      { label: "CV Examples", href: "/student-cv-examples" },
-      { label: "Career Tips", href: "/blog" },
-      { label: "LinkedIn Tips", href: "/linkedin-profile-for-students" },
-      { label: "GitHub Profile Tips", href: "/github-profile-for-students" },
+      { label: "Careero vs Canva", href: "/alternatives/canva-cv-builder-for-students" },
+      { label: "Careero vs Resume.io", href: "/alternatives/resume-io-for-students" },
+      { label: "Careero vs Generic AI tools", href: "/alternatives/generic-ai-resume-builders" },
     ],
   },
+  { label: "Templates", href: "/student-cv-templates" },
+  { label: "Features", href: "/features" },
+];
+
+// Footer-only "Company" column (kept out of the top nav to avoid clutter).
+export const footerCompany = [
+  { label: "About", href: "/about" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Blog", href: "/blog" },
+  { label: "CV Examples", href: "/student-cv-examples" },
+  { label: "First CV Guide", href: "/first-cv" },
 ];

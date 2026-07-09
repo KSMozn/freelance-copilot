@@ -23,7 +23,7 @@ export const pages = [
     slug: "",
     title: "Careero — AI CV Builder for Students",
     description:
-      "Create your first professional student CV with Careero. Build an ATS-friendly CV, improve your projects and internships, choose from modern templates, and download as PDF or DOCX.",
+      "Careero helps students and fresh graduates create professional CVs with AI. Build your first CV, improve projects and internships, choose a template, and download in PDF or DOCX.",
     h1: "Build your first student CV with confidence",
     type: "website",
     blocks: [
@@ -32,9 +32,9 @@ export const pages = [
         kicker: "AI CV Builder for Students",
         h1: "Build your first student CV with confidence",
         lead:
-          "Careero turns your courses, projects and internships into a clean, ATS-friendly CV — with AI that helps you describe your experience in strong, recruiter-ready language. No blank page, no guesswork.",
-        primaryCta: { text: "Create your CV now", href: APP },
-        secondaryCta: { text: "See templates", href: "/student-cv-templates" },
+          "Careero helps students and fresh graduates build professional CVs even when they have limited work experience. Add education, projects, internships, skills, activities, LinkedIn and GitHub — and download your CV in PDF or DOCX.",
+        primaryCta: { text: "Create My CV", href: APP },
+        secondaryCta: { text: "See Student CV Templates", href: "/student-cv-templates" },
         note: "Free to start · No credit card · PDF &amp; DOCX download",
         bullets: [
           "Guided, step-by-step CV wizard built for students",
@@ -46,7 +46,7 @@ export const pages = [
         type: "cards",
         h2: "Everything a student needs to land the interview",
         intro:
-          "Careero is designed for people writing their <strong>first</strong> CV — students, fresh graduates and interns — not senior professionals with 15 years of history.",
+          "Careero is an AI-powered CV builder for students and fresh graduates. It helps you create a professional CV even with limited work experience by guiding you through education, projects, internships, skills, activities, LinkedIn, GitHub, and ready-to-download CV templates.",
         items: [
           {
             icon: "🎓",
@@ -58,7 +58,7 @@ export const pages = [
             icon: "🤖",
             title: "AI writing help",
             text: "Describe a project or internship in a sentence and Careero rewrites it into strong, quantified bullet points.",
-            href: "/ai-cv-builder",
+            href: "/ai-cv-builder-for-students",
           },
           {
             icon: "✅",
@@ -70,7 +70,7 @@ export const pages = [
             icon: "🧩",
             title: "Project helper",
             text: "Turn a class or side project into achievement-focused bullets that show real skills.",
-            href: "/blog/how-to-describe-student-projects",
+            href: "/guides/how-to-write-projects-in-a-cv",
           },
           {
             icon: "💼",
@@ -241,7 +241,7 @@ export const pages = [
 
   // --------------------------------------------------- WRITE CV STUDENTS ----
   {
-    slug: "write-cv-for-students",
+    slug: "create-cv-for-students",
     title: "How to Write a CV for Students (2026 Guide) | Careero",
     description:
       "Learn how to write a student CV that gets interviews: what to include, how to structure it, and how to describe projects and experience. Then build yours free with Careero.",
@@ -335,7 +335,7 @@ export const pages = [
         lead:
           "Your first CV feels intimidating because it's a blank page and you're not sure you have &ldquo;enough&rdquo; to fill it. You do — and this guide (plus Careero's AI) will help you prove it.",
         primaryCta: { text: "Build my first CV", href: APP },
-        secondaryCta: { text: "CV with no experience", href: "/blog/how-to-write-cv-with-no-experience" },
+        secondaryCta: { text: "CV with no experience", href: "/guides/student-cv-with-no-experience" },
       },
       {
         type: "steps",
@@ -567,7 +567,9 @@ export const pages = [
       },
       {
         type: "cards",
-        h2: "Templates for every kind of student application",
+        h2: "Five templates for every kind of student application",
+        intro:
+          "Every template is ATS-friendly and exports to <strong>PDF and DOCX</strong>. Switch between them anytime — your content stays, only the design changes.",
         items: [
           {
             icon: "🟦",
@@ -577,17 +579,22 @@ export const pages = [
           {
             icon: "🟪",
             title: "Modern",
-            text: "A contemporary design with subtle accent colour — professional without looking like a template.",
+            text: "A contemporary design with a subtle accent colour — professional without looking like a template.",
           },
           {
-            icon: "🟩",
-            title: "Technical",
-            text: "Projects and skills up front — ideal for computer science, engineering and data roles.",
-          },
-          {
-            icon: "🟨",
+            icon: "⬜",
             title: "Minimal",
             text: "Maximum white space and clarity for when your content should do all the talking.",
+          },
+          {
+            icon: "🎓",
+            title: "Academic",
+            text: "Structured for research, publications and coursework — ideal for postgraduate and scholarship applications.",
+          },
+          {
+            icon: "🎨",
+            title: "Creative",
+            text: "A touch more personality for design, media and marketing students — still clean and recruiter-safe.",
           },
         ],
       },
@@ -626,7 +633,7 @@ export const pages = [
 
   // -------------------------------------------------- AI CV BUILDER ---------
   {
-    slug: "ai-cv-builder",
+    slug: "ai-cv-builder-for-students",
     title: "AI CV Builder for Students — Write Your CV with AI | Careero",
     description:
       "Careero's AI CV builder writes strong, ATS-friendly CV content for students. Describe a project or internship and AI turns it into quantified bullet points. Start free and download as PDF or DOCX.",
@@ -655,7 +662,7 @@ export const pages = [
             icon: "🧩",
             title: "Project descriptions",
             text: "Turn a class or side project into achievement bullets that show real, transferable skills.",
-            href: "/blog/how-to-describe-student-projects",
+            href: "/guides/how-to-write-projects-in-a-cv",
           },
           {
             icon: "💼",
@@ -753,13 +760,13 @@ export const pages = [
             icon: "🧩",
             title: "How to describe student projects",
             text: "Turn coursework and side projects into achievement-focused CV bullet points.",
-            href: "/blog/how-to-describe-student-projects",
+            href: "/guides/how-to-write-projects-in-a-cv",
           },
           {
             icon: "🚀",
             title: "How to write a CV with no experience",
             text: "What to include — and how to describe it — when you don't have formal work history yet.",
-            href: "/blog/how-to-write-cv-with-no-experience",
+            href: "/guides/student-cv-with-no-experience",
           },
           {
             icon: "✉️",
@@ -881,11 +888,11 @@ export const pages = [
 
   // ------------------------------------------ BLOG: DESCRIBE PROJECTS --------
   {
-    slug: "blog/how-to-describe-student-projects",
-    title: "How to Describe Student Projects on a CV (With Examples) | Careero",
+    slug: "guides/how-to-write-projects-in-a-cv",
+    title: "How to Write Projects in a Student CV (With Examples) | Careero",
     description:
       "Learn how to describe academic and personal projects on your CV so they show real skills. Includes before-and-after examples and a simple formula. Build your CV free with Careero.",
-    h1: "How to describe student projects on your CV",
+    h1: "How to write projects in a student CV",
     type: "article",
     datePublished: PUB,
     dateModified: MOD,
@@ -893,7 +900,7 @@ export const pages = [
       {
         type: "hero",
         kicker: "Guide · 5 min read",
-        h1: "How to describe student projects on your CV",
+        h1: "How to write projects in a student CV",
         lead:
           "Projects are the most valuable thing on a student CV — they prove you can actually do the work. But only if you describe them well. Here's a simple formula and real examples.",
         primaryCta: { text: "Improve my projects", href: APP },
@@ -957,11 +964,11 @@ export const pages = [
 
   // ------------------------------------------ BLOG: NO EXPERIENCE ------------
   {
-    slug: "blog/how-to-write-cv-with-no-experience",
-    title: "How to Write a CV With No Experience (Student Guide) | Careero",
+    slug: "guides/student-cv-with-no-experience",
+    title: "How to Create a Student CV With No Work Experience | Careero",
     description:
       "No work experience? You can still write a strong CV. Learn what to include, how to describe transferable skills, and how to fill the page with substance. Build yours free with Careero.",
-    h1: "How to write a CV with no experience",
+    h1: "How to create a student CV with no work experience",
     type: "article",
     datePublished: PUB,
     dateModified: MOD,
@@ -969,7 +976,7 @@ export const pages = [
       {
         type: "hero",
         kicker: "Guide · 5 min read",
-        h1: "How to write a CV with no experience",
+        h1: "How to create a student CV with no work experience",
         lead:
           "&ldquo;I have no experience&rdquo; almost always means &ldquo;I have no job title yet.&rdquo; You have more to work with than you think — here's how to find it and put it on the page.",
         primaryCta: { text: "Start my CV free", href: APP },
@@ -1072,7 +1079,7 @@ export const pages = [
             icon: "💻",
             title: "Technical / CS example",
             text: "Projects and skills first, with a tech stack and links to GitHub — ideal for software and data roles.",
-            href: "/github-profile-for-students",
+            href: "/guides/github-profile-for-students",
           },
           {
             icon: "🎯",
@@ -1200,7 +1207,7 @@ export const pages = [
 
   // -------------------------------------------------- LINKEDIN --------------
   {
-    slug: "linkedin-profile-for-students",
+    slug: "guides/linkedin-profile-for-students",
     title: "LinkedIn Profile for Students — Tips to Get Noticed | Careero",
     description:
       "Build a LinkedIn profile that gets students noticed by recruiters: headline, About section, projects and skills. Practical tips that pair perfectly with your Careero CV.",
@@ -1214,7 +1221,7 @@ export const pages = [
         lead:
           "Recruiters check LinkedIn before (and after) they read your CV. A clear, consistent profile makes you easy to find and easy to trust — here's how to build one as a student.",
         primaryCta: { text: "Build my CV first", href: APP },
-        secondaryCta: { text: "Write a CV with no experience", href: "/blog/how-to-write-cv-with-no-experience" },
+        secondaryCta: { text: "Write a CV with no experience", href: "/guides/student-cv-with-no-experience" },
       },
       {
         type: "steps",
@@ -1273,7 +1280,7 @@ export const pages = [
 
   // -------------------------------------------------- GITHUB ----------------
   {
-    slug: "github-profile-for-students",
+    slug: "guides/github-profile-for-students",
     title: "GitHub Profile Tips for Students (Put It on Your CV) | Careero",
     description:
       "Turn your GitHub into a portfolio that strengthens your CV. Tips on your README, pinned projects and commit history for students applying to tech roles. Build your CV free with Careero.",
@@ -1287,7 +1294,7 @@ export const pages = [
         lead:
           "For tech roles, your GitHub is living proof of what you can build. A tidy profile with a few well-presented projects can matter as much as the CV itself — here's how to get it right.",
         primaryCta: { text: "Build my technical CV", href: APP },
-        secondaryCta: { text: "Describe your projects", href: "/blog/how-to-describe-student-projects" },
+        secondaryCta: { text: "Describe your projects", href: "/guides/how-to-write-projects-in-a-cv" },
       },
       {
         type: "cards",
@@ -1608,6 +1615,528 @@ export const pages = [
         "Walk in with a CV you can talk about",
         "Careero helps you write clear, honest highlights you'll be ready to discuss.",
         "Get my CV interview-ready",
+      ),
+    ],
+  },
+
+  // ============================================ PLAYBOOK LANDING PAGES ======
+
+  // -------------------------------------------- NO EXPERIENCE (landing) -----
+  {
+    slug: "student-cv-with-no-experience",
+    title: "Student CV With No Experience — Build One Free | Careero",
+    description:
+      "No work experience? Build a strong student CV with Careero using your projects, coursework, activities, skills, LinkedIn and GitHub. Free, ATS-friendly, PDF & DOCX download.",
+    h1: "Build a student CV with no work experience",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Student CV With No Experience",
+        h1: "Build a student CV with no work experience",
+        lead:
+          "You don't need a job history to have a strong CV. Careero helps you build one from what you already have — projects, coursework, activities, skills, and your LinkedIn and GitHub.",
+        primaryCta: { text: "Create My CV", href: APP },
+        secondaryCta: { text: "Read the full guide", href: "/guides/student-cv-with-no-experience" },
+        note: "Free to start · PDF & DOCX download",
+      },
+      {
+        type: "cards",
+        h2: "What to put on a CV when you have no experience",
+        intro:
+          "Careero guides you through each of these and turns them into strong, recruiter-ready content.",
+        items: [
+          { icon: "🧩", title: "Projects", text: "Coursework and personal projects are the strongest proof of what you can do. Careero rewrites them into achievement bullets.", href: "/guides/how-to-write-projects-in-a-cv" },
+          { icon: "💼", title: "Internships (if any)", text: "Even short placements count. Describe them by results and the skills you used.", href: "/cv-for-internship" },
+          { icon: "📚", title: "Coursework", text: "Relevant modules, strong grades and academic achievements lead a student CV.", href: "/guides/how-to-write-a-student-cv" },
+          { icon: "🤝", title: "Activities", text: "Volunteering, societies and clubs show teamwork, initiative and leadership.", href: null },
+          { icon: "🛠️", title: "Technical skills", text: "List the tools, languages and software relevant to the roles you want.", href: null },
+          { icon: "🔗", title: "GitHub & LinkedIn", text: "Link your GitHub and LinkedIn so recruiters can see more of your work.", href: "/guides/linkedin-profile-for-students" },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "How Careero helps you fill the page — honestly",
+        paragraphs: [
+          "Careero never invents experience. It helps you <strong>recognise and describe</strong> what you already have: a class project becomes evidence of problem-solving; a part-time job becomes proof of reliability; a society role becomes leadership.",
+          "The result is a clean, one-page, ATS-friendly CV built entirely from real things you've done — ready to download as PDF or DOCX.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          { q: "Can I really build a CV with zero work experience?", a: "Yes. Careero is designed for exactly this — it builds your CV from projects, coursework, activities, skills and your online profiles." },
+          { q: "What's the most important section?", a: "Education and projects. Describe two or three projects by their results and the skills they show." },
+          { q: "Is it free?", a: "Yes — start free at <a href=\"" + APP + "\" rel=\"noopener\">app.careero.app</a> and download as PDF or DOCX." },
+        ],
+      },
+      closingCta(
+        "You have more than enough for a great CV",
+        "Let Careero help you find it and write it — no experience required to start.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- FEATURES --------------
+  {
+    slug: "features",
+    title: "Features — What Careero Does for Student CVs | Careero",
+    description:
+      "Careero's features for student CVs: AI-guided writing, project and internship help, skills guidance, five templates, PDF and DOCX export, plus LinkedIn and GitHub guidance.",
+    h1: "Everything Careero does for your student CV",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Features",
+        h1: "Everything Careero does for your student CV",
+        lead:
+          "Careero is an AI-powered CV builder for students and fresh graduates. Here's everything it helps you do — from a blank page to a polished, downloadable CV.",
+        primaryCta: { text: "Create My CV", href: APP },
+        secondaryCta: { text: "See templates", href: "/student-cv-templates" },
+      },
+      {
+        type: "cards",
+        h2: "Core features",
+        items: [
+          { icon: "🤖", title: "AI-guided student CV creation", text: "A guided wizard writes strong, quantified content with you — no blank page.", href: "/ai-cv-builder-for-students" },
+          { icon: "🧩", title: "Project section improvement", text: "Turn coursework and side projects into achievement-focused bullets.", href: "/guides/how-to-write-projects-in-a-cv" },
+          { icon: "💼", title: "Internship section support", text: "Describe internships and placements in results-focused language.", href: "/guides/how-to-add-internships-to-a-cv" },
+          { icon: "🛠️", title: "Skills guidance", text: "Add the right technical and soft skills for the roles you want.", href: null },
+          { icon: "🎨", title: "Multiple CV templates", text: "Five ATS-friendly designs: Classic, Modern, Minimal, Academic, Creative.", href: "/student-cv-templates" },
+          { icon: "📄", title: "PDF export", text: "Download a pixel-perfect, ATS-safe PDF for applications.", href: "/download-cv-pdf" },
+          { icon: "📝", title: "DOCX export", text: "Download an editable Word document when an employer asks for one.", href: "/download-cv-pdf#docx" },
+          { icon: "🔗", title: "LinkedIn profile guidance", text: "Tips to build a LinkedIn profile that matches your CV.", href: "/guides/linkedin-profile-for-students" },
+          { icon: "💻", title: "GitHub profile guidance", text: "Make your GitHub CV-ready for technical roles.", href: "/guides/github-profile-for-students" },
+        ],
+      },
+      closingCta(
+        "Try every feature free",
+        "Careero is free to start — build your CV and download it in a few minutes.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- ABOUT -----------------
+  {
+    slug: "about",
+    title: "About Careero — AI CV Builder for Students",
+    description:
+      "Careero is an AI-powered CV builder for students and fresh graduates, built to help them present their potential clearly, professionally and confidently.",
+    h1: "About Careero",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "About",
+        h1: "About Careero",
+        lead:
+          "Careero is built to help students present their potential clearly, professionally, and confidently.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "Why Careero exists",
+        paragraphs: [
+          "Careero is an AI-powered CV builder for students and fresh graduates. It helps students create professional CVs even when they have limited work experience by guiding them through education, projects, internships, skills, activities, LinkedIn, GitHub, and ready-to-download CV templates.",
+          "Most CV tools assume you already have years of work history. Students don't — and that's not a weakness, it's just a different starting point. Careero is designed around the real student experience: coursework, academic and personal projects, internships, volunteering and early achievements, described the way recruiters expect to read them.",
+          "Our goal is simple: help every student walk into their first application with a CV they're proud of.",
+        ],
+      },
+      closingCta(
+        "Build a CV you're proud of",
+        "Start free and see how Careero turns your experience into a professional CV.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- FAQ -------------------
+  {
+    slug: "faq",
+    title: "Careero FAQ — Student CV Builder Questions Answered",
+    description:
+      "Answers to common questions about Careero: who it's for, building a CV with no experience, PDF and DOCX download, templates, and help with projects, internships, LinkedIn and GitHub.",
+    h1: "Frequently asked questions",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "FAQ",
+        h1: "Frequently asked questions",
+        lead:
+          "Everything students ask about Careero, the AI CV builder for students and fresh graduates.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "faq",
+        h2: "Careero FAQ",
+        items: [
+          { q: "What is Careero?", a: "Careero is an AI-powered CV builder for students and fresh graduates. It helps you create a professional CV even with limited work experience by guiding you through education, projects, internships, skills, activities, LinkedIn, GitHub, and ready-to-download CV templates." },
+          { q: "Is Careero for students?", a: "Yes. Careero is built specifically for students, fresh graduates and internship applicants — not senior professionals with years of work history." },
+          { q: "Can I create a CV with no work experience?", a: "Yes. Careero helps you build a strong CV from projects, coursework, activities, skills and your online profiles. See our <a href=\"/student-cv-with-no-experience\">no-experience page</a>." },
+          { q: "Can I download my CV as PDF?", a: "Yes. Every CV can be exported as a clean, ATS-friendly PDF." },
+          { q: "Can I download my CV as DOCX?", a: "Yes. You can also export an editable Word (DOCX) document whenever you need one." },
+          { q: "What CV templates are available?", a: "Five ATS-friendly templates: Classic, Modern, Minimal, Academic and Creative. See <a href=\"/student-cv-templates\">student CV templates</a>." },
+          { q: "Does Careero help with projects?", a: "Yes. Careero turns coursework and personal projects into achievement-focused bullet points. See <a href=\"/guides/how-to-write-projects-in-a-cv\">writing projects in a CV</a>." },
+          { q: "Does Careero help with internships?", a: "Yes. It helps you describe internships and placements in strong, results-focused language. See <a href=\"/cv-for-internship\">CV for internship</a>." },
+          { q: "Does Careero help with LinkedIn?", a: "Yes — we provide guidance on building a LinkedIn profile that matches your CV. See <a href=\"/guides/linkedin-profile-for-students\">LinkedIn for students</a>." },
+          { q: "Does Careero help with GitHub?", a: "Yes — we help you make your GitHub profile CV-ready for technical roles. See <a href=\"/guides/github-profile-for-students\">GitHub for students</a>." },
+        ],
+      },
+      closingCta(
+        "Still have questions? Just start building",
+        "Careero is free to try — the fastest way to see how it works is to build your CV.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // ============================================ GUIDES (new) ================
+
+  // -------------------------------------------- GUIDE: WRITE STUDENT CV -----
+  {
+    slug: "guides/how-to-write-a-student-cv",
+    title: "How to Write a Student CV: A Simple Guide for University Students | Careero",
+    description:
+      "A simple, step-by-step guide to writing a student CV: what to include, how to order sections, and how to describe projects and experience. Build yours free with Careero.",
+    h1: "How to write a student CV: a simple guide for university students",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 6 min read",
+        h1: "How to write a student CV: a simple guide for university students",
+        lead:
+          "A clear, no-jargon walkthrough of writing a student CV that recruiters actually read — what to include, how to order it, and how to make limited experience look strong.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "The sections of a student CV",
+        paragraphs: [
+          "A strong student CV fits on one page and leads with education. Around it, you add the experiences that show skills — even if they didn't come from a formal job.",
+        ],
+        bullets: [
+          "<strong>Contact details</strong> — name, professional email, phone, city, LinkedIn and GitHub.",
+          "<strong>Personal summary</strong> — two or three lines on who you are and what you want.",
+          "<strong>Education</strong> — degree, expected grade, relevant modules and achievements.",
+          "<strong>Projects</strong> — coursework and personal projects, described by outcome.",
+          "<strong>Experience</strong> — part-time work, internships, volunteering and societies.",
+          "<strong>Skills</strong> — tools, technologies and languages relevant to the role.",
+        ],
+      },
+      {
+        type: "steps",
+        h2: "Write it step by step",
+        items: [
+          { title: "Lead with education", text: "As a student, your degree is your headline. Add modules, grades and academic achievements." },
+          { title: "Turn tasks into achievements", text: "Start each bullet with an action verb and add a result or number where you can." },
+          { title: "Tailor to each application", text: "Mirror the language of the job description so the CV matches the role." },
+          { title: "Keep it to one clean page", text: "Use a simple, ATS-friendly template and proofread carefully." },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Common mistakes to avoid",
+        bullets: [
+          "Listing duties instead of achievements.",
+          "A generic summary that could belong to anyone.",
+          "Fancy layouts that confuse applicant tracking systems.",
+          "Typos and inconsistent formatting.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          { q: "How long should a student CV be?", a: "One page. Keep it focused and remove anything that isn't relevant." },
+          { q: "What if I have no experience?", a: "Lead with education and projects. See our <a href=\"/guides/student-cv-with-no-experience\">no-experience guide</a>." },
+          { q: "Can Careero write it for me?", a: "Careero drafts your summary and rewrites your notes into strong bullets — you stay in control. <a href=\"" + APP + "\" rel=\"noopener\">Start free</a>." },
+        ],
+      },
+      closingCta(
+        "Turn this guide into a finished CV",
+        "Careero applies all of these best practices automatically as you build.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------- GUIDE: INTERNSHIPS ----------
+  {
+    slug: "guides/how-to-add-internships-to-a-cv",
+    title: "How to Add Internships to a Student CV (With Examples) | Careero",
+    description:
+      "Learn how to add internships to your student CV: what to include, how to describe your work by results, and where to place them. Build your CV free with Careero.",
+    h1: "How to add internships to a student CV",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 5 min read",
+        h1: "How to add internships to a student CV",
+        lead:
+          "An internship is one of the strongest things on a student CV — if you describe it well. Here's how to present it by impact, not just job title.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "What to include for each internship",
+        bullets: [
+          "<strong>Role and organisation</strong> — your title and where you interned.",
+          "<strong>Dates</strong> — month and year, even for short placements.",
+          "<strong>2–4 achievement bullets</strong> — what you did and the result, not a task list.",
+          "<strong>Tools and skills</strong> — the technologies or methods you used.",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Describe internships by result",
+        paragraphs: [
+          "Use the formula <strong>action + what + result</strong>. A number makes it stronger.",
+        ],
+        subsections: [
+          {
+            h3: "Before and after",
+            bullets: [
+              "Before: &ldquo;Helped the marketing team.&rdquo;",
+              "After: &ldquo;Scheduled 30+ social posts and drafted 5 newsletter emails, contributing to a 12% rise in open rate over 8 weeks.&rdquo;",
+            ],
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Where to place internships",
+        paragraphs: [
+          "If the internship is directly relevant to the role you're applying for, place it near the top under an Experience section. If it's less relevant, keep it but let stronger projects lead. Careero helps you order and describe everything automatically.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          { q: "Should I include a very short internship?", a: "Yes, if it's relevant — even a two-week placement shows initiative and real-world exposure." },
+          { q: "How many bullets per internship?", a: "Two to four strong, result-focused bullets is ideal." },
+          { q: "No internships yet?", a: "That's fine — lead with projects and coursework. See <a href=\"/guides/student-cv-with-no-experience\">CV with no experience</a>." },
+        ],
+      },
+      closingCta(
+        "Make your internship stand out",
+        "Careero rewrites your internship into strong, quantified bullet points.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------- GUIDE: BEST FORMAT ----------
+  {
+    slug: "guides/best-cv-format-for-students",
+    title: "Best CV Format for Students and Fresh Graduates | Careero",
+    description:
+      "The best CV format for students and fresh graduates: which layout to use, section order, length, and why ATS-friendly formatting matters. Build yours free with Careero.",
+    h1: "The best CV format for students and fresh graduates",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 5 min read",
+        h1: "The best CV format for students and fresh graduates",
+        lead:
+          "The right format makes limited experience look strong and keeps your CV readable by both recruiters and screening software. Here's what works for students.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "Use a reverse-chronological, single-column layout",
+        paragraphs: [
+          "For students, a clean <strong>reverse-chronological</strong> layout in a <strong>single column</strong> is best. It's what recruiters expect and what applicant tracking systems parse most reliably. Avoid multi-column designs, text boxes and graphics that hold key information.",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "The recommended section order",
+        bullets: [
+          "Contact details",
+          "Short personal summary",
+          "Education (your headline as a student)",
+          "Projects",
+          "Experience — internships, part-time work, volunteering",
+          "Skills",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Length, fonts and file type",
+        paragraphs: [
+          "Keep it to <strong>one page</strong>. Use one clean, standard font and consistent spacing. Export a structured PDF for most applications, or a DOCX when an employer asks for Word — both of Careero's exports stay <a href=\"/ats-friendly-student-cv\">ATS-friendly</a>.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          { q: "Should a student CV be one or two pages?", a: "One page. A focused one-pager reads far better than a padded two-pager." },
+          { q: "Is a creative CV format okay?", a: "For most students, a clean format is safest. Careero's Creative template adds personality while staying recruiter- and ATS-safe." },
+          { q: "PDF or DOCX?", a: "PDF for most applications; DOCX when Word is requested. Careero exports both." },
+        ],
+      },
+      closingCta(
+        "Get the format right automatically",
+        "Careero's templates handle formatting so you can focus on content.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // ============================================ COMPARISONS =================
+
+  // -------------------------------------------- vs CANVA -------------------
+  {
+    slug: "alternatives/canva-cv-builder-for-students",
+    title: "Careero vs Canva for Student CVs — Which Is Better? | Careero",
+    description:
+      "Canva is great for flexible design; Careero is a guided AI CV builder for students. Compare the two for building a first professional student CV, and choose what fits you.",
+    h1: "Careero vs Canva for student CVs",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Compare",
+        h1: "Careero vs Canva for student CVs",
+        lead:
+          "Both can produce a good-looking CV. The difference is guidance: Canva gives you a blank canvas, while Careero walks students through what to write and how to phrase it.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "What Canva is good at",
+        paragraphs: [
+          "Canva is a flexible, general-purpose design tool with a huge range of templates. If you enjoy design and want full control over layout, colours and typography, it's excellent — and it's used for far more than CVs.",
+        ],
+      },
+      {
+        type: "cards",
+        h2: "Best for",
+        items: [
+          { icon: "🎨", title: "Canva is best for", text: "People who want maximum design flexibility and are comfortable writing and structuring their CV content themselves." },
+          { icon: "🎓", title: "Careero is best for", text: "Students and fresh graduates who want guidance on what to write — especially projects, internships and skills — with ATS-friendly output." },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Why Careero is different for students",
+        paragraphs: [
+          "With Canva, the hard part isn't the design — it's knowing <strong>what to say</strong> when you don't have much experience. Careero focuses there: it guides you section by section, uses AI to turn rough notes into strong bullet points, keeps the layout ATS-friendly, and exports to PDF and DOCX.",
+          "If you want a beautiful blank canvas, Canva is great. If you want help building a professional first CV as a student, that's what Careero is for.",
+        ],
+      },
+      closingCta(
+        "Want guidance, not a blank canvas?",
+        "Careero helps students write the CV, not just design it.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------- vs RESUME.IO ---------------
+  {
+    slug: "alternatives/resume-io-for-students",
+    title: "Careero vs Resume.io for Students — A Fair Comparison | Careero",
+    description:
+      "Resume.io is a polished general CV builder; Careero focuses specifically on students, projects, internships and early-career profiles. Compare them and pick the right fit.",
+    h1: "Careero vs Resume.io for students",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Compare",
+        h1: "Careero vs Resume.io for students",
+        lead:
+          "Resume.io is a capable, general-purpose CV builder. Careero is purpose-built for students — the difference shows up in how each one handles limited experience.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "What Resume.io is good at",
+        paragraphs: [
+          "Resume.io is a polished, widely-used resume builder with clean templates and a smooth editor. It works well for people across many career stages who already know what they want to say.",
+        ],
+      },
+      {
+        type: "cards",
+        h2: "Best for",
+        items: [
+          { icon: "🧰", title: "Resume.io is best for", text: "General job seekers who want a professional, all-purpose resume builder and are comfortable writing their own content." },
+          { icon: "🎓", title: "Careero is best for", text: "Students, fresh graduates and interns who want guidance tailored to early-career CVs — projects, coursework, internships and skills." },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Why Careero is different for students",
+        paragraphs: [
+          "General builders assume you have work history to list. Careero assumes you might not — and helps you present education, projects, activities, LinkedIn and GitHub instead. Its AI is tuned for early-career phrasing, and every template stays ATS-friendly with PDF and DOCX export.",
+          "If you're mid-career, a general builder is a fine choice. If you're a student writing your first professional CV, Careero is built for exactly that.",
+        ],
+      },
+      closingCta(
+        "Building your first CV as a student?",
+        "Careero guides the whole early-career CV journey.",
+        "Create My CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------------- vs GENERIC AI --------------
+  {
+    slug: "alternatives/generic-ai-resume-builders",
+    title: "Careero vs Generic AI Resume Builders (for Students) | Careero",
+    description:
+      "Generic AI tools can write resume text; Careero guides the full student CV journey — structure, projects, internships, templates and ATS-friendly PDF and DOCX export.",
+    h1: "Careero vs generic AI resume builders",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Compare",
+        h1: "Careero vs generic AI resume builders",
+        lead:
+          "A generic AI tool can generate resume text. But a student CV needs more than text — it needs the right structure, the right sections, and output that actually reaches recruiters.",
+        primaryCta: { text: "Create My CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "What generic AI tools are good at",
+        paragraphs: [
+          "General AI writing tools are great at producing text on demand. If you already know your CV's structure and just want help wording a bullet point, they can help with that one step.",
+        ],
+      },
+      {
+        type: "cards",
+        h2: "Best for",
+        items: [
+          { icon: "✍️", title: "Generic AI tools are best for", text: "One-off text generation when you already know exactly what your CV should contain and how it should be laid out." },
+          { icon: "🎓", title: "Careero is best for", text: "Students who want the whole journey guided — what sections to include, how to describe projects and internships, which template to use, and how to export." },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Why Careero is different for students",
+        paragraphs: [
+          "Raw AI text isn't a CV. Careero combines AI writing with a guided, student-specific structure: it prompts you for the right information, keeps everything ATS-friendly, applies a professional template, and gives you a finished PDF or DOCX — not just a paragraph to paste somewhere.",
+          "Use a generic tool if you only need a sentence rewritten. Use Careero if you want to build the whole CV.",
+        ],
+      },
+      closingCta(
+        "Want the whole CV, not just the text?",
+        "Careero guides students from a blank page to a finished, downloadable CV.",
+        "Create My CV",
       ),
     ],
   },
