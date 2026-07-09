@@ -487,6 +487,7 @@ export function useAdminEmailPreview(
 }
 
 export function useAdminSendEmail() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
       userId,
@@ -501,10 +502,18 @@ export function useAdminSendEmail() {
       );
       return data;
     },
+    onSuccess: () => {
+      // A send changes recent_send_at (preview banner) and the send
+      // history — without this, a reopened preview kept claiming the
+      // email was never sent until the component remounted.
+      void qc.invalidateQueries({ queryKey: ["admin", "email-preview"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "emails"] });
+    },
   });
 }
 
 export function useAdminSendEmailBulk() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({
       userIds,
@@ -523,6 +532,11 @@ export function useAdminSendEmailBulk() {
         dry_run: dryRun,
       });
       return data;
+    },
+    onSuccess: (_data, variables) => {
+      if (variables.dryRun) return; // dry runs send nothing — nothing stale
+      void qc.invalidateQueries({ queryKey: ["admin", "email-preview"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "emails"] });
     },
   });
 }

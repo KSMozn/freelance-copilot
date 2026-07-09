@@ -26,6 +26,7 @@ import {
   useAdminUserEntries,
   useAdminUserLlmSpend,
 } from "@/features/admin/adminApi";
+import { parseInternshipAuditDetails } from "@/features/admin/adminTypes";
 import type { AdminStudentSummary, AdminUserDetail } from "@/features/admin/adminTypes";
 
 export function AdminUserDetailPage() {
@@ -856,15 +857,15 @@ function InternshipAuditPanel({ userId }: { userId: string }) {
           </div>
         ) : (
           items.map((it) => {
-            const d = (it.details ?? {}) as Record<string, unknown>;
-            const aiSummary = (d.ai_summary as string | undefined) ?? "";
-            const aiBullets = (d.ai_bullets as string[] | undefined) ?? [];
-            const responsibilities = (d.responsibilities as string | undefined) ?? "";
-            const achievements = (d.achievements as string | undefined) ?? "";
-            const tools = (d.tools as string[] | undefined) ?? [];
-            const skills = (d.skills_gained as string[] | undefined) ?? [];
-            const field = (d.field as string | undefined) ?? null;
-            const workMode = (d.work_mode as string | undefined) ?? null;
+            const d = parseInternshipAuditDetails(it.details);
+            const aiSummary = d.ai_summary;
+            const aiBullets = d.ai_bullets;
+            const responsibilities = d.responsibilities;
+            const achievements = d.achievements;
+            const tools = d.tools;
+            const skills = d.skills_gained;
+            const field = d.field;
+            const workMode = d.work_mode;
             const dates = _formatEntryRange(it.start_date, it.end_date, it.is_current);
             return (
               <div key={it.id} className="rounded-lg border bg-background p-3 text-sm">

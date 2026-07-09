@@ -301,3 +301,45 @@ export interface SendEmailBulkResponse {
   skipped: number;
   failed: BulkFailure[];
 }
+
+// ---- Internship audit (typed view over student-authored JSONB) ---------
+//
+// `AdminEntryDetail.details` is a free-form blob written by the student
+// wizard. The audit panel used to reach into it with inline `as` casts;
+// this parser degrades each field to a safe default instead of trusting
+// the shape, without changing what well-formed data renders.
+
+export interface AdminInternshipAuditDetails {
+  ai_summary: string;
+  ai_bullets: string[];
+  responsibilities: string;
+  achievements: string;
+  tools: string[];
+  skills_gained: string[];
+  field: string | null;
+  work_mode: string | null;
+}
+
+function asOptionalString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+}
+
+export function parseInternshipAuditDetails(
+  details: Record<string, unknown> | null | undefined,
+): AdminInternshipAuditDetails {
+  const d = details ?? {};
+  return {
+    ai_summary: asOptionalString(d.ai_summary) ?? "",
+    ai_bullets: asStringArray(d.ai_bullets),
+    responsibilities: asOptionalString(d.responsibilities) ?? "",
+    achievements: asOptionalString(d.achievements) ?? "",
+    tools: asStringArray(d.tools),
+    skills_gained: asStringArray(d.skills_gained),
+    field: asOptionalString(d.field) ?? null,
+    work_mode: asOptionalString(d.work_mode) ?? null,
+  };
+}

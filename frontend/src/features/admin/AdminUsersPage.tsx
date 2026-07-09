@@ -44,10 +44,14 @@ function parseBool(v: string | null): boolean | undefined {
 }
 
 export function AdminUsersPage() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
   const size = 25;
   const [params, setParams] = useSearchParams();
+  // Every piece of list state — search, page, and the filters — lives in
+  // the URL so a reload, a shared link, or the funnel deep-link all land
+  // on the same view. Updates use replace:true (matching the existing
+  // filter behavior) so typing in the search box doesn't spam history.
+  const search = params.get("search") ?? "";
+  const page = Math.max(1, Number(params.get("page") ?? "1") || 1);
   const stuckAt = params.get("stuck_at");
   const persona = params.get("persona") ?? "";
   const active = parseBool(params.get("active"));
@@ -62,13 +66,23 @@ export function AdminUsersPage() {
     const next = new URLSearchParams(params);
     if (value === null || value === "") next.delete(key);
     else next.set(key, value);
+    next.delete("page"); // any filter/search change restarts pagination
     setParams(next, { replace: true });
-    setPage(1);
+  }
+
+  function goToPage(nextPage: number) {
+    const next = new URLSearchParams(params);
+    if (nextPage <= 1) next.delete("page");
+    else next.set("page", String(nextPage));
+    setParams(next, { replace: true });
   }
 
   function clearAllFilters() {
-    setParams(new URLSearchParams(), { replace: true });
-    setPage(1);
+    // Clears the filters (and pagination) but keeps the search text —
+    // same semantics as before search moved into the URL.
+    const next = new URLSearchParams();
+    if (search) next.set("search", search);
+    setParams(next, { replace: true });
   }
 
   const hasAnyFilter =
@@ -142,10 +156,7 @@ export function AdminUsersPage() {
           <Input
             placeholder="Search by email or name…"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => updateFilter("search", e.target.value)}
             className="max-w-sm"
           />
           <div className="w-36">
@@ -363,7 +374,7 @@ export function AdminUsersPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => goToPage(Math.max(1, page - 1))}
               disabled={page === 1}
             >
               Previous
@@ -371,7 +382,7 @@ export function AdminUsersPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => goToPage(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
             >
               Next
