@@ -761,6 +761,30 @@ export const pages = [
             text: "What to include — and how to describe it — when you don't have formal work history yet.",
             href: "/blog/how-to-write-cv-with-no-experience",
           },
+          {
+            icon: "✉️",
+            title: "How to write a cover letter as a student",
+            text: "A simple 4-paragraph structure that works even with little experience.",
+            href: "/blog/cover-letter-for-students",
+          },
+          {
+            icon: "⚠️",
+            title: "10 common student CV mistakes",
+            text: "The fixable reasons student CVs get rejected — and how to fix each one.",
+            href: "/blog/common-cv-mistakes-students",
+          },
+          {
+            icon: "🔑",
+            title: "CV keywords: getting past the ATS",
+            text: "Use the right keywords naturally so screening software ranks your CV.",
+            href: "/blog/cv-keywords-and-ats",
+          },
+          {
+            icon: "🎤",
+            title: "How to prepare for an internship interview",
+            text: "Research, common questions, the STAR method and what to ask.",
+            href: "/blog/internship-interview-prep",
+          },
         ],
       },
       closingCta(
@@ -1320,6 +1344,270 @@ export const pages = [
         "Turn your GitHub into CV-ready proof",
         "Careero helps you describe your projects so your CV and GitHub tell one strong story.",
         "Build my technical CV",
+      ),
+    ],
+  },
+
+  // ------------------------------------------ BLOG: COVER LETTER ------------
+  {
+    slug: "blog/cover-letter-for-students",
+    title: "How to Write a Cover Letter as a Student (Template + Tips) | Careero",
+    description:
+      "Write a cover letter that gets read: a simple structure for students, what to say in each paragraph, and mistakes to avoid — even with no work experience. Build your CV free with Careero.",
+    h1: "How to write a cover letter as a student",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 5 min read",
+        h1: "How to write a cover letter as a student",
+        lead:
+          "A good cover letter doesn't repeat your CV — it connects you to one specific role. Here's a simple structure that works for students, even when you're light on experience.",
+        primaryCta: { text: "Build my CV first", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "The 4-paragraph structure",
+        paragraphs: [
+          "Keep it to one page and four short paragraphs. The goal is to show you understand the role, you're genuinely interested, and you have something relevant to offer.",
+        ],
+        bullets: [
+          "<strong>Opening</strong> — the role you're applying for and a one-line hook on why you're excited about it.",
+          "<strong>Why you</strong> — one or two relevant projects, modules or experiences, described by result.",
+          "<strong>Why them</strong> — a specific reason you want to work for this organisation, not a generic one.",
+          "<strong>Close</strong> — a confident sign-off and a thank you.",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Writing it with little experience",
+        paragraphs: [
+          "As a student, lean on coursework, projects, volunteering and part-time roles. The key is to connect each example to what the job actually needs — if the role values teamwork, describe a group project and its outcome.",
+          "Mirror the language of the job posting, and never send the same letter twice. A tailored letter beats a polished-but-generic one every time.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "How long should a student cover letter be?",
+            a: "Half a page to one page — four short paragraphs. Recruiters skim, so make every line count.",
+          },
+          {
+            q: "Do I need a cover letter if it's optional?",
+            a: "If you can write a tailored one, yes — it's a chance to show interest and fit that a CV alone can't.",
+          },
+          {
+            q: "Should my cover letter repeat my CV?",
+            a: "No. Use it to connect a few relevant highlights to this specific role, not to list everything again.",
+          },
+        ],
+      },
+      closingCta(
+        "Get your CV ready to match",
+        "A great cover letter needs a great CV behind it. Build yours free with Careero.",
+        "Build my CV first",
+      ),
+    ],
+  },
+
+  // ------------------------------------------ BLOG: CV MISTAKES -------------
+  {
+    slug: "blog/common-cv-mistakes-students",
+    title: "10 Common Student CV Mistakes (and How to Fix Them) | Careero",
+    description:
+      "The most common student CV mistakes — from listing duties instead of achievements to typos and bad formatting — and exactly how to fix each one. Build a better CV free with Careero.",
+    h1: "10 common student CV mistakes (and how to fix them)",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 6 min read",
+        h1: "10 common student CV mistakes (and how to fix them)",
+        lead:
+          "Most student CVs are rejected for the same handful of fixable reasons. Avoid these ten and you're already ahead of most applicants.",
+        primaryCta: { text: "Fix my CV now", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "The mistakes recruiters see most",
+        bullets: [
+          "<strong>Listing duties, not achievements.</strong> Fix: start with an action verb and add a result or number.",
+          "<strong>A generic summary.</strong> Fix: name your field and what you're looking for.",
+          "<strong>Too long.</strong> Fix: keep it to one focused page.",
+          "<strong>Typos and inconsistency.</strong> Fix: proofread, and keep dates and tenses consistent.",
+          "<strong>Fancy layouts that break the ATS.</strong> Fix: use a clean, single-column, <a href=\"/ats-friendly-student-cv\">ATS-friendly</a> template.",
+          "<strong>Burying education.</strong> Fix: as a student, lead with it.",
+          "<strong>Vague project descriptions.</strong> Fix: say what you built, the tools, and the outcome.",
+          "<strong>Irrelevant detail.</strong> Fix: cut anything that doesn't support the role.",
+          "<strong>No keywords from the job post.</strong> Fix: weave in the skills the employer asks for.",
+          "<strong>Unprofessional contact details.</strong> Fix: use a clean email and add LinkedIn/GitHub.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "What's the single biggest CV mistake?",
+            a: "Describing duties instead of achievements. Always show the result or skill, not just the task.",
+          },
+          {
+            q: "How do I know if my CV is ATS-friendly?",
+            a: "Use a simple single-column layout with standard headings. See our <a href=\"/ats-friendly-student-cv\">ATS-friendly CV guide</a>.",
+          },
+          {
+            q: "Can Careero help me avoid these?",
+            a: "Yes — it enforces clean structure and rewrites duties into achievement bullets automatically. <a href=\"" + APP + "\" rel=\"noopener\">Start free</a>.",
+          },
+        ],
+      },
+      closingCta(
+        "Build a CV without the common mistakes",
+        "Careero bakes these fixes in, so you avoid them by default.",
+        "Fix my CV now",
+      ),
+    ],
+  },
+
+  // ------------------------------------------ BLOG: ATS KEYWORDS ------------
+  {
+    slug: "blog/cv-keywords-and-ats",
+    title: "CV Keywords: How to Get Past the ATS (Student Guide) | Careero",
+    description:
+      "Learn how to use the right CV keywords to pass applicant tracking systems without keyword stuffing. A practical guide for students. Build an ATS-friendly CV free with Careero.",
+    h1: "CV keywords: how to get past the ATS",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 5 min read",
+        h1: "CV keywords: how to get past the ATS",
+        lead:
+          "Before a human reads your CV, software scans it for relevant terms. Here's how to include the right keywords naturally — so you rank well without sounding like a robot.",
+        primaryCta: { text: "Build an ATS-friendly CV", href: APP },
+      },
+      {
+        type: "prose",
+        h2: "Where keywords come from",
+        paragraphs: [
+          "The best keyword list is the job description itself. Read it closely and note the skills, tools and phrases the employer repeats — those are exactly what the applicant tracking system is told to look for.",
+          "Then make sure those terms appear naturally in your CV: in your skills section, and — more powerfully — inside real project and experience bullets that prove you actually used them.",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "How to include keywords without stuffing",
+        paragraphs: [
+          "Keyword stuffing (repeating terms unnaturally) reads badly to humans and can be flagged. Instead, weave each keyword into a genuine achievement.",
+        ],
+        bullets: [
+          "Weak: a long list of 30 skills with no context.",
+          "Strong: &ldquo;Built a REST API in <strong>Python</strong> and <strong>FastAPI</strong>, tested with <strong>pytest</strong> — used by a 4-person project team.&rdquo;",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "How many keywords should I use?",
+            a: "Cover the core skills the job posting emphasises — quality and relevance matter more than quantity.",
+          },
+          {
+            q: "Does the ATS read PDFs?",
+            a: "Yes, if the PDF has real selectable text. Careero's PDF export keeps structured text so it parses correctly.",
+          },
+          {
+            q: "How does Careero help with keywords?",
+            a: "Its AI phrases your skills into natural, keyword-rich achievement bullets. <a href=\"/ats-friendly-student-cv\">See the ATS guide</a> or <a href=\"" + APP + "\" rel=\"noopener\">start free</a>.",
+          },
+        ],
+      },
+      closingCta(
+        "Rank higher with the right keywords",
+        "Careero helps you include the terms recruiters and ATS software look for — naturally.",
+        "Build an ATS-friendly CV",
+      ),
+    ],
+  },
+
+  // ------------------------------------------ BLOG: INTERVIEW PREP ----------
+  {
+    slug: "blog/internship-interview-prep",
+    title: "How to Prepare for an Internship Interview (Student Guide) | Careero",
+    description:
+      "A practical checklist for students preparing for an internship interview: research, common questions, the STAR method, and questions to ask. Build your CV free with Careero.",
+    h1: "How to prepare for an internship interview",
+    type: "article",
+    datePublished: PUB,
+    dateModified: MOD,
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Guide · 6 min read",
+        h1: "How to prepare for an internship interview",
+        lead:
+          "Internship interviews are about potential and attitude as much as knowledge. A little preparation goes a long way — here's a simple plan.",
+        primaryCta: { text: "Get my CV interview-ready", href: APP },
+      },
+      {
+        type: "steps",
+        h2: "Your prep checklist",
+        items: [
+          {
+            title: "Research the organisation",
+            text: "Know what they do, a recent project or product, and why you want to work there specifically.",
+          },
+          {
+            title: "Re-read your own CV",
+            text: "Be ready to talk through every project and experience on it — interviewers ask about what you wrote.",
+          },
+          {
+            title: "Prepare STAR examples",
+            text: "For behavioural questions, structure answers as Situation, Task, Action, Result. Prepare two or three flexible stories.",
+          },
+          {
+            title: "Prepare questions to ask",
+            text: "Have two thoughtful questions ready — about the team, the work, or how success is measured.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Common internship interview questions",
+        bullets: [
+          "&ldquo;Tell me about yourself&rdquo; — a 60-second summary of your studies, interests and why this role.",
+          "&ldquo;Tell me about a project you're proud of&rdquo; — use a STAR example with a clear result.",
+          "&ldquo;Why do you want this internship?&rdquo; — connect your goals to what they offer.",
+          "&ldquo;Tell me about a time you worked in a team&rdquo; — pick a real group project or role.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "What is the STAR method?",
+            a: "A way to structure answers: describe the Situation, the Task, the Action you took, and the Result. It keeps stories clear and focused.",
+          },
+          {
+            q: "What should I ask at the end?",
+            a: "Ask about the team, the day-to-day work, or how they measure success — it shows genuine interest.",
+          },
+          {
+            q: "How does my CV help in the interview?",
+            a: "Interviewers ask about what's on it, so a clear, honest CV sets up the conversation. Build yours with <a href=\"/cv-for-internship\">Careero's internship CV</a> guidance.",
+          },
+        ],
+      },
+      closingCta(
+        "Walk in with a CV you can talk about",
+        "Careero helps you write clear, honest highlights you'll be ready to discuss.",
+        "Get my CV interview-ready",
       ),
     ],
   },

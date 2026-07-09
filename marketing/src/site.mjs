@@ -15,6 +15,13 @@ export const site = {
     "Careero helps students build their first professional, ATS-friendly CV with AI — describe projects and internships clearly, pick a modern template, and download as PDF or DOCX.",
   twitter: "@careero",
   locale: "en_US",
+  // --- integrations (fill in, then rebuild + redeploy) -------------------
+  // Google Search Console "HTML tag" verification: paste ONLY the content
+  // value of the <meta name="google-site-verification"> tag Google gives you.
+  googleSiteVerification: "",
+  // Cloudflare Web Analytics (cookieless, no banner): paste the beacon token
+  // from Cloudflare dashboard → Analytics & Logs → Web Analytics.
+  cloudflareAnalyticsToken: "",
   // Brand palette (mirrors app.careero.app: blue → indigo → violet).
   brand: {
     from: "#3B82F6",

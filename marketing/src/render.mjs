@@ -335,9 +335,14 @@ const buildJsonLd = (page) => {
 };
 
 // ---- <head> ----------------------------------------------------------------
+// Per-page OG image path: /og/<slug-with-dashes>.png (homepage -> /og/home.png).
+// Pre-generated PNGs live in assets/og/. Falls back to the shared image.
+export const ogImagePath = (slug) =>
+  `/og/${slug ? slug.replace(/\//g, "-") : "home"}.png`;
+
 const head = (page) => {
   const url = absUrl(page.slug);
-  const ogImage = absUrl(page.ogImage || "/og-default.png");
+  const ogImage = absUrl(page.ogImage || ogImagePath(page.slug));
   const ogType = page.type === "article" ? "article" : "website";
   return `
   <meta charset="utf-8">
@@ -345,7 +350,11 @@ const head = (page) => {
   <title>${esc(page.title)}</title>
   <meta name="description" content="${esc(page.description)}">
   <link rel="canonical" href="${esc(url)}">
-  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="robots" content="index, follow, max-image-preview:large">${
+    site.googleSiteVerification
+      ? `\n  <meta name="google-site-verification" content="${esc(site.googleSiteVerification)}">`
+      : ""
+  }
   <meta name="theme-color" content="${site.brand.from}">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon.svg">
@@ -377,6 +386,12 @@ const head = (page) => {
   ${buildJsonLd(page)}`;
 };
 
+// Cookieless Cloudflare Web Analytics beacon (only when a token is configured).
+const analytics = () =>
+  site.cloudflareAnalyticsToken
+    ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${site.cloudflareAnalyticsToken}"}'></script>`
+    : "";
+
 // ---- full document ---------------------------------------------------------
 export const renderPage = (page) => `<!doctype html>
 <html lang="en">
@@ -388,5 +403,6 @@ ${header()}
 ${renderBlocks(page.blocks)}
 </main>
 ${footer()}
+${analytics()}
 </body>
 </html>`;
