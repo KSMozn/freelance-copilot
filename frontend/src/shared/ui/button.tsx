@@ -46,14 +46,22 @@ export interface ButtonProps
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, children, ...props }, ref) => {
     if (asChild && React.isValidElement(children)) {
-      return (
-        <ButtonPrimitive
-          render={children as React.ReactElement<Record<string, unknown>>}
-          className={cn(buttonVariants({ variant, size, className }))}
-          ref={ref}
-          {...props}
-        />
-      );
+      // Radix-Slot-equivalent composition: merge the button's classes and
+      // remaining props onto the child element (child's own props win) —
+      // deliberately WITHOUT Base UI's button wiring. A Link rendered via
+      // asChild must keep its link semantics; Base UI's render prop with
+      // nativeButton={false} injects role="button" onto the anchor
+      // (verified in the Storybook AsChild story), which the old Slot
+      // behavior never did. Note: unlike Slot, handlers are not composed —
+      // no asChild call site passes handlers on the Button side.
+      const child = children as React.ReactElement<Record<string, unknown>>;
+      const childClassName = (child.props as { className?: string }).className;
+      return React.cloneElement(child, {
+        ...props,
+        ...(child.props as Record<string, unknown>),
+        className: cn(buttonVariants({ variant, size, className }), childClassName),
+        ref,
+      } as Record<string, unknown>);
     }
     return (
       <ButtonPrimitive
