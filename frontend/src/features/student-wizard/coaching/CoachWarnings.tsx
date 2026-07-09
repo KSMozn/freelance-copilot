@@ -1,4 +1,4 @@
-import type { CoachSuggestion, CoachWarning } from "@/types/student";
+import type { CoachSuggestion, CoachWarning } from "@/features/student-wizard/coaching/coachingTypes";
 
 export function CoachWarnings({
   warnings,

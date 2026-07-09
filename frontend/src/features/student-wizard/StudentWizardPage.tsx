@@ -3,15 +3,15 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { logoutCurrentSurface } from "@/app/apiClient";
-import { fetchPhotoDataUri } from "@/lib/photoCache";
-import { useLastProfileStore } from "@/stores/lastProfile";
+import { fetchPhotoDataUri } from "@/features/student-wizard/photoCache";
+import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 import { AboutFooter } from "@/shared/ui/brand/AboutFooter";
 import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
-import { CoachWarnings } from "@/components/student/CoachWarnings";
-import { DateOfBirthPicker } from "@/components/student/DateOfBirthPicker";
-import { PhotoPositioner } from "@/components/student/PhotoPositioner";
-import { CareerStarterPack } from "@/components/student/CareerStarterPack";
-import { PostDownloadSurvey } from "@/components/student/PostDownloadSurvey";
+import { CoachWarnings } from "@/features/student-wizard/coaching/CoachWarnings";
+import { DateOfBirthPicker } from "@/features/student-wizard/DateOfBirthPicker";
+import { PhotoPositioner } from "@/features/student-wizard/PhotoPositioner";
+import { CareerStarterPack } from "@/features/student-wizard/career-pack/CareerStarterPack";
+import { PostDownloadSurvey } from "@/features/student-wizard/feedback/PostDownloadSurvey";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Combobox } from "@/shared/ui/combobox";
@@ -20,25 +20,27 @@ import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select";
 import { Textarea } from "@/shared/ui/textarea";
 import {
-  downloadStudentCv,
-  downloadStudentCvDocx,
-  fetchCvPreviewHtml,
   useCoachEmail,
   useCoachPhoto,
   useCoachText,
-  useCreateStudentEntry,
-  useCvTemplates,
-  useDeleteStudentEntry,
   useDraftSummary,
   useImproveInternship,
   useProofread,
+} from "@/features/student-wizard/coaching/coachingApi";
+import {
+  downloadStudentCv,
+  downloadStudentCvDocx,
+  fetchCvPreviewHtml,
+  useCreateStudentEntry,
+  useCvTemplates,
+  useDeleteStudentEntry,
   useStudentEntries,
   useStudentPhotoBlob,
   useStudentProfile,
   useUpdateStudentEntry,
   useUpdateStudentProfile,
   useUploadStudentPhoto,
-} from "@/lib/student";
+} from "@/features/student-wizard/studentApi";
 import {
   CERTIFICATE_ISSUERS,
   CERTIFICATES,
@@ -56,21 +58,23 @@ import {
   SKILLS,
   TECH_STACK,
   UNIVERSITIES,
-} from "@/lib/studentSuggestions";
+} from "@/features/student-wizard/studentSuggestions";
 import { useAutoSave } from "@/shared/hooks/useAutoSave";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/features/auth/authStore";
 import type {
   CoachSuggestion,
   CoachWarning,
+  ProofreadFix,
+} from "@/features/student-wizard/coaching/coachingTypes";
+import type {
   InternshipDetails,
   InternshipField,
   InternshipWorkMode,
-  ProofreadFix,
   StudentEntry,
   StudentEntryKind,
   StudentLinks,
   StudentProfileUpdate,
-} from "@/types/student";
+} from "@/features/student-wizard/studentTypes";
 
 interface StepDef {
   slug: string;

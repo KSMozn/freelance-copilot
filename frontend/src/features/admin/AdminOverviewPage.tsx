@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 
-import { LlmSpendCardBody } from "@/components/admin/LlmSpendCard";
-import { useAdminOverview } from "@/lib/admin";
+import { LlmSpendCardBody } from "@/features/admin/LlmSpendCard";
+import { useAdminOverview } from "@/features/admin/adminApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import type {
   AdminOverview,
   SignupsPoint,
   WizardFunnel,
-} from "@/types/admin";
+} from "@/features/admin/adminTypes";
 
 export function AdminOverviewPage() {
   const { data, isLoading, isError } = useAdminOverview();

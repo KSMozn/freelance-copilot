@@ -1,7 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
-import { useAdminAuthStore } from "@/stores/adminAuth";
-import { useAuthStore } from "@/stores/auth";
+import { useAdminAuthStore } from "@/features/admin/adminAuthStore";
+import { useAuthStore } from "@/features/auth/authStore";
 
 // Pick the backend URL from the current frontend host so the same bundle
 // works on all three deploys without a rebuild:

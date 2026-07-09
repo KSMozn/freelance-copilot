@@ -7,9 +7,9 @@ import { AuthShell } from "@/shared/ui/brand/AuthShell";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { useLastProfileStore } from "@/stores/lastProfile";
+import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 import { api } from "@/app/apiClient";
-import { useAuthStore, type AuthUser } from "@/stores/auth";
+import { useAuthStore, type AuthUser } from "@/features/auth/authStore";
 
 interface AuthResponse {
   user: AuthUser;

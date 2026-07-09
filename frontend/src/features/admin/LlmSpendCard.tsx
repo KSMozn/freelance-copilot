@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { useAdminLlmCalls } from "@/lib/admin";
-import type { LlmSpendSummary } from "@/types/admin";
+import { useAdminLlmCalls } from "@/features/admin/adminApi";
+import type { LlmSpendSummary } from "@/features/admin/adminTypes";
 
 /**
  * Reusable LLM spend card used on both the Overview page (all users)

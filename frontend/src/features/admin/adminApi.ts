@@ -20,7 +20,7 @@ import type {
   EmailTemplateSpec,
   SendEmailBulkDryRunResponse,
   SendEmailBulkResponse,
-} from "@/types/admin";
+} from "@/features/admin/adminTypes";
 
 const OVERVIEW_KEY = ["admin", "overview"] as const;
 export interface AdminUsersFilters {
@@ -359,7 +359,7 @@ export function useAdminUserLlmSpend(
     queryKey: ["admin", "user", userId ?? "none", "llm-spend", sinceDays] as const,
     enabled: !!userId,
     queryFn: async () => {
-      const { data } = await api.get<import("@/types/admin").LlmSpendSummary>(
+      const { data } = await api.get<import("@/features/admin/adminTypes").LlmSpendSummary>(
         `/admin/users/${userId}/llm-spend`,
         { params: { since_days: sinceDays } },
       );

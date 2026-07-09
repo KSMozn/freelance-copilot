@@ -7,7 +7,7 @@ import type {
   GitHubReview,
   LinkedInGenerated,
   LinkedInReview,
-} from "@/types/careerPack";
+} from "@/features/student-wizard/career-pack/careerPackTypes";
 
 const CAREER_PACK_KEY = ["student", "career-pack"] as const;
 

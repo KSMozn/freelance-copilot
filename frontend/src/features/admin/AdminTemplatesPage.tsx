@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { Card, CardContent } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
-import { useAdminCvTemplates, useUpdateAdminCvTemplate } from "@/lib/admin";
+import { useAdminCvTemplates, useUpdateAdminCvTemplate } from "@/features/admin/adminApi";
 
 export function AdminTemplatesPage() {
   const { data, isLoading } = useAdminCvTemplates();

@@ -20,8 +20,8 @@ import {
   useGenerateLinkedIn,
   useReviewGitHub,
   useReviewLinkedIn,
-} from "@/lib/careerPack";
-import { useUpdateStudentProfile } from "@/lib/student";
+} from "@/features/student-wizard/career-pack/careerPackApi";
+import { useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import type {
   CareerStatus,
   GitHubGenerated,
@@ -29,7 +29,7 @@ import type {
   GitHubReview,
   LinkedInGenerated,
   LinkedInReview,
-} from "@/types/careerPack";
+} from "@/features/student-wizard/career-pack/careerPackTypes";
 
 const LINKEDIN_URL_RE = /^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\/(in|pub|profile|company)\/[A-Za-z0-9\-_/%.]+\/?$/i;
 const GITHUB_URL_RE = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/?$/i;

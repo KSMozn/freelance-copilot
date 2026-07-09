@@ -87,8 +87,8 @@ export async function loadUniversities(): Promise<string[]> {
   if (_loadedUnis) return _loadedUnis;
   if (_loadingUnis) return _loadingUnis;
   _loadingUnis = Promise.all([
-    import("@/data/universities.json"),
-    import("@/data/universities-supplementary.json"),
+    import("@/features/student-wizard/data/universities.json"),
+    import("@/features/student-wizard/data/universities-supplementary.json"),
   ]).then(([hipolabs, supp]) => {
     type Row = { name: string; country: string };
     const hipo = (hipolabs as unknown as { default: { universities: Row[] } }).default.universities;

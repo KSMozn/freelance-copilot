@@ -2,24 +2,24 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { RequireAuth } from "@/components/RequireAuth";
+import { RequireAuth } from "@/features/auth/RequireAuth";
 import { isAdminSurface } from "@/app/apiClient";
 import { queryClient } from "@/app/queryClient";
-import { ImpersonateLanding } from "@/pages/ImpersonateLanding";
-import { LoginPage } from "@/pages/Login";
-import { OnboardingPage } from "@/pages/Onboarding";
-import { RegisterPage } from "@/pages/Register";
-import { StudentFeedbackPage } from "@/pages/StudentFeedback";
-import { StudentWizardPage } from "@/pages/StudentWizard";
-import { AdminActivityPage } from "@/pages/admin/AdminActivity";
-import { AdminEmailsPage } from "@/pages/admin/AdminEmails";
-import { AdminFeedbackPage } from "@/pages/admin/AdminFeedback";
-import { AdminLayout } from "@/pages/admin/AdminLayout";
-import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
-import { AdminOverviewPage } from "@/pages/admin/AdminOverview";
-import { AdminTemplatesPage } from "@/pages/admin/AdminTemplatesPage";
-import { AdminUserDetailPage } from "@/pages/admin/AdminUserDetail";
-import { AdminUsersPage } from "@/pages/admin/AdminUsers";
+import { ImpersonateLanding } from "@/features/auth/ImpersonateLandingPage";
+import { LoginPage } from "@/features/auth/LoginPage";
+import { OnboardingPage } from "@/features/auth/OnboardingPage";
+import { RegisterPage } from "@/features/auth/RegisterPage";
+import { StudentFeedbackPage } from "@/features/student-wizard/feedback/StudentFeedbackPage";
+import { StudentWizardPage } from "@/features/student-wizard/StudentWizardPage";
+import { AdminActivityPage } from "@/features/admin/AdminActivityPage";
+import { AdminEmailsPage } from "@/features/admin/AdminEmailsPage";
+import { AdminFeedbackPage } from "@/features/admin/AdminFeedbackPage";
+import { AdminLayout } from "@/features/admin/AdminLayout";
+import { AdminLoginPage } from "@/features/admin/AdminLoginPage";
+import { AdminOverviewPage } from "@/features/admin/AdminOverviewPage";
+import { AdminTemplatesPage } from "@/features/admin/AdminTemplatesPage";
+import { AdminUserDetailPage } from "@/features/admin/AdminUserDetailPage";
+import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
 
 export default function App() {
   return (

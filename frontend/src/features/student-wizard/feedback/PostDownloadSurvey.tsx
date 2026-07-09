@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
-import { useSubmitSurvey } from "@/lib/feedback";
+import { useSubmitSurvey } from "@/features/student-wizard/feedback/feedbackApi";
 
 interface PostDownloadSurveyProps {
   templateSlug: string | null;

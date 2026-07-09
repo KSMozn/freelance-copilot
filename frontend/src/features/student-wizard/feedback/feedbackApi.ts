@@ -5,7 +5,7 @@ import type {
   FeedbackEntry,
   GeneralFeedbackCreate,
   SurveyCreate,
-} from "@/types/feedback";
+} from "@/features/student-wizard/feedback/feedbackTypes";
 
 export function useSubmitFeedback() {
   return useMutation({

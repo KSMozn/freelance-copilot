@@ -8,7 +8,7 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { api } from "@/app/apiClient";
-import { useAdminAuthStore, type AdminUser } from "@/stores/adminAuth";
+import { useAdminAuthStore, type AdminUser } from "@/features/admin/adminAuthStore";
 
 interface AdminLoginResponse {
   user: AdminUser;

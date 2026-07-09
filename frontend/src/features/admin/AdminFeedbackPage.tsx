@@ -9,9 +9,9 @@ import {
   useAdminFeedback,
   useAdminResolveFeedback,
   useAdminUnresolveFeedback,
-} from "@/lib/admin";
+} from "@/features/admin/adminApi";
 import { cn } from "@/shared/lib/utils";
-import type { AdminFeedbackItem } from "@/types/admin";
+import type { AdminFeedbackItem } from "@/features/admin/adminTypes";
 
 const KIND_OPTIONS = [
   { value: "", label: "All kinds" },

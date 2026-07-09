@@ -12,13 +12,13 @@ import {
   useAdminEmailTemplates,
   useAdminSendEmailBulk,
   useAdminUsers,
-} from "@/lib/admin";
+} from "@/features/admin/adminApi";
 import { cn } from "@/shared/lib/utils";
 import type {
   BulkRecipient,
   SendEmailBulkDryRunResponse,
   SendEmailBulkResponse,
-} from "@/types/admin";
+} from "@/features/admin/adminTypes";
 
 const STUCK_AT_LABELS: Record<string, string> = {
   registered: "Registered but no wizard progress",

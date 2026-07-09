@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Textarea } from "@/shared/ui/textarea";
 import { logoutCurrentSurface } from "@/app/apiClient";
-import { useSubmitFeedback } from "@/lib/feedback";
+import { useSubmitFeedback } from "@/features/student-wizard/feedback/feedbackApi";
 
 const MIN_LEN = 10;
 

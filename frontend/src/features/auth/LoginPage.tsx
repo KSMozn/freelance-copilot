@@ -9,8 +9,8 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { api } from "@/app/apiClient";
-import { useAuthStore, type AuthUser } from "@/stores/auth";
-import { useLastProfileStore } from "@/stores/lastProfile";
+import { useAuthStore, type AuthUser } from "@/features/auth/authStore";
+import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 
 interface AuthResponse {
   user: AuthUser;

@@ -9,9 +9,9 @@ import {
   useAdminEmailSends,
   useAdminEmailTemplates,
   useAdminSendEmail,
-} from "@/lib/admin";
+} from "@/features/admin/adminApi";
 import { cn } from "@/shared/lib/utils";
-import type { AdminEmailSendRow } from "@/types/admin";
+import type { AdminEmailSendRow } from "@/features/admin/adminTypes";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Any status" },

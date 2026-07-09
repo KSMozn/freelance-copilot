@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { useAuthStore, type AuthUser } from "@/stores/auth";
+import { useAuthStore, type AuthUser } from "@/features/auth/authStore";
 
 /**
  * Cross-subdomain impersonation landing page.

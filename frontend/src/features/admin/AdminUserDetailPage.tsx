@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Select } from "@/shared/ui/select";
-import { LlmSpendCardBody } from "@/components/admin/LlmSpendCard";
+import { LlmSpendCardBody } from "@/features/admin/LlmSpendCard";
 import {
   downloadAdminUserCvDocx,
   downloadAdminUserCvPdf,
@@ -25,8 +25,8 @@ import {
   useAdminUserCvPreview,
   useAdminUserEntries,
   useAdminUserLlmSpend,
-} from "@/lib/admin";
-import type { AdminStudentSummary, AdminUserDetail } from "@/types/admin";
+} from "@/features/admin/adminApi";
+import type { AdminStudentSummary, AdminUserDetail } from "@/features/admin/adminTypes";
 
 export function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>();
