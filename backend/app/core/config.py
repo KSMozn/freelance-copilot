@@ -154,4 +154,4 @@ def _build_database_url(settings: "Settings", *, scheme: str) -> str:
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]
+    return Settings()

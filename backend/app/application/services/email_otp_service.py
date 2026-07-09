@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # type: ignore[import-untyped]  # passlib ships no stubs
 
 from app.domain.entities.email_otp import OtpPurpose
 from app.domain.exceptions import OtpInvalidError, RateLimitedError

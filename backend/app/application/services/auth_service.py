@@ -181,7 +181,7 @@ class AuthService:
         elif user.email_verified_at is None:
             await self._users.mark_email_verified(user.id, now)
             # Reload so the response shows the new verified_at.
-            user = await self._users.get_by_id(user.id)  # type: ignore[assignment]
+            user = await self._users.get_by_id(user.id)
 
         if user is None or not user.is_active:
             raise InvalidCredentialsError("User is inactive")

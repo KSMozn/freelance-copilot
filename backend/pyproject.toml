@@ -78,6 +78,49 @@ python_version = "3.13"
 strict = true
 plugins = ["pydantic.mypy"]
 
+# --- mypy-strict ratchet baseline -------------------------------------------
+# This is the measured 2026-07 baseline of pre-existing strict-mode debt: the
+# modules listed below still carry mypy errors and are excluded from error
+# reporting so `mypy app` exits 0 and can gate CI.
+# Ratchet rules:
+#   * NEVER add a new entry — new and changed modules must be strict-clean.
+#   * Remove an entry as soon as its module is cleaned (mypy will flag the
+#     stale override via this list shrinking, not the other way around).
+# The security/live-surface modules (app.core.*, auth/admin/students/
+# career-pack endpoints and their services) are strict-clean on purpose and
+# must stay OUT of this list.
+[[tool.mypy.overrides]]
+module = [
+    "app.api.v1.endpoints.tracker",
+    "app.application.services.analytics_service",
+    "app.application.services.application_service",
+    "app.application.services.career_fitness_service",
+    "app.application.services.gap_recommendation_service",
+    "app.application.services.match_report_service",
+    "app.application.services.output_generation_service",
+    "app.application.services.portfolio_service",
+    "app.application.services.portfolio_story_service",
+    "app.application.services.proposal_context",
+    "app.application.services.proposal_generation_service",
+    "app.application.services.repository_improvement_service",
+    "app.application.services.repository_scan_service",
+    "app.application.services.repository_service",
+    "app.application.services.repository_star_story_service",
+    "app.application.services.resume_service",
+    "app.application.services.student_cv_docx_renderer",
+    "app.application.services.student_cv_renderer",
+    "app.infrastructure.ai.mock_provider",
+    "app.infrastructure.db.repositories.sqlalchemy_job_repository",
+    "app.infrastructure.db.repositories.sqlalchemy_repository_store",
+    "app.infrastructure.db.repositories.sqlalchemy_skill_catalog_repository",
+    "app.infrastructure.email.resend_provider",
+    "app.infrastructure.email.template_renderer",
+    "app.infrastructure.github.github_client",
+    "app.infrastructure.storage.gcs_blob_store",
+    "app.scripts.seed",
+]
+ignore_errors = true
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"

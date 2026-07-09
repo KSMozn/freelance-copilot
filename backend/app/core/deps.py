@@ -1,5 +1,6 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -60,6 +61,8 @@ from app.application.services.skill_catalog_service import SkillCatalogService
 from app.application.services.skill_evidence_service import SkillEvidenceService
 from app.core.config import Settings, get_settings
 from app.core.database import AsyncSessionLocal
+from app.domain.entities.match_report import MatchReport
+from app.domain.entities.skill_catalog import SkillCatalogEntry
 from app.domain.entities.user import User
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
 from app.domain.providers.ai_provider import AIProvider
@@ -578,7 +581,7 @@ async def get_career_fitness_assembler(
     service: Annotated[
         CareerFitnessService, Depends(get_career_fitness_service)
     ],
-):
+) -> Callable[[UUID], Awaitable[CareerFitness]]:
     """Return a callable ``(user_id) -> CareerFitness`` bundling repo reads.
 
     Saves the endpoint from threading six repos through its signature;
@@ -596,7 +599,7 @@ async def get_career_fitness_assembler(
     user_skill_repo = SQLAlchemyUserSkillRepository(session)
     catalog_repo = SQLAlchemySkillCatalogRepository(session)
 
-    async def _assemble(user_id) -> CareerFitness:
+    async def _assemble(user_id: UUID) -> CareerFitness:
         analyses = await analysis_repo.list_for_user(user_id)
         # `list_for_analytics` returns a plain list without pagination —
         # exactly the shape we want for the dashboard aggregation.
@@ -604,7 +607,7 @@ async def get_career_fitness_assembler(
 
         # match_repo doesn't have a list-by-user (only by job). We
         # aggregate by iterating the user's analyses' jobs.
-        match_reports = []
+        match_reports: list[MatchReport] = []
         for a in analyses:
             match_reports.extend(
                 await match_repo.list_for_job(user_id=user_id, job_id=a.job_id)
@@ -613,7 +616,7 @@ async def get_career_fitness_assembler(
         user_skills = await user_skill_repo.list_for_user(user_id)
 
         # Hydrate catalog rows we need so the service stays free of DB IO.
-        catalog_by_id = {}
+        catalog_by_id: dict[UUID, SkillCatalogEntry] = {}
         for row in user_skills:
             entry = await catalog_repo.get_by_id(row.skill_id)
             if entry is not None:

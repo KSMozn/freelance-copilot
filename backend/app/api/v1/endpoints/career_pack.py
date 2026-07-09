@@ -8,7 +8,8 @@ GitHub API).
 from __future__ import annotations
 
 import time
-from typing import Annotated
+from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
@@ -52,7 +53,14 @@ StudentSvc = Annotated[StudentProfileService, Depends(_student_svc)]
 AiDep = Annotated[AIProvider, Depends(get_ai_provider)]
 
 
-def _emit(user_id, name: str, start: float, meta=None, error=None, career=None) -> None:
+def _emit(
+    user_id: UUID,
+    name: str,
+    start: float,
+    meta: dict[str, Any] | None = None,
+    error: str | None = None,
+    career: CareerPackService | None = None,
+) -> None:
     latency_ms = int((time.perf_counter() - start) * 1000)
     final_meta = dict(meta or {})
     if career is not None:

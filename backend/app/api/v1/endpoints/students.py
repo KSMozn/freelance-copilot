@@ -162,7 +162,7 @@ def _profile_to_read(row: StudentProfile, *, photo_url: str | None) -> StudentPr
 def _entry_to_read(row: StudentProfileEntry) -> StudentEntryRead:
     return StudentEntryRead(
         id=row.id,
-        kind=row.kind,  # type: ignore[arg-type]
+        kind=row.kind,
         title=row.title,
         organization=row.organization,
         start_date=row.start_date,

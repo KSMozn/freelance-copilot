@@ -283,7 +283,7 @@ class SkillEvidenceService:
             skills.append(
                 SkillEvidence(
                     name=skill_name,
-                    category=sr.category if sr else None,  # type: ignore[arg-type]
+                    category=sr.category if sr else None,
                     importance=sr.importance if sr else None,
                     evidence=items,
                     best_snippet=_best_snippet(items),

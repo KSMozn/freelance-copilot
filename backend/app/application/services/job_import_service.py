@@ -158,7 +158,7 @@ class JobImportService:
         payload = JobCreate(
             title=schema.title.strip(),
             description=description,
-            source_url=final_url,  # type: ignore[arg-type]  # pydantic coerces str → HttpUrl
+            source_url=final_url,
             budget_type=BudgetType(schema.budget_type) if schema.budget_type else None,
             budget_min=_coerce_decimal(schema.budget_min),
             budget_max=_coerce_decimal(schema.budget_max),

@@ -3,7 +3,7 @@ from typing import Any, Literal
 from uuid import UUID
 
 import jwt
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # type: ignore[import-untyped]  # passlib ships no stubs
 
 from app.core.config import get_settings
 
@@ -14,11 +14,15 @@ PrincipalType = Literal["user", "admin"]
 
 
 def hash_password(password: str) -> str:
-    return _pwd_ctx.hash(password)
+    # CryptContext is untyped (passlib has no stubs); hash() returns str at runtime.
+    hashed: str = _pwd_ctx.hash(password)
+    return hashed
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return _pwd_ctx.verify(password, hashed)
+    # CryptContext is untyped (passlib has no stubs); verify() returns bool at runtime.
+    ok: bool = _pwd_ctx.verify(password, hashed)
+    return ok
 
 
 def _create_token(

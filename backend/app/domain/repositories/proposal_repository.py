@@ -1,7 +1,13 @@
 from typing import Any, Protocol
 from uuid import UUID
 
-from app.domain.entities.proposal import Milestone, Proposal
+from app.domain.entities.proposal import (
+    ImplementationWeek,
+    Milestone,
+    Proposal,
+    ProposalDiagram,
+    ProposalStrategy,
+)
 
 
 class ProposalRepository(Protocol):
@@ -22,6 +28,9 @@ class ProposalRepository(Protocol):
         quality_score: int | None,
         quality_breakdown: dict[str, int] | None,
         quality_warnings: list[str],
+        strategy: ProposalStrategy | None,
+        implementation_plan: list[ImplementationWeek],
+        diagrams: list[ProposalDiagram],
         prompt_version: str,
         model_provider: str,
         model_name: str,

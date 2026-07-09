@@ -1,7 +1,12 @@
 from typing import Any, Protocol
 from uuid import UUID
 
-from app.domain.entities.analysis import JobAnalysis, OpportunityScore, RiskItem
+from app.domain.entities.analysis import (
+    JobAnalysis,
+    OpportunityScore,
+    RiskItem,
+    StackRequirement,
+)
 
 
 class JobAnalysisRepository(Protocol):
@@ -40,6 +45,7 @@ class JobAnalysisRepository(Protocol):
         provider: str,
         model: str,
         prompt_version: str,
+        stack_requirements: list[StackRequirement],
         raw_response: dict[str, Any] | None,
     ) -> JobAnalysis: ...
 

@@ -177,6 +177,6 @@ class JobConfidenceService:
             domain_match=domain,
             architecture_match=architecture,
             missing_critical_skills=missing,
-            interview_chance=interview,  # type: ignore[arg-type]
+            interview_chance=interview,
             rationale=rationale,
         )

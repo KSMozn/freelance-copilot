@@ -181,7 +181,7 @@ def _to_response(
             hidden_requirements=analysis.hidden_requirements,
             expected_deliverables=analysis.expected_deliverables,
             risks=[
-                RiskItemSchema(risk=r.risk, severity=r.severity, mitigation=r.mitigation)  # type: ignore[arg-type]
+                RiskItemSchema(risk=r.risk, severity=r.severity, mitigation=r.mitigation)
                 for r in analysis.risks
             ],
             red_flags=analysis.red_flags,
@@ -193,7 +193,7 @@ def _to_response(
             model=analysis.model,
             prompt_version=analysis.prompt_version,
             stack_requirements=[
-                StackRequirementSchema(category=s.category, name=s.name, importance=s.importance)  # type: ignore[arg-type]
+                StackRequirementSchema(category=s.category, name=s.name, importance=s.importance)
                 for s in analysis.stack_requirements
             ],
             created_at=analysis.created_at,
@@ -204,8 +204,8 @@ def _to_response(
             job_id=score.job_id,
             analysis_id=score.analysis_id,
             score=score.score,
-            recommendation=score.recommendation,  # type: ignore[arg-type]
-            confidence=score.confidence,  # type: ignore[arg-type]
+            recommendation=score.recommendation,
+            confidence=score.confidence,
             score_breakdown=ScoreBreakdown(**score.score_breakdown),
             reasoning=score.reasoning,
             profile_version=score.profile_version,

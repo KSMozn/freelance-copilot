@@ -111,9 +111,13 @@ refactor, not a drive-by.
   `tests/test_api_students.py` / `test_api_admin.py` / `test_api_auth_live.py`
   are the live-surface suite; extend them, don't regress them.
 - CI (`.github/workflows/ci.yml`) gates: `ruff check .` + `pytest -q`.
-  mypy strict is configured but not gated — measured 2026-07 at **159 errors
-  in 44 of 262 files**; treat as debt to ratchet down, and never introduce
-  `Any` in new code.
+  mypy strict now **exits 0 and is CI-gateable**: the remaining 2026-07 debt
+  (**98 errors in 27 of 262 files**, dormant surface + CV renderers + infra
+  adapters only) is held in an explicit `[[tool.mypy.overrides]]` ratchet
+  baseline in `pyproject.toml`. All security/live-surface modules (`core/*`,
+  auth/admin/students/career-pack endpoints and their services) are
+  strict-clean. Shrink the baseline as modules get cleaned — **never add an
+  entry**, and never introduce `Any` in new code.
 
 ---
 
