@@ -1,7 +1,7 @@
 // Rendering layer: turns a page object (see pages.mjs) into a complete,
 // pre-rendered HTML document. No client framework — the HTML IS the content.
 
-import { nav, site } from "./site.mjs";
+import { footerCompany, nav, site } from "./site.mjs";
 
 const esc = (s = "") =>
   String(s)
@@ -39,11 +39,20 @@ const brandMark = (size = 30) => `
 export const cta = (text, href = site.appUrl, cls = "btn btn-primary") => {
   const ext = !isInternal(href);
   const attrs = ext ? ' rel="noopener"' : "";
-  return `<a class="${cls}" href="${esc(href)}"${attrs}>${esc(text)}</a>`;
+  // Name app-bound CTAs for analytics (see assets/analytics.js).
+  const dataCta = href.startsWith(site.appUrl)
+    ? ` data-cta="${esc(text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))}"`
+    : "";
+  return `<a class="${cls}" href="${esc(href)}"${attrs}${dataCta}>${esc(text)}</a>`;
 };
 
 // ---- header / nav ----------------------------------------------------------
-const navGroup = (group) => `
+const navGroup = (group) => {
+  // Plain link (no dropdown) when the entry has an href and no items.
+  if (group.href && !group.items) {
+    return `<li class="nav-item"><a class="nav-trigger" href="${esc(group.href)}">${esc(group.label)}</a></li>`;
+  }
+  return `
   <li class="nav-item">
     <button type="button" class="nav-trigger" aria-haspopup="true" aria-expanded="false">
       ${esc(group.label)}<span class="caret" aria-hidden="true">▾</span>
@@ -59,6 +68,7 @@ const navGroup = (group) => `
         .join("")}
     </ul>
   </li>`;
+};
 
 const header = () => `
 <header class="site-header">
@@ -82,13 +92,10 @@ const header = () => `
   </div>
 </header>`;
 
-const footer = () => {
-  const cols = nav
-    .map(
-      (g) => `
+const footColHtml = (label, items) => `
       <div class="foot-col">
-        <h4>${esc(g.label)}</h4>
-        <ul>${g.items
+        <h4>${esc(label)}</h4>
+        <ul>${items
           .map(
             (it) =>
               `<li><a href="${esc(it.href)}"${
@@ -96,8 +103,14 @@ const footer = () => {
               }>${esc(it.label)}</a></li>`,
           )
           .join("")}</ul>
-      </div>`,
-    )
+      </div>`;
+
+const footer = () => {
+  // Only dropdown groups (with items) become footer columns; plain-link nav
+  // entries are covered by the Company column.
+  const cols = nav
+    .filter((g) => g.items)
+    .map((g) => footColHtml(g.label, g.items))
     .join("");
   return `
 <footer class="site-footer">
@@ -105,10 +118,11 @@ const footer = () => {
     <div class="foot-grid">
       <div class="foot-brand">
         <a class="brand" href="/" aria-label="Careero home">${brandMark(28)}<span class="brand-word">Careero</span></a>
-        <p>${esc(site.description)}</p>
-        ${cta("Create your CV now", site.appUrl, "btn btn-primary")}
+        <p>${esc(site.productDescription)}</p>
+        ${cta("Create My CV", site.appUrl, "btn btn-primary")}
       </div>
       ${cols}
+      ${footColHtml("Company", footerCompany)}
     </div>
     <div class="foot-bottom">
       <span>© ${new Date().getUTCFullYear()} Careero. A PersonaArmory product.</span>
@@ -290,8 +304,8 @@ const organizationLd = () => ({
   name: "Careero",
   url: site.origin + "/",
   logo: absUrl("/icon.svg"),
-  description: site.description,
-  sameAs: [site.appUrl],
+  description: site.productDescription,
+  sameAs: [site.linkedin, site.appUrl],
 });
 
 const websiteLd = () => ({
@@ -299,7 +313,20 @@ const websiteLd = () => ({
   "@type": "WebSite",
   name: "Careero",
   url: site.origin + "/",
-  description: site.description,
+  description: site.productDescription,
+});
+
+// SoftwareApplication — helps search/AI surface Careero as a tool. Pricing is
+// left as a free offer (the app is free to start); no paid plans are invented.
+const softwareApplicationLd = () => ({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Careero",
+  applicationCategory: "EducationalApplication",
+  operatingSystem: "Web",
+  url: site.appUrl,
+  description: site.productDescription,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 });
 
 const articleLd = (page) => ({
@@ -322,7 +349,7 @@ const articleLd = (page) => ({
 const buildJsonLd = (page) => {
   const blocks = [];
   if (!page.slug) {
-    blocks.push(organizationLd(), websiteLd());
+    blocks.push(organizationLd(), websiteLd(), softwareApplicationLd());
   } else if (page.type === "article") {
     blocks.push(articleLd(page));
   }
@@ -404,5 +431,6 @@ ${renderBlocks(page.blocks)}
 </main>
 ${footer()}
 ${analytics()}
+<script defer src="/analytics.js"></script>
 </body>
 </html>`;

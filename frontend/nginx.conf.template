@@ -5,6 +5,15 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # This is the authenticated app (app.careero.app / admin.careero.app) — it
+    # holds private, user-specific pages and CV data. Block all crawling; the
+    # public marketing/SEO site lives on the careero.app apex. Without this,
+    # the SPA fallback below would serve index.html for /robots.txt.
+    location = /robots.txt {
+        default_type text/plain;
+        return 200 "User-agent: *\nDisallow: /\n";
+    }
+
     # SPA fallback: every non-asset request returns index.html so
     # React Router handles the route client-side.
     location / {

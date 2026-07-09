@@ -19,6 +19,15 @@ server {
     # script-src / connect-src allow Cloudflare Web Analytics (cookieless).
     add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 
+    # 301 redirects: old slugs consolidated into their new canonical URLs so
+    # nothing is double-indexed after the SEO restructure.
+    location = /ai-cv-builder { return 301 /ai-cv-builder-for-students; }
+    location = /write-cv-for-students { return 301 /create-cv-for-students; }
+    location = /linkedin-profile-for-students { return 301 /guides/linkedin-profile-for-students; }
+    location = /github-profile-for-students { return 301 /guides/github-profile-for-students; }
+    location = /blog/how-to-describe-student-projects { return 301 /guides/how-to-write-projects-in-a-cv; }
+    location = /blog/how-to-write-cv-with-no-experience { return 301 /guides/student-cv-with-no-experience; }
+
     # Homepage.
     location = / {
         try_files /index.html =404;
