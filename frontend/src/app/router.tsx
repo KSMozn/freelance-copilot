@@ -1,10 +1,7 @@
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
-import { RequireAuth } from "@/features/auth/RequireAuth";
 import { isAdminSurface } from "@/app/apiClient";
-import { queryClient } from "@/app/queryClient";
+import { RequireAuth } from "@/features/auth/RequireAuth";
 import { ImpersonateLanding } from "@/features/auth/ImpersonateLandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { OnboardingPage } from "@/features/auth/OnboardingPage";
@@ -21,15 +18,8 @@ import { AdminTemplatesPage } from "@/features/admin/AdminTemplatesPage";
 import { AdminUserDetailPage } from "@/features/admin/AdminUserDetailPage";
 import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
 
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        {isAdminSurface ? <AdminRoutes /> : <AppRoutes />}
-      </BrowserRouter>
-      <Toaster richColors position="top-right" theme="dark" />
-    </QueryClientProvider>
-  );
+export function AppRouter() {
+  return isAdminSurface ? <AdminRoutes /> : <AppRoutes />;
 }
 
 // ---- admin.careero.app — admin surface only ---------------------------
@@ -57,9 +47,10 @@ function AdminRoutes() {
 //
 // The wider freelance / career-OS surface (jobs, personas, portfolio,
 // applications, analytics, career fitness, etc.) is intentionally *not*
-// mounted here. All that code is still in the repo — the routes are
-// simply not registered. To bring it back, restore the AppLayout branch
-// from git history (see commit 4c18fb7 and earlier).
+// mounted here. All that code is still in the repo — it now lives under
+// src/features/professional/ — the routes are simply not registered. To
+// bring it back, restore the AppLayout branch from git history (see
+// commit 4c18fb7 and earlier) and point it at the relocated files.
 //
 // Every authenticated user lands directly in the student wizard;
 // unauthenticated users get bounced to /login.
