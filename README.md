@@ -74,7 +74,7 @@ flow — only the delivery adapter differs.
 make backend-dev    # uvicorn --reload (needs Python 3.13 + `uv sync` in backend/)
 make frontend-dev   # vite dev server on :5173
 make lint           # ruff (backend) + eslint/tsc (frontend)
-make backend-test   # pytest inside the backend container (356 unit tests, no DB needed)
+make backend-test   # pytest inside the backend container (363 unit tests, no DB needed)
 ```
 
 Frontend extras: `npm run storybook` (shared/ui component browser),

@@ -75,7 +75,10 @@ checklist runs here.
   - Admin: `https://admin.careero.app` + `https://admin.personaarmory.com`.
   - Backend: `https://api.careero.app` + `https://api.personaarmory.com`.
 - **Cloud Run** services: `freelance-copilot-backend`, `freelance-copilot-frontend`.
-- **Cloud SQL** Postgres 15: `freelance-copilot-db`.
+- **Cloud SQL** Postgres: `freelance-copilot-db`. Local dev runs Postgres 16
+  (`pgvector/pgvector:pg16`); confirm the instance's major version with
+  `gcloud sql instances describe freelance-copilot-db --format='value(databaseVersion)'`
+  before relying on version-specific behavior.
 - **GCS bucket** for uploads: `freelance-copilot-841590-uploads`.
 - **Secrets** in GCP Secret Manager.
 - **Region:** `europe-west1`.

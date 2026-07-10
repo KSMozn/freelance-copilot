@@ -826,6 +826,37 @@ limiters are per-instance, and at Cloud Run scale the effective limit
 being `limit × instance_count` is an accepted trade-off. 429 responses
 carry `Retry-After`.
 
+**Login anti-enumeration.** Unknown-email logins burn a dummy bcrypt
+verification (`core/security.py:dummy_verify_password`) on both the user
+and admin paths, so a lookup miss costs the same as a wrong password and
+response timing can't reveal which emails are registered. OTP issuance
+and forgot-password are response-identical for known and unknown emails.
+**Deliberate exception:** `POST /auth/register` returns `409 Email
+already registered` — a documented UX trade-off (signup needs a clear
+signal); the endpoint is rate-limited per-IP, and the
+enumeration-sensitive flows above stay non-disclosing.
+
+**Email canonicalization.** All email columns (`users`, `admin_users`,
+`email_otp_codes`) are CITEXT, so matching and uniqueness are
+case-insensitive at the database level — mixed-case duplicates are
+impossible. On top of that, `domain/services/email_normalization.py`
+lowercases + trims at every service boundary (register, login, OTP,
+reset, admin login, `create_admin`) so stored values are canonical and
+in-memory comparisons agree with the DB semantics.
+
+**Admin lockout — known limitation (accepted, tracked).** Admin login is
+password-only (no MFA) and its brute-force control is the in-process
+limiter above: per-instance state that resets on restart/deploy and
+scales with instance count. The per-email dimension still makes online
+guessing impractical, and unknown-admin timing is equalized, but there
+is no durable per-account lockout. If this risk profile changes, the
+designed fix is: `failed_login_count` + `locked_until` columns on
+`admin_users` (one migration), incremented on failure and cleared on
+success, with exponential backoff and a `423`/generic-401 response —
+deliberately NOT auto-locking on IP signals alone (spoofable → DoS
+vector). Not implemented today: it adds an operator-lockout failure mode
+that currently outweighs the marginal gain over the existing limiter.
+
 **Transport & headers.** `main.py` adds a security-header middleware
 (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
 `Referrer-Policy: no-referrer`, CSP `frame-ancestors 'none'`, HSTS in
@@ -837,7 +868,7 @@ short `SECRET_KEY`s.
 
 ## Testing strategy
 
-- **Unit (the automated suite)** — 321 tests (incl. the live-surface API suite: auth, students, admin), no database needed.
+- **Unit (the automated suite)** — 363 tests (incl. the live-surface API suite: auth, students, admin), no database needed.
   Services and domain logic run against the in-memory fakes in
   `tests/factories.py`; API tests use FastAPI's `TestClient` with
   `app.dependency_overrides` swapping in fakes and a stub current user.

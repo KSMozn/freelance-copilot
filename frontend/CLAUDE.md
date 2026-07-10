@@ -27,7 +27,7 @@ Bundled features:
 - **Server state**: **TanStack Query** (`useQuery`, `useMutation`, `invalidateQueries`, `setQueryData`)
 - **Client state**: **Zustand** with `persist` middleware — storage keys are **frozen** (see Security Note)
 - **HTTP**: axios via the single client in `src/app/apiClient.ts`
-- **Routing**: `react-router-dom` v6, `<BrowserRouter>` + eager `<Routes>` JSX in `src/app/router.tsx`
+- **Routing**: `react-router-dom` v6, `<BrowserRouter>`; `src/app/router.tsx` lazy-loads one surface tree per session (`appRoutes.tsx` / `adminRoutes.tsx` are separate chunks — a student session never downloads admin code)
 - **Validation**: `zod` — the standard for **new** schemas (existing hand-rolled validation is not being rewritten wholesale)
 - **Formatting**: Prettier (`printWidth: 100`, `prettier-plugin-tailwindcss`)
 - **Linting**: ESLint 9 (flat config) with `eslint-plugin-import-x` layer boundaries
@@ -64,7 +64,8 @@ src/
 ├── app/                         # LAYER: wiring
 │   ├── apiClient.ts             # axios instance + interceptors + isAdminSurface + logoutCurrentSurface
 │   ├── queryClient.ts           # TanStack QueryClient singleton
-│   └── router.tsx               # AppRouter: isAdminSurface ? AdminRoutes : AppRoutes
+│   ├── router.tsx               # AppRouter: lazy(isAdminSurface ? adminRoutes : appRoutes)
+│   └── appRoutes.tsx · adminRoutes.tsx   # per-surface route trees (separate lazy chunks)
 │
 ├── features/
 │   ├── auth/                    # Foundation — flat, one file per concern
@@ -190,7 +191,7 @@ Do **not** create additional axios instances or fetch wrappers. Per-feature data
    └── use<Name>.ts               # feature hooks (if needed)
    ```
 
-2. Register the route in `src/app/router.tsx` — **in the correct surface tree** (`AppRoutes` vs `AdminRoutes`), wrapping in `<RequireAuth>` (app) or relying on `AdminLayout`'s guard (admin). Never register anything from `features/professional`.
+2. Register the route **in the correct surface tree** (`src/app/appRoutes.tsx` vs `src/app/adminRoutes.tsx`), wrapping in `<RequireAuth>` (app) or relying on `AdminLayout`'s guard (admin). Never register anything from `features/professional`.
 
 3. Add a zone to `eslint.config.js` → `import-x/no-restricted-paths` to keep the feature isolated from its peers.
 
@@ -275,7 +276,32 @@ Two images live here: `Dockerfile` (dev — used by the repo-root `docker-compos
 
 ## Security Note — Token & storage keys
 
-Auth tokens (access + refresh) persist via Zustand `persist` in `localStorage` under **frozen keys** — `upwork-intel-auth`, `persona-armory-admin-auth`, `careero-last-profile` (centralized in `STORAGE_KEYS`, `@/shared/config/brand.ts`). **Changing any key value logs every existing user out.** The impersonation bridge passes tokens in a URL **fragment** (never sent to a server) and wipes it on landing — preserve that contract exactly. For production hardening, HttpOnly cookies would mitigate XSS token exfiltration; track separately, don't improvise.
+Auth tokens (access + refresh) persist via Zustand `persist` in `localStorage` under **frozen keys** — `upwork-intel-auth`, `persona-armory-admin-auth`, `careero-last-profile` (centralized in `STORAGE_KEYS`, `@/shared/config/brand.ts`). **Changing any key value logs every existing user out.** The impersonation bridge passes tokens in a URL **fragment** (never sent to a server) and wipes it on landing — preserve that contract exactly.
+
+### HttpOnly-cookie migration plan (documented, NOT implemented — don't improvise)
+
+localStorage tokens are readable by any XSS payload; the accepted hardening path
+is server-set cookies. This is a coordinated backend+frontend change — do it as
+a deliberate project, not a drive-by:
+
+1. **Refresh token → HttpOnly cookie** (biggest win first): backend sets it on
+   login/refresh (`HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`) and
+   admin variants get `Path=/api/v1/admin/auth` so the two surfaces stay
+   isolated. The SPA stops persisting `refreshToken`; `tryRefresh` posts with
+   `withCredentials` and an empty body.
+2. **Access token**: keep in memory only (Zustand without `persist` for the
+   token field). Cost: a refresh round-trip on every hard reload.
+3. **CSRF**: cookie auth makes the refresh/logout endpoints CSRF-targetable —
+   pair the cookie with the double-submit pattern (random `csrf` cookie the SPA
+   echoes in an `X-CSRF-Token` header) or require a custom header + strict CORS
+   (already enforced) as the minimum bar.
+4. **CORS**: `allow_credentials=True` is already set; the origin allowlist must
+   stay exact (never wildcard — config already rejects it).
+5. **Impersonation**: the fragment bridge still works — the minted impersonation
+   session is access-token-only (no refresh token), so it never touches cookies.
+6. **Rollout**: accept both auth styles during a transition window (bearer
+   header OR cookie), then remove localStorage persistence and drop the frozen
+   keys' token fields (keep user/profile fields — do NOT rename the keys).
 
 ---
 
