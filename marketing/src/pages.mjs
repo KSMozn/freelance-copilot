@@ -227,7 +227,7 @@ export const pages = [
           },
           {
             q: "What if I have no work experience?",
-            a: "That is exactly who Careero is built for. Read our guide on <a href=\"/blog/how-to-write-cv-with-no-experience\">writing a CV with no experience</a>.",
+            a: "That is exactly who Careero is built for. Read our guide on <a href=\"/guides/student-cv-with-no-experience\">writing a CV with no experience</a>.",
           },
         ],
       },
@@ -376,7 +376,7 @@ export const pages = [
         items: [
           {
             q: "What do I put on a first CV with no jobs?",
-            a: "Education, academic and personal projects, volunteering, societies, and any part-time or casual work. Our <a href=\"/blog/how-to-write-cv-with-no-experience\">no-experience guide</a> covers this in detail.",
+            a: "Education, academic and personal projects, volunteering, societies, and any part-time or casual work. Our <a href=\"/guides/student-cv-with-no-experience\">no-experience guide</a> covers this in detail.",
           },
           {
             q: "How do I make my first CV look professional?",
@@ -1343,7 +1343,7 @@ export const pages = [
           },
           {
             q: "How do I describe GitHub projects on my CV?",
-            a: "Use achievement-focused bullets: what you built, the tech, and the outcome. See our guide on <a href=\"/blog/how-to-describe-student-projects\">describing student projects</a>.",
+            a: "Use achievement-focused bullets: what you built, the tech, and the outcome. See our guide on <a href=\"/guides/how-to-write-projects-in-a-cv\">describing student projects</a>.",
           },
         ],
       },

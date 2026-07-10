@@ -56,7 +56,8 @@ cp frontend/.env.example frontend/.env       # only if present
 # 2. Start the stack
 docker compose up -d
 
-# 3. Apply migrations
+# 3. Apply migrations (optional — the backend container already runs
+#    `alembic upgrade head` on start; rerun manually only if you need to)
 docker compose exec backend alembic upgrade head
 
 # 4. Seed a local admin user

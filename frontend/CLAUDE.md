@@ -1,8 +1,8 @@
-# CLAUDE.md — AI Development Guide for the Freelance Copilot Frontend
+# CLAUDE.md — AI Development Guide for the Careero Frontend
 
 ## Project Overview
 
-**Freelance Copilot Frontend** is a single-repo React 18 + TypeScript SPA built with Vite. One build serves **three surfaces**, selected at runtime from the hostname (or a sticky `?surface=` override): the **Careero** student CV builder (`app.*`), the **PersonaArmory Admin** console (`admin.*`), and a **dormant professional Career-OS surface** whose routes are intentionally not registered.
+**The Careero frontend** is a single-repo React 18 + TypeScript SPA built with Vite. One build serves **three surfaces**, selected at runtime from the hostname (or a sticky `?surface=` override): the **Careero** student CV builder (`app.*`), the **PersonaArmory Admin** console (`admin.*`), and a **dormant professional Career-OS surface** whose routes are intentionally not registered.
 
 Bundled features:
 
