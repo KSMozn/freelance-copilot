@@ -18,7 +18,7 @@ from app.application.dto.admin_auth_dto import (
     AdminUserRead,
 )
 from app.application.services.refresh_token_manager import RefreshTokenManager
-from app.core.security import decode_token, verify_password
+from app.core.security import decode_token, dummy_verify_password, verify_password
 from app.domain.entities.admin_user import AdminUser
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
 from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import (
@@ -54,7 +54,12 @@ class AdminAuthService:
 
     async def login(self, payload: AdminLoginRequest) -> AdminAuthResponse:
         admin = await self._admins.get_by_email(str(payload.email))
-        if admin is None or not verify_password(payload.password, admin.password_hash):
+        if admin is None:
+            # Burn a bcrypt check anyway so an unknown email costs the same
+            # as a wrong password — timing can't enumerate admin accounts.
+            dummy_verify_password()
+            raise InvalidCredentialsError("Invalid email or password")
+        if not verify_password(payload.password, admin.password_hash):
             raise InvalidCredentialsError("Invalid email or password")
         if not admin.is_active:
             raise InvalidCredentialsError("Admin account is disabled")

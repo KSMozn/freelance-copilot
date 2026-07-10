@@ -20,7 +20,7 @@ from app.application.services.auth_service import AuthService
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.refresh_token_manager import RefreshTokenManager
 from app.core.deps import get_auth_service
-from app.core.security import decode_token
+from app.core.security import create_refresh_token, decode_token
 from app.domain.entities.email_otp import EmailOtp
 from app.domain.entities.refresh_token import RefreshTokenRecord
 from app.domain.entities.user import User
@@ -411,3 +411,48 @@ def test_me_without_token_returns_401() -> None:
         resp = raw.get("/api/v1/auth/me")
         assert resp.status_code == 401
         assert resp.json()["detail"] == "Not authenticated"
+
+
+def test_me_disabled_user_with_valid_token_returns_401(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
+    """A still-valid access token must not outlive a disable action."""
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": "disabled.window@example.com", "password": "s3cure-enough"},
+    ).json()
+    token = registered["tokens"]["access_token"]
+    state["users"].rows[UUID(registered["user"]["id"])].is_active = False
+
+    resp = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "User is inactive"
+
+
+# ---- identity-space separation on the refresh endpoint --------------------
+
+
+def test_refresh_rejects_admin_refresh_token(client: TestClient) -> None:
+    """An admin refresh token must bounce off the USER refresh endpoint."""
+    admin_refresh = create_refresh_token(uuid4(), "admin")
+    resp = client.post("/api/v1/auth/refresh", json={"refresh_token": admin_refresh})
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Not a user refresh token"
+
+
+# ---- login timing equalization --------------------------------------------
+
+
+def test_login_unknown_email_burns_bcrypt_check(client: TestClient, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """A miss on the account lookup must still cost one bcrypt verification,
+    otherwise response timing reveals which emails are registered."""
+    calls: list[int] = []
+    monkeypatch.setattr(
+        "app.application.services.auth_service.dummy_verify_password",
+        lambda: calls.append(1),
+    )
+    resp = client.post(
+        "/api/v1/auth/login",
+        json={"email": "ghost.nobody@example.com", "password": "whatever-pass"},
+    )
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid email or password"
+    assert calls == [1]

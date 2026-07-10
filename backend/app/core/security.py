@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from typing import Any, Literal
 from uuid import UUID
 
@@ -23,6 +24,23 @@ def verify_password(password: str, hashed: str) -> bool:
     # CryptContext is untyped (passlib has no stubs); verify() returns bool at runtime.
     ok: bool = _pwd_ctx.verify(password, hashed)
     return ok
+
+
+@lru_cache(maxsize=1)
+def _dummy_password_hash() -> str:
+    # Hashed through the same context as real passwords so the cost matches
+    # whatever bcrypt work factor is configured.
+    return hash_password("timing-equalization-dummy")
+
+
+def dummy_verify_password() -> None:
+    """Burn one bcrypt verification against a throwaway hash.
+
+    Called on the login path when the account lookup misses (unknown email or
+    passwordless OTP-only account) so the rejection costs the same as a real
+    wrong-password check — response timing can't enumerate registered emails.
+    """
+    verify_password("not-the-dummy-password", _dummy_password_hash())
 
 
 def _create_token(

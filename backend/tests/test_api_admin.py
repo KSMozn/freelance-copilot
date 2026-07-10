@@ -341,3 +341,134 @@ def test_resolve_feedback_unknown_returns_404(admin: AdminUser) -> None:
     assert resp.status_code == 404
     assert resp.json()["detail"] == "Feedback not found"
     assert session.committed is False
+
+
+# ---- identity-space separation on the ADMIN refresh endpoint ---------------
+
+
+def test_admin_refresh_rejects_user_refresh_token() -> None:
+    """A user refresh token must bounce off the ADMIN refresh endpoint.
+
+    The pt-claim check fires before any repo access, so the service can be
+    wired with inert placeholders — no admin lookup ever happens.
+    """
+    from app.api.v1.endpoints import admin_auth as admin_auth_endpoints
+    from app.application.services.admin_auth_service import AdminAuthService
+    from app.core.security import create_refresh_token
+
+    service = AdminAuthService(None, object())  # type: ignore[arg-type]
+    app.dependency_overrides[admin_auth_endpoints._service] = lambda: service
+    try:
+        client = TestClient(app)
+        user_refresh = create_refresh_token(uuid4(), "user")
+        resp = client.post(
+            "/api/v1/admin/auth/refresh", json={"refresh_token": user_refresh}
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Not an admin refresh token"
+
+
+async def test_admin_login_unknown_email_burns_bcrypt_check(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """Admin login must cost one bcrypt check even when the email is unknown,
+    so response timing can't enumerate admin accounts."""
+    from app.application.dto.admin_auth_dto import AdminLoginRequest
+    from app.application.services.admin_auth_service import AdminAuthService
+    from app.domain.exceptions import InvalidCredentialsError
+
+    calls: list[int] = []
+    monkeypatch.setattr(
+        "app.application.services.admin_auth_service.dummy_verify_password",
+        lambda: calls.append(1),
+    )
+
+    class MissRepo:
+        async def get_by_email(self, email: str) -> None:
+            return None
+
+    service = AdminAuthService(MissRepo(), None)  # type: ignore[arg-type]
+    with pytest.raises(InvalidCredentialsError):
+        await service.login(
+            AdminLoginRequest(email="ghost.admin@example.com", password="pw")
+        )
+    assert calls == [1]
+
+
+# ---- X-Task-Secret machine endpoint ----------------------------------------
+
+
+class _FakeDailyReportService:
+    """Stands in for DailyReportService — the auth gate is what's under test."""
+
+    def __init__(self, session: Any, email_provider: Any) -> None:
+        pass
+
+    async def build_report(self, *, window_hours: int) -> dict[str, Any]:
+        return {}
+
+    async def send(self, report: dict[str, Any]) -> Any:
+        from app.application.dto.admin_dto import DailyReportResult
+
+        return DailyReportResult(recipients=1, delivered=1, errors=[])
+
+
+def _task_settings(**over: Any) -> Any:
+    from app.core.config import get_settings
+
+    return get_settings().model_copy(update=over)
+
+
+def test_daily_report_unset_secret_outside_dev_returns_503(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setattr(
+        admin_endpoints,
+        "get_settings",
+        lambda: _task_settings(report_task_secret="", environment="staging"),
+    )
+    with TestClient(app) as raw:
+        resp = raw.post("/api/v1/admin/tasks/daily-report", json={})
+    assert resp.status_code == 503
+    assert resp.json()["detail"] == "Task secret not configured"
+
+
+def test_daily_report_wrong_secret_returns_401(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setattr(
+        admin_endpoints,
+        "get_settings",
+        lambda: _task_settings(report_task_secret="right-secret", environment="staging"),
+    )
+    with TestClient(app) as raw:
+        resp = raw.post(
+            "/api/v1/admin/tasks/daily-report",
+            json={},
+            headers={"X-Task-Secret": "wrong-secret"},
+        )
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Invalid task secret"
+
+
+def test_daily_report_correct_secret_runs_report(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    monkeypatch.setattr(
+        admin_endpoints,
+        "get_settings",
+        lambda: _task_settings(report_task_secret="right-secret", environment="staging"),
+    )
+    monkeypatch.setattr(admin_endpoints, "DailyReportService", _FakeDailyReportService)
+
+    async def _no_session():  # type: ignore[no-untyped-def]
+        yield None
+
+    app.dependency_overrides[get_session] = _no_session
+    try:
+        client = TestClient(app)
+        resp = client.post(
+            "/api/v1/admin/tasks/daily-report",
+            json={},
+            headers={"X-Task-Secret": "right-secret"},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json() == {"recipients": 1, "delivered": 1, "errors": []}

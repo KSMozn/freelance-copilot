@@ -16,7 +16,12 @@ from app.application.dto.auth_dto import (
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.persona_service import PersonaService
 from app.application.services.refresh_token_manager import RefreshTokenManager
-from app.core.security import decode_token, hash_password, verify_password
+from app.core.security import (
+    decode_token,
+    dummy_verify_password,
+    hash_password,
+    verify_password,
+)
 from app.domain.entities.user import User
 from app.domain.exceptions import (
     AlreadyExistsError,
@@ -76,11 +81,12 @@ class AuthService:
 
     async def login(self, payload: LoginRequest) -> AuthResponse:
         user = await self._users.get_by_email(str(payload.email))
-        if (
-            user is None
-            or user.password_hash is None
-            or not verify_password(payload.password, user.password_hash)
-        ):
+        if user is None or user.password_hash is None:
+            # Burn a bcrypt check anyway so an unknown email costs the same
+            # as a wrong password — timing can't enumerate accounts.
+            dummy_verify_password()
+            raise InvalidCredentialsError("Invalid email or password")
+        if not verify_password(payload.password, user.password_hash):
             raise InvalidCredentialsError("Invalid email or password")
         if not user.is_active:
             raise InvalidCredentialsError("User is inactive")
