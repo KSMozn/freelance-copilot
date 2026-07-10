@@ -160,7 +160,9 @@ Copy `.env.example` → `.env` if needed:
 | ------------------- | ------------------------------------------------ | ------------------------------ |
 | `VITE_API_BASE_URL` | Dev fallback API base for `src/app/apiClient.ts` | `http://localhost:8000/api/v1` |
 
-In deployed environments the API base is resolved **at runtime from the hostname** (`*.careero.app` → `api.careero.app`, `*.personaarmory.com` → `api.personaarmory.com`, `*.run.app` → paired Cloud Run backend). The admin surface is picked the same way (`admin.*` hosts) with a sticky `?surface=admin` sessionStorage override for raw Cloud Run URLs; `?surface=app` clears it. This logic lives in `apiClient.ts` and runs at module load — do not duplicate or reorder it.
+In deployed environments the API base is resolved **at runtime from the hostname** (`*.careero.app` → `api.careero.app`, `*.personaarmory.com` → `api.personaarmory.com`, `*.run.app` → paired Cloud Run backend). The admin surface is picked the same way (`admin.*` hosts) with a sticky `?surface=admin` sessionStorage override for shared origins (localhost, raw Cloud Run URLs); `?surface=app` clears it. This logic lives in `apiClient.ts` and runs at module load — do not duplicate or reorder it.
+
+Precedence in `detectAdminSurface()` (order matters): `admin.*` hostname → explicit `?surface=` param → **`APP_OWNED_PATHS`** → sticky flag. The `APP_OWNED_PATHS` step exists because the sticky flag is per-tab and otherwise hijacks bare student URLs on a shared origin: `/login` lives in both route trees (so it would render the admin login) and `/student` would hit the admin catch-all and land on `/overview`. Loading a student-only path clears the flag. Consequence: **on a shared origin the admin login always needs an explicit `?surface=admin`** — that is what the e2e suite passes. Keep `APP_OWNED_PATHS` in sync with `app/appRoutes.tsx`; `/feedback` is intentionally excluded (it exists on both surfaces).
 
 ---
 

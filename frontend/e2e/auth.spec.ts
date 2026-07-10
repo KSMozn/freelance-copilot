@@ -41,6 +41,33 @@ test.describe("auth — failure paths", () => {
   });
 });
 
+test.describe("surface selection on a shared origin", () => {
+  // The `?surface=admin` override is sticky in sessionStorage. It must never
+  // hijack a student-only URL loaded later in the same tab: `/login` exists in
+  // both route trees (it rendered the admin login) and `/student` used to hit
+  // the admin catch-all and land on /overview.
+  test("sticky admin override does not hijack bare student URLs", async ({ page }) => {
+    await page.goto("/overview?surface=admin");
+    await expect(page.getByRole("heading", { name: "Admin sign-in" })).toBeVisible();
+
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Admin sign-in" })).toBeHidden();
+    await expect(page.getByRole("button", { name: /Send code|Continue/ }).first()).toBeVisible();
+
+    await page.goto("/student");
+    await expect(page).not.toHaveURL(/\/overview/);
+  });
+
+  test("admin surface is still reachable with an explicit ?surface=admin", async ({ page }) => {
+    await page.goto("/login");
+    await page.goto("/login?surface=admin");
+    await expect(page.getByRole("heading", { name: "Admin sign-in" })).toBeVisible();
+    // Sticky flag still carries admin across a bare in-console URL.
+    await page.goto("/users");
+    await expect(page.getByRole("heading", { name: "Admin sign-in" })).toBeVisible();
+  });
+});
+
 test.describe("auth — session lifecycle", () => {
   test.use({ storageState: STUDENT_STATE });
 

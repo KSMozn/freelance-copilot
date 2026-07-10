@@ -35,6 +35,27 @@ const baseURL = resolveApiBaseUrl();
 // are unavailable): pass `?surface=admin` once, we sticky-store the choice
 // in sessionStorage so subsequent client-side navigations stay in admin
 // mode. `?surface=app` clears it.
+
+// Paths owned exclusively by the student route tree (see app/appRoutes.tsx).
+// On a shared origin (localhost, *.run.app) the sticky admin flag would
+// otherwise hijack these: `/login` exists in BOTH trees so it would render
+// the admin login, and `/student` would hit the admin catch-all and redirect
+// to /overview. Loading one of these paths is an unambiguous request for the
+// student surface, so it wins over the sticky flag and clears it. Reaching
+// the admin login on a shared origin therefore always needs an explicit
+// `?surface=admin` (which is checked first, and is what the e2e suite uses).
+// `/feedback` is deliberately absent — it exists in both trees, so the sticky
+// flag still decides it.
+const APP_OWNED_PATHS = new Set([
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/impersonate",
+  "/student",
+  "/onboarding",
+]);
+
 function detectAdminSurface(): boolean {
   if (typeof window === "undefined") return false;
   const host = window.location.hostname;
@@ -42,8 +63,18 @@ function detectAdminSurface(): boolean {
   try {
     const params = new URLSearchParams(window.location.search);
     const override = params.get("surface");
-    if (override === "admin") sessionStorage.setItem("surface", "admin");
-    else if (override === "app") sessionStorage.removeItem("surface");
+    if (override === "admin") {
+      sessionStorage.setItem("surface", "admin");
+      return true;
+    }
+    if (override === "app") {
+      sessionStorage.removeItem("surface");
+      return false;
+    }
+    if (APP_OWNED_PATHS.has(window.location.pathname)) {
+      sessionStorage.removeItem("surface");
+      return false;
+    }
     return sessionStorage.getItem("surface") === "admin";
   } catch {
     return false;
