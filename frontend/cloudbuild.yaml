@@ -7,17 +7,25 @@ steps:
       - --build-arg
       - VITE_API_BASE_URL=${_VITE_API_BASE_URL}
       - -t
-      - europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/frontend:latest
+      - europe-west1-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REPO}/frontend:latest
       - .
 images:
-  - europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/frontend:latest
+  - europe-west1-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REPO}/frontend:latest
 options:
   machineType: E2_HIGHCPU_8
 substitutions:
   # Build-time FALLBACK only: on every deployed hostname the SPA resolves the
   # API base at runtime (src/app/apiClient.ts — careero.app, personaarmory.com,
-  # and *.run.app via the frontend->backend name swap). This value is used only
+  # and *.run.app via the frontend->backend token swap). This value is used only
   # on hosts matching none of those patterns. Keep it a stable custom domain —
   # never a generated (hashed) run.app URL, which silently rots when the
   # service is recreated. Override per build with --substitutions if needed.
   _VITE_API_BASE_URL: https://api.careero.app/api/v1
+
+  # GCP project ID is immutable and keeps its pre-pivot name (see
+  # docs/CAREERO_MIGRATION.md, decision: Option A).
+  _PROJECT_ID: freelance-copilot-841590
+  # Artifact Registry repository. CAREERO MIGRATION CUTOVER: flip to `careero`
+  # only AFTER the new registry exists (runbook step 2), otherwise the push
+  # target does not exist and the build fails.
+  _ARTIFACT_REPO: freelance-copilot

@@ -17,9 +17,12 @@ function resolveApiBaseUrl(): string {
   if (host.endsWith("careero.app")) return "https://api.careero.app/api/v1";
   if (host.endsWith("personaarmory.com")) return "https://api.personaarmory.com/api/v1";
   if (host.endsWith(".run.app")) {
-    // Frontend service name pattern: freelance-copilot-frontend-<hash>-<region>.a.run.app
-    // Paired backend swaps 'frontend' for 'backend', same hash + region.
-    const backendHost = host.replace("freelance-copilot-frontend", "freelance-copilot-backend");
+    // Cloud Run host pattern: <service>-<hash>-<region>.a.run.app, where the
+    // paired services differ only in a `frontend`/`backend` token. Swapping
+    // that token (rather than a hardcoded product prefix) keeps this working
+    // across the careero-* rename without a coordinated redeploy, and stops
+    // the service name from rotting into the bundle a third time.
+    const backendHost = host.replace(/(^|-)frontend(?=-|\.)/, "$1backend");
     return `https://${backendHost}/api/v1`;
   }
   return import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";

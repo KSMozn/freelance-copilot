@@ -8,7 +8,7 @@ contribution into paperwork. Read it once, keep it open in a tab.
 
 ## 1. Project Overview
 
-Careero (formerly Freelance Copilot) is a student-only CV builder.
+Careero is a student-only CV builder.
 
 | Layer | Stack |
 |---|---|
@@ -46,7 +46,7 @@ Every contributor should have:
 
 ```bash
 git clone <repo-url>
-cd freelance-copilot
+cd <repo-dir>
 
 # 1. Environment
 cp backend/.env.example backend/.env

@@ -5,9 +5,17 @@ steps:
       - -f
       - Dockerfile.prod
       - -t
-      - europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/marketing:latest
+      - europe-west1-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REPO}/marketing:latest
       - .
 images:
-  - europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/marketing:latest
+  - europe-west1-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REPO}/marketing:latest
 options:
   machineType: E2_HIGHCPU_8
+substitutions:
+  # GCP project ID is immutable and keeps its pre-pivot name (see
+  # docs/CAREERO_MIGRATION.md, decision: Option A).
+  _PROJECT_ID: freelance-copilot-841590
+  # Artifact Registry repository. CAREERO MIGRATION CUTOVER: flip to `careero`
+  # only AFTER the new registry exists (runbook step 2), otherwise the push
+  # target does not exist and the build fails.
+  _ARTIFACT_REPO: freelance-copilot

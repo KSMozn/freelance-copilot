@@ -55,3 +55,9 @@ GCP project `freelance-copilot-841590`, Cloud Run services
 `freelance-copilot-{backend,frontend}` + `marketing`, region `europe-west1`.
 Release flow and environment details: `README_DEVELOPMENT_PROCESS.md`.
 Contribution flow, branch naming, review gates: `CONTRIBUTING.md`.
+
+These pre-pivot infra names are being retired to `careero-*` — the project ID
+is immutable and stays. Ordered cutover + what must NOT be renamed (the
+PersonaArmory brand, frozen storage keys, DB identifiers):
+`docs/CAREERO_MIGRATION.md`. Until that runbook's steps land, the names above
+are still the live ones — don't "fix" them.

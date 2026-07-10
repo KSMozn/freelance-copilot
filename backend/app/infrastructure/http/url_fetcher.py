@@ -25,7 +25,7 @@ _ALLOWED_SCHEMES = frozenset({"http", "https"})
 DEFAULT_TIMEOUT_S = 12.0
 MAX_BYTES = 1_500_000  # ~1.5 MB cap on the raw HTML
 TEXT_CAP = 8000  # chars of stripped text we keep for downstream LLM input
-USER_AGENT = "freelance-copilot-research/1 (+local)"
+USER_AGENT = "careero-research/1 (+local)"
 
 _SCRIPT_STYLE_RE = re.compile(
     r"<(script|style|noscript|svg|iframe)\b[^>]*>.*?</\1>",

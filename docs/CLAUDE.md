@@ -12,6 +12,7 @@ mismatch once (README advertising the pre-pivot product); don't repeat it.
 | `ERD.md` | Database schema | **Every Alembic migration** — same PR |
 | `ROADMAP.md` | Phase history (professional era + Careero era) | Every shipped phase |
 | `llm-visibility-playbook.md` | Marketing-site SEO/LLM strategy | Marketing changes |
+| `CAREERO_MIGRATION.md` | Cutover runbook retiring the `freelance-copilot` infra names | Each completed migration step |
 
 ## Rules
 
