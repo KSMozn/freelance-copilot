@@ -24,3 +24,11 @@ class RateLimitedError(DomainError):
 
 class OtpInvalidError(DomainError):
     """Submitted OTP code is wrong, expired, exhausted attempts, or missing."""
+
+
+class PasswordResetInvalidError(DomainError):
+    """Password-reset token is unknown, already used, or expired."""
+
+
+class EmailDeliveryError(DomainError):
+    """The configured email provider failed to deliver a message."""

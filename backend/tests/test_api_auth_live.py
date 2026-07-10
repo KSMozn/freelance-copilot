@@ -186,8 +186,9 @@ class FakeEmailProvider:
 def state():  # type: ignore[no-untyped-def]
     users = FakeUserRepository()
     emails = FakeEmailProvider()
+    otps = FakeEmailOtpRepository()
     otp_service = EmailOtpService(
-        otp_repo=FakeEmailOtpRepository(),
+        otp_repo=otps,
         email_provider=emails,
         app_name="Careero",
         from_address="no-reply@careero.test",
@@ -198,7 +199,7 @@ def state():  # type: ignore[no-untyped-def]
         None,  # persona provisioning is optional and DB-backed — skip it
         RefreshTokenManager(FakeRefreshTokenRepository()),
     )
-    return {"users": users, "emails": emails, "service": service}
+    return {"users": users, "emails": emails, "otps": otps, "service": service}
 
 
 @pytest.fixture
@@ -340,6 +341,51 @@ def test_verify_code_wrong_code_returns_400(client: TestClient, state) -> None: 
     )
     assert resp.status_code == 400
     assert resp.json()["detail"] == "Incorrect code."
+
+
+def test_verify_code_expired_code_returns_400(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
+    from datetime import timedelta
+
+    client.post(
+        "/api/v1/auth/request-code",
+        json={"email": "otp.expired@example.com", "purpose": "login"},
+    )
+    code = _sent_code(state["emails"])
+    for row in state["otps"].rows:
+        row.expires_at = datetime.now(UTC) - timedelta(minutes=1)
+
+    resp = client.post(
+        "/api/v1/auth/verify-code",
+        json={"email": "otp.expired@example.com", "code": code, "purpose": "login"},
+    )
+    assert resp.status_code == 400
+    assert "expired" in resp.json()["detail"].lower()
+
+
+def test_verify_code_cannot_be_reused(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
+    client.post(
+        "/api/v1/auth/request-code",
+        json={"email": "otp.reuse@example.com", "purpose": "register"},
+    )
+    code = _sent_code(state["emails"])
+    payload = {"email": "otp.reuse@example.com", "code": code, "purpose": "register"}
+    assert client.post("/api/v1/auth/verify-code", json=payload).status_code == 200
+
+    resp = client.post("/api/v1/auth/verify-code", json=payload)
+    assert resp.status_code == 400  # consumed on first use
+
+
+def test_request_code_provider_failure_returns_503(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
+    async def boom(message):  # type: ignore[no-untyped-def]
+        raise RuntimeError("provider down")
+
+    state["emails"].send = boom
+    resp = client.post(
+        "/api/v1/auth/request-code",
+        json={"email": "otp.outage@example.com", "purpose": "login"},
+    )
+    assert resp.status_code == 503
+    assert "couldn't send the email" in resp.json()["detail"]
 
 
 # ---- /auth/me ------------------------------------------------------------

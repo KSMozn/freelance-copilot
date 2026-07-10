@@ -73,3 +73,17 @@ class SQLAlchemyRefreshTokenRepository:
             .values(revoked_at=at, revoked_reason=reason)
         )
         await self._session.commit()
+
+    async def revoke_all_for_subject(
+        self, principal_type: str, subject_id: UUID, *, reason: str, at: datetime
+    ) -> None:
+        """Revoke every still-live token a principal holds, across all
+        families (password reset / account-wide sign-out)."""
+        await self._session.execute(
+            update(RefreshToken)
+            .where(RefreshToken.principal_type == principal_type)
+            .where(RefreshToken.subject_id == subject_id)
+            .where(RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=at, revoked_reason=reason)
+        )
+        await self._session.commit()

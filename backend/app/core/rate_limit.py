@@ -75,3 +75,9 @@ otp_request_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
 # Password registration does a bcrypt hash per call and creates rows — it was
 # the only unlimited auth endpoint (account-spam / CPU vector).
 register_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
+# Forgot-password sends an email per call; the per-account window is long
+# (15 min) so it can't be used to flood one inbox, mirroring the DB-backed
+# OTP issuance limit. Reset-password does a bcrypt hash per call.
+forgot_password_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
+forgot_password_account_limiter = SlidingWindowLimiter(limit=3, window_s=900.0)
+reset_password_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)

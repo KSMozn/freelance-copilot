@@ -114,6 +114,18 @@ class RefreshTokenManager:
             ),
         )
 
+    async def revoke_all_for(
+        self, subject_id: UUID, principal_type: str, *, reason: str = "password_reset"
+    ) -> None:
+        """Revoke every live session a principal holds, across all families.
+
+        Used after a password reset so stolen/old refresh tokens die with the
+        old credential.
+        """
+        await self._repo.revoke_all_for_subject(
+            principal_type, subject_id, reason=reason, at=datetime.now(UTC)
+        )
+
     async def revoke_session(self, data: dict[str, Any]) -> None:
         """Logout: revoke the whole family behind the presented refresh token.
 

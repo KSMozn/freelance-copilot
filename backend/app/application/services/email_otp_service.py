@@ -6,7 +6,11 @@ from datetime import UTC, datetime, timedelta
 from passlib.context import CryptContext  # type: ignore[import-untyped]  # passlib ships no stubs
 
 from app.domain.entities.email_otp import OtpPurpose
-from app.domain.exceptions import OtpInvalidError, RateLimitedError
+from app.domain.exceptions import (
+    EmailDeliveryError,
+    OtpInvalidError,
+    RateLimitedError,
+)
 from app.domain.providers.email_provider import EmailMessage, EmailProvider
 from app.domain.repositories.email_otp_repository import EmailOtpRepository
 from app.infrastructure.email.template_renderer import render
@@ -84,15 +88,23 @@ class EmailOtpService:
             "register": "sign-up",
             "email_change": "email change",
         }[purpose]
-        await self._email.send(
-            EmailMessage(
-                to=email,
-                subject=f"Your {self._app_name} {subject_label} code: {code}",
-                html_body=render("otp_login.html", context),
-                text_body=render("otp_login.txt", context),
-                tags={"purpose": purpose, "kind": "otp"},
+        try:
+            await self._email.send(
+                EmailMessage(
+                    to=email,
+                    subject=f"Your {self._app_name} {subject_label} code: {code}",
+                    html_body=render("otp_login.html", context),
+                    text_body=render("otp_login.txt", context),
+                    tags={"purpose": purpose, "kind": "otp"},
+                )
             )
-        )
+        except Exception as exc:
+            # A provider outage must be a visible, actionable error — not an
+            # opaque 500 — and it must not differ between mock and real
+            # providers (same flow, different adapter).
+            raise EmailDeliveryError(
+                "We couldn't send the email right now. Please try again shortly."
+            ) from exc
 
     async def verify(
         self,

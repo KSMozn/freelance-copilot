@@ -22,6 +22,37 @@ DEFAULT_DEV_OUTBOX = Path("var/dev-emails.jsonl")
 _CODE_RE = re.compile(r"\b(\d{6})\b")
 
 
+def read_dev_outbox(
+    to: str | None = None,
+    limit: int = 10,
+    outbox_path: Path | None = None,
+) -> list[dict[str, object]]:
+    """Read captured emails back out of the dev outbox, newest first.
+
+    Powers the dev-only mailbox endpoint so developers (and e2e tests) can
+    fetch OTP codes / reset links without shelling into the container.
+    """
+    path = outbox_path or DEFAULT_DEV_OUTBOX
+    if not path.exists():
+        return []
+    records: list[dict[str, object]] = []
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(record, dict):
+                continue
+            if to and str(record.get("to", "")).lower() != to.lower():
+                continue
+            records.append(record)
+    return records[-limit:][::-1]
+
+
 class MockEmailProvider:
     """Writes outgoing emails to a JSONL file and logs the OTP code.
 

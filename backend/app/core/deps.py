@@ -31,6 +31,7 @@ from app.application.services.match_report_service import MatchReportService
 from app.application.services.output_generation_service import (
     OutputGenerationService,
 )
+from app.application.services.password_reset_service import PasswordResetService
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
 from app.application.services.persona_service import PersonaService
 from app.application.services.portfolio_matching_service import PortfolioMatchingService
@@ -100,6 +101,9 @@ from app.infrastructure.db.repositories.sqlalchemy_match_report_repository impor
 from app.infrastructure.db.repositories.sqlalchemy_output_repository import (
     SQLAlchemyOutputRepository,
 )
+from app.infrastructure.db.repositories.sqlalchemy_password_reset_token_repository import (
+    SQLAlchemyPasswordResetTokenRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
     SQLAlchemyPersonaArchetypeRepository,
     SQLAlchemyPersonaRepository,
@@ -127,6 +131,7 @@ from app.infrastructure.db.repositories.sqlalchemy_user_skill_repository import 
     SQLAlchemyUserSkillRepository,
 )
 from app.infrastructure.email.factory import build_email_provider
+from app.infrastructure.email.mock_provider import read_dev_outbox
 from app.infrastructure.github.github_client import GithubClient
 from app.infrastructure.storage.factory import build_blob_store
 
@@ -148,6 +153,18 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 def get_email_provider(settings: SettingsDep) -> EmailProvider:
     return build_email_provider(settings)
+
+
+# Callable (to, limit) -> captured dev emails, newest first. Kept behind DI so
+# the dev-mailbox endpoint stays decoupled from the mock provider's storage.
+DevOutboxReader = Callable[[str | None, int], list[dict[str, object]]]
+
+
+def get_dev_outbox_reader() -> DevOutboxReader:
+    return read_dev_outbox
+
+
+DevOutboxReaderDep = Annotated[DevOutboxReader, Depends(get_dev_outbox_reader)]
 
 
 def get_ai_provider(settings: SettingsDep) -> AIProvider:
@@ -248,6 +265,27 @@ def get_auth_service(
         persona_service,
         RefreshTokenManager(SQLAlchemyRefreshTokenRepository(session)),
     )
+
+
+def get_password_reset_service(
+    session: SessionDep,
+    settings: SettingsDep,
+    email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+) -> PasswordResetService:
+    return PasswordResetService(
+        user_repo=SQLAlchemyUserRepository(session),
+        reset_repo=SQLAlchemyPasswordResetTokenRepository(session),
+        refresh_tokens=RefreshTokenManager(SQLAlchemyRefreshTokenRepository(session)),
+        email_provider=email_provider,
+        app_name=settings.app_name,
+        frontend_base_url=settings.frontend_base_url,
+        expires_minutes=settings.password_reset_expires_minutes,
+    )
+
+
+PasswordResetServiceDep = Annotated[
+    PasswordResetService, Depends(get_password_reset_service)
+]
 
 
 def get_job_service(session: SessionDep) -> JobService:

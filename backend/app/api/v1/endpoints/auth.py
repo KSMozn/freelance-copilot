@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Request, status
 
 from app.application.dto.auth_dto import (
     AuthResponse,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
     LoginRequest,
     LogoutRequest,
     LogoutResponse,
@@ -10,23 +12,35 @@ from app.application.dto.auth_dto import (
     OtpVerifyRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
     TokenPair,
     UserRead,
 )
-from app.core.deps import AuthServiceDep, CurrentUser, SettingsDep
+from app.core.deps import (
+    AuthServiceDep,
+    CurrentUser,
+    PasswordResetServiceDep,
+    SettingsDep,
+)
 from app.core.rate_limit import (
     client_ip,
+    forgot_password_account_limiter,
+    forgot_password_ip_limiter,
     login_account_limiter,
     login_ip_limiter,
     otp_request_ip_limiter,
     otp_verify_limiter,
     refresh_ip_limiter,
     register_ip_limiter,
+    reset_password_ip_limiter,
 )
 from app.domain.exceptions import (
     AlreadyExistsError,
+    EmailDeliveryError,
     InvalidCredentialsError,
     OtpInvalidError,
+    PasswordResetInvalidError,
     RateLimitedError,
 )
 
@@ -90,6 +104,10 @@ async def request_code(
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)
         ) from exc
+    except EmailDeliveryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
     return OtpRequestResponse(
         sent=True, expires_in_minutes=settings.otp_expires_minutes
     )
@@ -111,6 +129,43 @@ async def verify_code(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)
         ) from exc
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    resets: PasswordResetServiceDep,
+    request: Request,
+) -> ForgotPasswordResponse:
+    # Per-account window is long so this can't flood one inbox; per-IP is
+    # defense-in-depth. Same generic 200 whether or not the account exists.
+    forgot_password_account_limiter.check(f"forgot:{str(payload.email).lower()}")
+    forgot_password_ip_limiter.check(f"forgot:{client_ip(request)}")
+    try:
+        await resets.request_reset(email=str(payload.email))
+    except EmailDeliveryError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    return ForgotPasswordResponse()
+
+
+@router.post("/reset-password", response_model=ResetPasswordResponse)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    resets: PasswordResetServiceDep,
+    request: Request,
+) -> ResetPasswordResponse:
+    reset_password_ip_limiter.check(f"reset:{client_ip(request)}")
+    try:
+        await resets.reset_password(
+            token=payload.token, new_password=payload.new_password
+        )
+    except PasswordResetInvalidError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
+        ) from exc
+    return ResetPasswordResponse()
 
 
 @router.post("/logout", response_model=LogoutResponse)
