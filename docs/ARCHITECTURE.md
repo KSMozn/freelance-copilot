@@ -85,6 +85,24 @@ paths share the same token model:
 - `POST /api/v1/auth/request-code` — issue a 6-digit code, email it via the configured provider. Rate-limited (3 / 15 min / email).
 - `POST /api/v1/auth/verify-code` — verify the code. If the email isn't yet registered, the account is created on the fly (no password). Marks `email_verified_at` and returns tokens.
 
+**Forgot / reset password:**
+- `POST /api/v1/auth/forgot-password` — issue a single-use reset link if the
+  account exists; the response is the same generic success either way (no
+  account enumeration). Rate-limited per-email (3 / 15 min) + per-IP.
+- `POST /api/v1/auth/reset-password` — consume the token: set the new
+  password (bcrypt), mark the email verified (inbox control proven), burn all
+  outstanding links, and revoke **every** refresh-token session for the user
+  (`revoked_reason=password_reset`). OTP-only accounts use this same flow to
+  set their first password.
+
+Reset tokens are `secrets.token_urlsafe(48)`; only the SHA-256 digest is
+stored (`password_reset_tokens`, migration `0044`) — high-entropy tokens make
+an unsalted deterministic digest safe, and it allows lookup-by-hash. Expiry
+defaults to 30 min (`PASSWORD_RESET_EXPIRES_MINUTES`).
+`PasswordResetService` (`application/services/password_reset_service.py`)
+depends on the domain repository protocols + `EmailProvider`, wired in
+`core/deps.py`.
+
 **Shared:**
 - `POST /api/v1/auth/refresh` — rotate access token from refresh token.
 - `GET  /api/v1/auth/me` — current user (includes `email_verified_at`, `last_login_at`).
@@ -112,11 +130,21 @@ Implementations in `infrastructure/email/`:
 - `ResendEmailProvider` — calls the Resend transactional email API. Recommended prod default.
 
 Templates live next to the providers under `infrastructure/email/templates/`
-(`otp_login.html` + `otp_login.txt`) and render via `template_renderer.render()`
-— plain `str.format_map` for now, easy to swap for Jinja2 if templates grow.
+(`otp_login.html`/`.txt`, `password_reset.html`/`.txt`, …) and render via
+`template_renderer.render()` — plain `str.format_map` for now, easy to swap
+for Jinja2 if templates grow.
 
 Selection via `EMAIL_PROVIDER=mock|resend` in `app/core/config.py`, factory in
-`app/infrastructure/email/factory.py`.
+`app/infrastructure/email/factory.py`. Delivery failures surface as the domain
+`EmailDeliveryError` → HTTP 503 with a readable message (never a silent drop),
+identically for both providers.
+
+**Dev mailbox (live, development-only):** `GET /api/v1/dev/emails` returns the
+mock provider's captured emails (filter `?to=`, newest first). It 404s unless
+`ENVIRONMENT=development` **and** `EMAIL_PROVIDER=mock`; staging/production
+additionally refuse to boot on the mock provider. The SPA's OTP screens show a
+dev-only "Fill the latest code" hint on top of it, and the Playwright suite
+reads the same mailbox from disk.
 
 ## Professional Knowledge Graph (Phase B)
 

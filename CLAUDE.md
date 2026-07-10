@@ -44,8 +44,10 @@ never a refactor side-effect.
   `.env.example` at root + `backend/.env.example` — keep both in sync with
   `backend/app/core/config.py`).
 - Dev conveniences: `make up` (full stack), `make create-admin`,
-  `make backend-test`, `make lint`. OTP codes in dev land in
-  `backend/var/dev-emails.jsonl` (mock email provider).
+  `make backend-test`, `make lint`. Dev email is captured, never sent:
+  OTP codes + reset links land in `backend/var/dev-emails.jsonl` (mock
+  provider), readable via `GET /api/v1/dev/emails` (development+mock only)
+  and surfaced directly in the auth screens' dev-mode helper boxes.
 
 ## Deployment shape (context, not instructions)
 

@@ -2,7 +2,8 @@
 
 > **Live vs dormant surfaces (2026-07).** The live Careero product (student CV
 > wizard + PersonaArmory admin console) uses: `users`, `email_otp_codes`,
-> `refresh_tokens`, `uploaded_files` (profile photos), `student_profiles`,
+> `refresh_tokens`, `password_reset_tokens`, `uploaded_files` (profile
+> photos), `student_profiles`,
 > `student_profile_entries`, `cv_templates`, `feedback_entries`,
 > `usage_events`, and the separate `admin_users` identity space.
 > (`persona_archetypes` / `personas` still gain a row per user via
@@ -73,6 +74,7 @@
   cv_templates — seeded registry; student_profiles.cv_template_slug  [Phase L]
   feedback_entries (n) ─── users (1)                                 [Phase M]
   refresh_tokens — one per minted refresh JWT; no FK (user or admin) [Phase P]
+  password_reset_tokens (n) ─── users (1) CASCADE — hashed reset links [0044]
 ```
 
 ## Tables
@@ -599,8 +601,24 @@ a new family on first refresh — no backfill needed.
 | subject_id     | uuid              | indexed; users.id or admin_users.id (no FK)        |
 | expires_at     | timestamptz       |                                                    |
 | revoked_at     | timestamptz NULL  |                                                    |
-| revoked_reason | varchar(32) NULL  | `rotated` \| `logout` \| `reuse_detected`          |
+| revoked_reason | varchar(32) NULL  | `rotated` \| `logout` \| `reuse_detected` \| `password_reset` |
 | created_at     | timestamptz       |                                                    |
+
+### password_reset_tokens *(0044 — live)*
+One row per issued forgot-password link. Only the SHA-256 hex digest of the
+raw token is stored — the raw token exists solely inside the reset email.
+`used_at` doubles as the invalidation marker: a successful reset (or a newer
+request for the same user) burns every outstanding row. A consumed reset also
+revokes all of the user's `refresh_tokens` (`revoked_reason=password_reset`).
+
+| column     | type              | notes                                             |
+|------------|-------------------|---------------------------------------------------|
+| id         | uuid PK           |                                                   |
+| user_id    | uuid FK→users     | indexed; ON DELETE CASCADE                        |
+| token_hash | varchar(64)       | unique indexed; SHA-256 hex of the raw token      |
+| expires_at | timestamptz       | default TTL 30 min (`PASSWORD_RESET_EXPIRES_MINUTES`) |
+| used_at    | timestamptz NULL  | NULL = still redeemable (until `expires_at`)      |
+| created_at | timestamptz       |                                                   |
 
 ### jobs
 Imported job posts. Versioned via `source_hash` + `version`.
@@ -833,4 +851,5 @@ Index: `ivfflat (vector vector_cosine_ops)`. Unique `(owner_type, owner_id, mode
 - Phase O: `0036` adds `student_profiles.career_pack` JSONB; `0037` /
   `0039` / `0041` add `career_pack.*`, `cv.docx`, and `coach.internship`
   to `usage_event_kind`; `0040` adds `internship` to `student_entry_kind`.
-- Phase P: `0043` creates `refresh_tokens`.
+- Phase P: `0043` creates `refresh_tokens`; `0044` creates
+  `password_reset_tokens` (forgot/reset-password flow).

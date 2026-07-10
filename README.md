@@ -48,8 +48,25 @@ make create-admin email=you@example.com password=change-me
 - Admin console: <http://localhost:5173/login?surface=admin>
 - Backend API: <http://localhost:8000> (OpenAPI docs at `/docs` outside production)
 
-Sign in to the student app with any email — the dev mail provider writes the
-OTP code to `backend/var/dev-emails.jsonl` instead of sending it.
+### Email on localhost — nothing reaches a real inbox (by design)
+
+The dev stack runs `EMAIL_PROVIDER=mock`: every email (OTP codes,
+password-reset links) is **captured locally** in
+`backend/var/dev-emails.jsonl` instead of being sent. If you're watching your
+Gmail inbox, nothing will ever arrive — that's not a bug.
+
+You don't have to open that file. In development the auth screens show a
+"Development mode — emails are captured locally" box:
+
+- **OTP steps** display the latest captured code with a **Use code** button.
+- **Forgot password** displays an **Open reset link** button after the
+  request.
+
+Both are backed by `GET /api/v1/dev/emails`, a mailbox endpoint that only
+exists when `ENVIRONMENT=development` **and** `EMAIL_PROVIDER=mock` (it 404s
+everywhere else, and staging/production refuse to boot on the mock provider
+at all). Production sends real email via Resend with the exact same auth
+flow — only the delivery adapter differs.
 
 ## Local development (without Docker)
 
@@ -70,7 +87,7 @@ commit (hooks live in `frontend/.husky/`).
 | --- | --- | --- |
 | LLM | `AI_PROVIDER=mock\|openai\|claude` | `mock` is the offline default; Groq works through `OPENAI_BASE_URL` (OpenAI-compatible). |
 | Embeddings | `EMBEDDING_PROVIDER=mock\|openai` | Used by the dormant professional surface. |
-| Email | `EMAIL_PROVIDER=mock\|resend` | `mock` writes to `backend/var/dev-emails.jsonl` (includes OTP codes). |
+| Email | `EMAIL_PROVIDER=mock\|resend` | `mock` writes to `backend/var/dev-emails.jsonl` (OTP codes + password-reset links) and powers the dev mailbox endpoint; `resend` sends real mail and is required in staging/production (the app refuses to boot there on `mock`). Same auth flow either way — only the delivery adapter changes. |
 | Uploads | `BLOB_STORE=local\|gcs` | Local dir or GCS bucket. |
 
 See `.env.example` (root, full stack) and `backend/.env.example` for the

@@ -95,7 +95,8 @@ refactor, not a drive-by.
 - Live-surface tables: `users`, `admin_users`, `student_profiles`,
   `student_profile_entries`, `cv_templates`, `email_otp_codes`,
   `usage_events`, `feedback_entries`, `career_packs`, `refresh_tokens`,
-  `uploaded_files`. Everything else belongs to the dormant surface — leave it.
+  `password_reset_tokens`, `uploaded_files`. Everything else belongs to the
+  dormant surface — leave it.
 
 ---
 
