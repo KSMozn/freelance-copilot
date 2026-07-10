@@ -13,6 +13,7 @@ from app.domain.exceptions import (
 )
 from app.domain.providers.email_provider import EmailMessage, EmailProvider
 from app.domain.repositories.email_otp_repository import EmailOtpRepository
+from app.domain.services.email_normalization import normalize_email
 from app.infrastructure.email.template_renderer import render
 
 _OTP_HASH_CTX = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -54,7 +55,7 @@ class EmailOtpService:
         user_agent: str | None = None,
     ) -> None:
         """Generate a code, persist its hash, and email the plaintext to the user."""
-        email = email.strip().lower()
+        email = normalize_email(email)
         now = datetime.now(UTC)
 
         recent = await self._otps.count_recent_issues(
@@ -117,7 +118,7 @@ class EmailOtpService:
 
         On success the code is marked consumed so it cannot be reused.
         """
-        email = email.strip().lower()
+        email = normalize_email(email)
         code = code.strip()
 
         otp = await self._otps.get_active(email=email, purpose=purpose)

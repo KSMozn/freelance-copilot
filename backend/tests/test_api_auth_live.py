@@ -438,6 +438,59 @@ def test_refresh_rejects_admin_refresh_token(client: TestClient) -> None:
     assert resp.json()["detail"] == "Not a user refresh token"
 
 
+# ---- email case-insensitivity (mirrors the CITEXT column semantics) --------
+
+
+def test_login_with_different_casing_reaches_same_account(client: TestClient) -> None:
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": "Case.Login@Example.com", "password": "s3cure-enough"},
+    ).json()
+
+    resp = client.post(
+        "/api/v1/auth/login",
+        json={"email": "case.login@EXAMPLE.COM", "password": "s3cure-enough"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["user"]["id"] == registered["user"]["id"]
+
+
+def test_register_mixed_case_duplicate_returns_409(client: TestClient) -> None:
+    first = client.post(
+        "/api/v1/auth/register",
+        json={"email": "Case.Dupe@Example.com", "password": "s3cure-enough"},
+    )
+    assert first.status_code == 201
+
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={"email": "case.DUPE@example.com", "password": "s3cure-enough"},
+    )
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "Email already registered"
+
+
+def test_otp_login_with_different_casing_uses_same_account(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
+    """An OTP sign-in with different casing must NOT create a second account."""
+    registered = client.post(
+        "/api/v1/auth/register",
+        json={"email": "case.otp@example.com", "password": "s3cure-enough"},
+    ).json()
+
+    client.post(
+        "/api/v1/auth/request-code",
+        json={"email": "Case.OTP@EXAMPLE.com", "purpose": "login"},
+    )
+    code = _sent_code(state["emails"])
+    resp = client.post(
+        "/api/v1/auth/verify-code",
+        json={"email": "Case.OTP@EXAMPLE.com", "code": code, "purpose": "login"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["user"]["id"] == registered["user"]["id"]
+    assert len(state["users"].rows) == 1  # no duplicate account
+
+
 # ---- login timing equalization --------------------------------------------
 
 

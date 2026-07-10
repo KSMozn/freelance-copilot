@@ -5,9 +5,9 @@ round-trips) is wired over the DI seams with in-memory fakes — no Postgres,
 no email network. Token hashing, bcrypt password hashing, and refresh-token
 revocation all run for real.
 
-Endpoint hits are budgeted deliberately: the module-level rate limiters are
-process-global, so tests that only need a reset token in hand mint it through
-the service directly instead of burning /auth/forgot-password quota.
+Rate-limiter state is reset per test by the conftest autouse fixture; tests
+that only need a reset token in hand still mint it through the service
+directly — it's faster and keeps each test focused on its own endpoint hits.
 """
 from __future__ import annotations
 

@@ -81,6 +81,88 @@ def test_assert_public_url_allows_public_ip_literal() -> None:
     _assert_public_url("http://8.8.8.8/")
 
 
+# ---- SSRF guard: redirect hops (fetch_page manual-redirect loop) --------
+#
+# A public URL must not be able to 302-bounce the fetch into an internal
+# address. DNS is faked (public hostname → public IP, internal names →
+# private IPs) and the HTTP layer is a MockTransport, so no test traffic
+# leaves the process.
+
+_REDIRECTS = {
+    "https://safe-public.example/to-metadata": "http://169.254.169.254/latest/meta-data/",
+    "https://safe-public.example/to-localhost": "http://localhost/admin",
+    "https://safe-public.example/to-private": "http://internal.corp/secrets",
+    "https://safe-public.example/to-final": "https://safe-public.example/final",
+}
+
+_FAKE_DNS = {
+    "safe-public.example": "93.184.216.34",  # public
+    "internal.corp": "10.0.0.5",  # private
+    "localhost": "127.0.0.1",  # loopback
+}
+
+
+def _install_fetch_fakes(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ipaddress
+    import socket as socket_mod
+
+    import httpx
+
+    from app.infrastructure.http import url_fetcher
+
+    def fake_getaddrinfo(host, port, *args, **kwargs):  # type: ignore[no-untyped-def]
+        ip = _FAKE_DNS.get(host, host)
+        try:
+            ipaddress.ip_address(ip)
+        except ValueError:
+            raise socket_mod.gaierror(f"fake DNS has no entry for {host!r}") from None
+        return [(socket_mod.AF_INET, socket_mod.SOCK_STREAM, 6, "", (ip, port or 80))]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if url in _REDIRECTS:
+            return httpx.Response(302, headers={"location": _REDIRECTS[url]})
+        return httpx.Response(
+            200, html="<html><title>Safe</title><body>public content</body></html>"
+        )
+
+    transport = httpx.MockTransport(handler)
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(url_fetcher.socket, "getaddrinfo", fake_getaddrinfo)
+    monkeypatch.setattr(
+        url_fetcher.httpx,
+        "AsyncClient",
+        lambda **kw: real_client(transport=transport, **kw),
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["to-metadata", "to-localhost", "to-private"],
+)
+async def test_fetch_page_blocks_redirect_to_internal_address(
+    monkeypatch: pytest.MonkeyPatch, path: str
+) -> None:
+    from app.infrastructure.http.url_fetcher import fetch_page
+
+    _install_fetch_fakes(monkeypatch)
+    with pytest.raises(UrlFetchError, match=r"non-public|Cannot resolve"):
+        await fetch_page(f"https://safe-public.example/{path}")
+
+
+async def test_fetch_page_follows_public_redirect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Positive control: a public→public redirect still works."""
+    from app.infrastructure.http.url_fetcher import fetch_page
+
+    _install_fetch_fakes(monkeypatch)
+    page = await fetch_page("https://safe-public.example/to-final")
+    assert page.final_url == "https://safe-public.example/final"
+    assert page.title == "Safe"
+    assert "public content" in page.text
+
+
 # ---- blob store containment -------------------------------------------
 
 

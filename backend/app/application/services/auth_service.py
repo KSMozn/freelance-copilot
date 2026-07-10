@@ -29,6 +29,7 @@ from app.domain.exceptions import (
     NotFoundError,
 )
 from app.domain.repositories.user_repository import UserRepository
+from app.domain.services.email_normalization import normalize_email
 
 
 class AuthService:
@@ -65,11 +66,15 @@ class AuthService:
         )
 
     async def register(self, payload: RegisterRequest) -> AuthResponse:
-        existing = await self._users.get_by_email(payload.email)
+        # The 409 on a taken email is a deliberate UX trade-off: signup needs
+        # a clear signal. Enumeration-sensitive flows (OTP, forgot-password)
+        # stay non-disclosing; this endpoint is additionally rate-limited.
+        email = normalize_email(str(payload.email))
+        existing = await self._users.get_by_email(email)
         if existing is not None:
             raise AlreadyExistsError("Email already registered")
         user = await self._users.create(
-            email=str(payload.email),
+            email=email,
             password_hash=hash_password(payload.password),
             full_name=payload.full_name,
             selected_persona_kind=payload.persona_kind,
@@ -80,7 +85,7 @@ class AuthService:
         )
 
     async def login(self, payload: LoginRequest) -> AuthResponse:
-        user = await self._users.get_by_email(str(payload.email))
+        user = await self._users.get_by_email(normalize_email(str(payload.email)))
         if user is None or user.password_hash is None:
             # Burn a bcrypt check anyway so an unknown email costs the same
             # as a wrong password — timing can't enumerate accounts.
@@ -174,11 +179,12 @@ class AuthService:
         )
 
         now = datetime.now(UTC)
-        user = await self._users.get_by_email(str(payload.email))
+        email = normalize_email(str(payload.email))
+        user = await self._users.get_by_email(email)
         if user is None:
             # First time we've seen this email — create the account.
             user = await self._users.create(
-                email=str(payload.email),
+                email=email,
                 password_hash=None,
                 full_name=payload.full_name,
                 email_verified_at=now,

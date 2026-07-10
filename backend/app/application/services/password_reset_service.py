@@ -20,6 +20,7 @@ from app.domain.repositories.password_reset_token_repository import (
     PasswordResetTokenRepository,
 )
 from app.domain.repositories.user_repository import UserRepository
+from app.domain.services.email_normalization import normalize_email
 from app.infrastructure.email.template_renderer import render
 
 _INVALID_MESSAGE = "This reset link is invalid or has expired. Request a new one."
@@ -58,7 +59,7 @@ class PasswordResetService:
         Never signals whether the email is registered — the endpoint returns
         the same generic response either way.
         """
-        email = email.strip().lower()
+        email = normalize_email(email)
         user = await self._users.get_by_email(email)
         if user is None or not user.is_active:
             return

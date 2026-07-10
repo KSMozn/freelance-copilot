@@ -20,10 +20,12 @@ from sqlalchemy import select
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import hash_password
+from app.domain.services.email_normalization import normalize_email
 from app.infrastructure.db.models.admin_user import AdminUser
 
 
 async def create(email: str, password: str, full_name: str | None) -> None:
+    email = normalize_email(email)
     async with AsyncSessionLocal() as session:
         existing = (
             await session.execute(select(AdminUser).where(AdminUser.email == email))
