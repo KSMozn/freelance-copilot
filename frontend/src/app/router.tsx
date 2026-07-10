@@ -2,10 +2,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { isAdminSurface } from "@/app/apiClient";
 import { RequireAuth } from "@/features/auth/RequireAuth";
+import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { ImpersonateLanding } from "@/features/auth/ImpersonateLandingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { OnboardingPage } from "@/features/auth/OnboardingPage";
 import { RegisterPage } from "@/features/auth/RegisterPage";
+import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
 import { StudentFeedbackPage } from "@/features/student-wizard/feedback/StudentFeedbackPage";
 import { StudentWizardPage } from "@/features/student-wizard/StudentWizardPage";
 import { AdminActivityPage } from "@/features/admin/AdminActivityPage";
@@ -60,6 +62,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/impersonate" element={<ImpersonateLanding />} />
       <Route
         path="/student"

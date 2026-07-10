@@ -8,14 +8,14 @@ test.describe("admin console", () => {
   test("overview renders KPIs, funnel, and LLM spend", async ({ page }) => {
     await page.goto("/overview?surface=admin");
     await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
-    await expect(page.getByText("Users", { exact: true })).toBeVisible();
+    // Scoped to main: the sidebar nav also contains a "Users" link, which
+    // trips Playwright's strict mode if the whole page is queried.
+    await expect(page.getByRole("main").getByText("Users", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Wizard funnel" })).toBeVisible();
     await expect(page.getByRole("heading", { name: /LLM spend/ })).toBeVisible();
   });
 
-  test("users table lists this run's student; search filter lives in the URL", async ({
-    page,
-  }) => {
+  test("users table lists this run's student; search filter lives in the URL", async ({ page }) => {
     const email = studentEmail();
     await page.goto("/users?surface=admin");
     await expect(page.getByRole("cell", { name: email, exact: true })).toBeVisible();

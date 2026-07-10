@@ -11,6 +11,7 @@ import { Label } from "@/shared/ui/label";
 import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 import { api } from "@/app/apiClient";
 import { useAuthStore, type AuthUser } from "@/features/auth/authStore";
+import { DevOtpHint } from "@/features/auth/DevOtpHint";
 
 interface AuthResponse {
   user: AuthUser;
@@ -281,6 +282,7 @@ export function RegisterPage() {
                 </button>
               </p>
             </div>
+            <DevOtpHint email={email} onCode={setCode} />
             <div className="flex gap-2">
               <Button
                 type="button"

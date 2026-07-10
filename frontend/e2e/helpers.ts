@@ -58,6 +58,31 @@ export async function readOtpCode(email: string, timeoutMs = 10_000): Promise<st
   );
 }
 
+/** Read the newest password-reset token emailed to `email` from the mock mailbox. */
+export async function readResetToken(email: string, timeoutMs = 10_000): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (fs.existsSync(MAILBOX)) {
+      const lines = fs.readFileSync(MAILBOX, "utf-8").trim().split("\n");
+      for (let i = lines.length - 1; i >= 0; i--) {
+        try {
+          const entry = JSON.parse(lines[i]) as { to?: string; text_body?: string };
+          if (entry.to === email) {
+            const match = entry.text_body?.match(/\/reset-password\?token=([A-Za-z0-9_-]+)/);
+            if (match) return match[1];
+          }
+        } catch {
+          // partial line mid-write — retry
+        }
+      }
+    }
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(
+    `No password-reset email for ${email} in ${MAILBOX} — is the stack up (make up) with EMAIL_PROVIDER=mock?`,
+  );
+}
+
 /** Full OTP sign-in for a fresh account; ends authenticated. */
 export async function signInWithOtp(page: Page, email: string, fullName?: string): Promise<void> {
   await page.goto("/login");

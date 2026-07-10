@@ -11,6 +11,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { api } from "@/app/apiClient";
 import { useAuthStore, type AuthUser } from "@/features/auth/authStore";
+import { DevOtpHint } from "@/features/auth/DevOtpHint";
 import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 
 interface AuthResponse {
@@ -236,6 +237,7 @@ export function LoginPage() {
                 </button>
               </p>
             </div>
+            <DevOtpHint email={email} onCode={setCode} />
             {/* New signups only — a returning student (whose email matches
                 the picker snapshot) already has a name on file. */}
             {(!lastProfile || lastProfile.email !== email) && (
@@ -300,7 +302,16 @@ export function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:underline"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Forgot password?
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"
