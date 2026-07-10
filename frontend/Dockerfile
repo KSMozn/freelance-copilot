@@ -2,8 +2,10 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install
+# npm ci honors package-lock.json exactly — the dev container runs the same
+# dependency set CI and Dockerfile.prod verify (npm install could drift).
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
 

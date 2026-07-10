@@ -270,7 +270,7 @@ Each gate exists because we hit a bug that got past the previous gate.
 | Gate | What it checks | Failure mode it catches |
 |---|---|---|
 | **Local run** | The dev's own docker stack. | Obvious build breakage. |
-| **CI** | Type check, build, unit tests. | Missed imports, type drift. |
+| **CI** | Lint (ruff/eslint), strict mypy, type check, build, unit tests, Playwright E2E. | Missed imports, type drift, broken golden paths. |
 | **Peer review** | Correctness, blast radius, matches issue. | Logic errors, hidden coupling. |
 | **UI review** | Screenshots + local walk-through. | Empty states, mobile, "I forgot to test that path". |
 | **Release checklist** | End-to-end journey in prod. | Prod-only bugs (env vars, secrets, custom domains). |

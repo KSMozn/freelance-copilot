@@ -30,7 +30,7 @@ FastAPI backend serving **three API surfaces** from one app (`/api/v1`):
 - **Email**: `EMAIL_PROVIDER=mock|resend` — mock writes `var/dev-emails.jsonl`; non-mock enforced in staging/production
 - **PDF/DOCX**: WeasyPrint (native libs in Dockerfile) + python-docx; Jinja2 CV templates in `app/application/templates/student_cv/`
 - **Lint/format**: ruff (configured in pyproject: line 100, py313, E/F/I/B/UP/N/ASYNC/RUF)
-- **Types**: mypy configured `strict=true` but **not gated in CI** (measured debt — see below)
+- **Types**: mypy `strict=true`, **gated in CI** — exits 0 via the explicit ratchet baseline (see Testing)
 - **Tests**: pytest + pytest-asyncio (`asyncio_mode=auto`), unit-only
 
 ---
@@ -110,8 +110,9 @@ refactor, not a drive-by.
   historically inverted (dormant surface well-tested, live surface thin) —
   `tests/test_api_students.py` / `test_api_admin.py` / `test_api_auth_live.py`
   are the live-surface suite; extend them, don't regress them.
-- CI (`.github/workflows/ci.yml`) gates: `ruff check .` + `pytest -q`.
-  mypy strict now **exits 0 and is CI-gateable**: the remaining 2026-07 debt
+- CI (`.github/workflows/ci.yml`) gates: `ruff check .` + `mypy app` +
+  `pytest -q`, installed with `uv sync --frozen` so the lockfile governs CI.
+  mypy strict **exits 0 and is gated**: the remaining 2026-07 debt
   (**98 errors in 27 of 262 files**, dormant surface + CV renderers + infra
   adapters only) is held in an explicit `[[tool.mypy.overrides]]` ratchet
   baseline in `pyproject.toml`. All security/live-surface modules (`core/*`,

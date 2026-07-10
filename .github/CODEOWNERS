@@ -42,6 +42,7 @@
 /backend/app/infrastructure/db/                                      @KSMozn
 
 # ---- Environment / config / secrets -----------------------------------
+/.env.example                                                        @KSMozn
 /backend/.env.example                                                @KSMozn
 /backend/app/core/config.py                                          @KSMozn
 /backend/Dockerfile                                                  @KSMozn
@@ -51,6 +52,8 @@
 
 # ---- Deploy tooling ---------------------------------------------------
 /frontend/cloudbuild.yaml                                            @KSMozn
+/marketing/cloudbuild.yaml                                           @KSMozn
+/marketing/Dockerfile.prod                                           @KSMozn
 /.github/workflows/                                                  @KSMozn
 
 # ---- Governance docs (this list itself) -------------------------------

@@ -4,6 +4,9 @@ storybook-static
 .husky
 .storybook/node_modules
 *.tsbuildinfo
+playwright-report
+test-results
+e2e/.auth
 .env
 .env.*
 !.env.example

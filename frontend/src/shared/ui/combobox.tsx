@@ -131,3 +131,4 @@ export function Combobox({
     </div>
   );
 }
+Combobox.displayName = "Combobox";

@@ -1,7 +1,9 @@
 [project]
-name = "upwork-intel-backend"
+# Package metadata only — database names (upwork_intel) and storage keys are
+# load-bearing legacy identifiers and must NOT be renamed with it.
+name = "careero-backend"
 version = "0.1.0"
-description = "Upwork Intelligence Platform — backend"
+description = "Careero — FastAPI backend (student CV wizard + PersonaArmory admin)"
 requires-python = ">=3.13"
 readme = "README.md"
 dependencies = [
@@ -17,7 +19,8 @@ dependencies = [
     "bcrypt<5",
     "pyjwt>=2.10",
     "python-multipart>=0.0.20",
-    "pgvector>=0.3.6",
+    # >=0.5 ships py.typed — strict mypy needs the typed release.
+    "pgvector>=0.5",
     "email-validator>=2.2",
     "httpx>=0.28",
     "pdfminer.six>=20240706",

@@ -45,8 +45,9 @@ create-admin:
 	@test -n "$(password)" || (echo 'usage: make create-admin email=you@example.com password=secret [name="Full Name"]' && exit 1)
 	docker compose exec -e ADMIN_EMAIL=$(email) -e ADMIN_PASSWORD=$(password) -e ADMIN_FULL_NAME=$(name) backend python -m app.scripts.create_admin
 
+# uv run syncs .venv from uv.lock on demand — no manual activation needed.
 backend-dev:
-	cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 frontend-dev:
 	cd frontend && npm run dev
@@ -55,9 +56,9 @@ backend-test:
 	docker compose exec backend pytest
 
 fmt:
-	cd backend && ruff format . && ruff check --fix .
+	cd backend && uv run --extra dev ruff format . && uv run --extra dev ruff check --fix .
 	cd frontend && npm run format
 
 lint:
-	cd backend && ruff check .
+	cd backend && uv run --extra dev ruff check .
 	cd frontend && npm run lint && npm run typecheck

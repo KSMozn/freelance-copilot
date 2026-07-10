@@ -156,3 +156,4 @@ export function Select({
     </div>
   );
 }
+Select.displayName = "Select";

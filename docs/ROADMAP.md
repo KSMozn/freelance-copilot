@@ -927,7 +927,8 @@ field-fills require explicit user click-through.
 The Careero pivot delivered most of this list on the live surface: the
 cost dashboard and per-call AI audit log landed as `usage_events` + the
 admin LLM-spend cards (Phase L); auth rate limiting landed in Phase P.
-Still open: per-user LLM quotas and automated Playwright E2E.
+Automated Playwright E2E landed 2026-07 (`frontend/e2e/`, 18 tests,
+gated in CI). Still open: per-user LLM quotas.
 
 - Rate-limit & quota on LLM calls per user.
 - Cost dashboard.

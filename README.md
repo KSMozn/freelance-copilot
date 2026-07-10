@@ -31,7 +31,7 @@ One repository, three deployed surfaces, one frontend bundle:
 │                TanStack Query (server state) · Zustand (client state) · Storybook
 ├── marketing/   Zero-dependency static-site generator for careero.app (own Dockerfile + cloudbuild)
 ├── docs/        Architecture, ERD, roadmap, LLM-visibility playbook
-├── .github/     CI (ruff + pytest, typecheck + build), CODEOWNERS, issue/PR templates
+├── .github/     CI (ruff + mypy + pytest, lint + typecheck + build, Playwright E2E), CODEOWNERS, issue/PR templates
 ├── docker-compose.yml · Makefile · CONTRIBUTING.md · README_DEVELOPMENT_PROCESS.md
 └── CLAUDE.md    AI-agent guides (root, backend/, frontend/, docs/)
 ```
@@ -57,7 +57,7 @@ OTP code to `backend/var/dev-emails.jsonl` instead of sending it.
 make backend-dev    # uvicorn --reload (needs Python 3.13 + `uv sync` in backend/)
 make frontend-dev   # vite dev server on :5173
 make lint           # ruff (backend) + eslint/tsc (frontend)
-make backend-test   # pytest inside the backend container (233 unit tests, no DB needed)
+make backend-test   # pytest inside the backend container (321 unit tests, no DB needed)
 ```
 
 Frontend extras: `npm run storybook` (shared/ui component browser),

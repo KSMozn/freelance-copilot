@@ -809,18 +809,20 @@ short `SECRET_KEY`s.
 
 ## Testing strategy
 
-- **Unit (the automated suite)** — 309 tests (incl. the live-surface API suite: auth, students, admin), no database needed.
+- **Unit (the automated suite)** — 321 tests (incl. the live-surface API suite: auth, students, admin), no database needed.
   Services and domain logic run against the in-memory fakes in
   `tests/factories.py`; API tests use FastAPI's `TestClient` with
   `app.dependency_overrides` swapping in fakes and a stub current user.
   Hardening has dedicated coverage (`test_refresh_rotation.py`,
-  `test_hardening.py`).
-- **Integration / E2E — currently manual.** There is no automated
-  Playwright suite or Docker-Postgres integration layer yet. Releases
-  are gated by the release checklist in
-  `README_DEVELOPMENT_PROCESS.md` — the end-to-end journey walked in a
-  real browser (Playwright-driven) against a running stack, plus a
-  post-deploy smoke test in prod.
+  `test_hardening.py`); architecture layering is enforced by
+  `test_architecture.py` (AST import walker + shrink-only allowlist).
+- **E2E (live surfaces)** — a committed Playwright suite
+  (`frontend/e2e/`, 18 tests) drives the real docker-compose stack with
+  no mocks: OTP auth, the full 13-step wizard, CV preview/DOCX export,
+  the admin console, the impersonation bridge, and professional-surface
+  dormancy. CI runs it on every PR (`e2e` job). Releases are additionally
+  gated by the release checklist in `README_DEVELOPMENT_PROCESS.md`,
+  plus a post-deploy smoke test in prod.
 
 ## Configuration
 

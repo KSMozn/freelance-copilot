@@ -14,7 +14,7 @@ Careero (formerly Freelance Copilot) is a student-only CV builder.
 |---|---|
 | Frontend | React 18, Vite, TypeScript, Tailwind, react-query |
 | Backend | Python 3.13, FastAPI, SQLAlchemy async, Pydantic v2 |
-| Database | PostgreSQL 15 (+ pgvector) |
+| Database | PostgreSQL 16 (+ pgvector) |
 | PDF | WeasyPrint (Jinja2 templates) |
 | DOCX | python-docx (programmatic) |
 | Auth | JWT, OTP email login |
@@ -51,7 +51,7 @@ cd freelance-copilot
 # 1. Environment
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env       # only if present
-# Ask Khaled for OPENAI_API_KEY, RESEND_API_KEY, JWT_SECRET_KEY.
+# Ask Khaled for OPENAI_API_KEY, RESEND_API_KEY, SECRET_KEY.
 
 # 2. Start the stack
 docker compose up -d
@@ -80,7 +80,7 @@ with placeholder values. Add new variables there whenever the code starts consum
 new key, in the same PR. Real values live in Secret Manager (prod) and `backend/.env`
 (local, git-ignored).
 
-Sensitive keys — `OPENAI_API_KEY`, `JWT_SECRET_KEY`, `DB_PASSWORD`, `RESEND_API_KEY` —
+Sensitive keys — `OPENAI_API_KEY`, `SECRET_KEY`, `POSTGRES_PASSWORD`, `RESEND_API_KEY` —
 are fetched from GCP Secret Manager at runtime in prod. Rotating them is a maintainer
 task; do not put real values in commits, in issues, or in any chat.
 
@@ -198,7 +198,8 @@ For any PR that changes what a user sees:
   users table, activity kinds, email templates).
 
 If the change reworks a wizard step, include a note in the PR on how the new step
-integrates with the auto-mark-done logic in `StudentWizard.tsx`.
+integrates with the auto-mark-done logic in
+`frontend/src/features/student-wizard/StudentWizardPage.tsx`.
 
 ---
 
@@ -379,8 +380,7 @@ Templates live at `backend/app/infrastructure/email/templates/*.html` + `.txt`.
 **Every email template change PR must:**
 
 - Render locally through `render(template_name, ctx)` and confirm zero unresolved
-  `{placeholder}` literals. Placeholder leaks in production are a common bug — the
-  smoke test in `verify` should catch them.
+  `{placeholder}` literals — placeholder leaks in production are a common bug.
 - Include screenshots of the rendered HTML in both Gmail and (if reachable) Outlook.
 - Use Outlook VML fallbacks for any CTA button (`<!--[if mso]><v:roundrect ...`).
 - Not use inline HTML comments that contain `{placeholder}` values — Gmail's parser

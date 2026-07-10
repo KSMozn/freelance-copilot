@@ -34,8 +34,10 @@ services:
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production-this-is-a-dev-only-key}
+      ALGORITHM: ${ALGORITHM:-HS256}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-14}
+      IMPERSONATION_TOKEN_EXPIRE_MINUTES: ${IMPERSONATION_TOKEN_EXPIRE_MINUTES:-30}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       ENVIRONMENT: ${ENVIRONMENT:-development}
       AI_PROVIDER: ${AI_PROVIDER:-mock}
@@ -57,6 +59,20 @@ services:
       OTP_MAX_ATTEMPTS: ${OTP_MAX_ATTEMPTS:-5}
       OTP_RATE_LIMIT_PER_15MIN: ${OTP_RATE_LIMIT_PER_15MIN:-3}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
+      ADMIN_BASE_URL: ${ADMIN_BASE_URL:-http://localhost:5173}
+      BLOB_STORE: ${BLOB_STORE:-local}
+      UPLOADS_DIR: ${UPLOADS_DIR:-var/uploads}
+      GCS_UPLOADS_BUCKET: ${GCS_UPLOADS_BUCKET:-}
+      REPORT_TASK_SECRET: ${REPORT_TASK_SECRET:-}
+    healthcheck:
+      # start_period covers `alembic upgrade head` before uvicorn binds.
+      # 127.0.0.1, not localhost: uvicorn binds IPv4 0.0.0.0 and localhost
+      # can resolve to ::1 inside the container.
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
     command: >
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -76,6 +92,15 @@ services:
       # container — without polling, in-container Vite serves stale modules
       # and HMR never fires on host-side edits.
       CHOKIDAR_USEPOLLING: "true"
+    healthcheck:
+      # busybox wget (node:alpine); 127.0.0.1 because busybox resolves
+      # localhost to ::1 while Vite binds IPv4 0.0.0.0 (refused on ::1).
+      # start_period covers Vite's first boot.
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:
