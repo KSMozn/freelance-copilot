@@ -41,7 +41,6 @@ dev = [
     "pytest-asyncio>=0.24",
     "ruff>=0.8",
     "mypy>=1.13",
-    "anyio>=4.6",
 ]
 
 [tool.ruff]

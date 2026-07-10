@@ -24,7 +24,6 @@ interface AuthState {
   activePersonaId: string | null;
   setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   setTokens: (accessToken: string, refreshToken: string) => void;
-  setUser: (user: AuthUser) => void;
   setActivePersonaId: (id: string | null) => void;
   logout: () => void;
 }
@@ -39,7 +38,6 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken, activePersonaId: null }),
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
-      setUser: (user) => set({ user }),
       setActivePersonaId: (id) => set({ activePersonaId: id }),
       logout: () =>
         set({

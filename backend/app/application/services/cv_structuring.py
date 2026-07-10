@@ -95,10 +95,6 @@ async def structure_cv(
         ) from exc
 
 
-def empty_payload() -> CvStructuredPayload:
-    return CvStructuredPayload()
-
-
 def to_dict(payload: CvStructuredPayload) -> dict[str, Any]:
     """Stable JSONB shape for ``cv_uploads.extracted_structure``."""
     return payload.model_dump(mode="json")

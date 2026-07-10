@@ -3,8 +3,6 @@ import { useId } from "react";
 interface Props {
   size?: number;
   className?: string;
-  /** Draw the mark on a dark surface (e.g. rounded-square app-icon look). */
-  boxed?: boolean;
 }
 
 /**
@@ -13,7 +11,7 @@ interface Props {
  * opening. Self-contained inline SVG: gradient defs use a `useId` so multiple
  * marks on the same page don't collide on the id.
  */
-export function CareeroMark({ size = 28, className, boxed = false }: Props) {
+export function CareeroMark({ size = 28, className }: Props) {
   const uid = useId().replace(/:/g, "");
   const gradId = `careero-grad-${uid}`;
   const sparkGradId = `careero-spark-${uid}`;
@@ -22,7 +20,7 @@ export function CareeroMark({ size = 28, className, boxed = false }: Props) {
   const cy = 32;
   const r = 18;
 
-  const mark = (
+  return (
     <svg viewBox="0 0 64 64" width={size} height={size} className={className} aria-hidden="true">
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
@@ -52,15 +50,5 @@ export function CareeroMark({ size = 28, className, boxed = false }: Props) {
         fill={`url(#${sparkGradId})`}
       />
     </svg>
-  );
-
-  if (!boxed) return mark;
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-xl bg-[hsl(226_33%_8%)] p-1.5"
-      style={{ width: size + 12, height: size + 12 }}
-    >
-      {mark}
-    </span>
   );
 }

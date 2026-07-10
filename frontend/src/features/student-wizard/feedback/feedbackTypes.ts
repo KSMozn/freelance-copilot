@@ -19,8 +19,3 @@ export interface SurveyCreate {
   comment?: string | null;
   template_slug?: string | null;
 }
-
-export interface FeedbackListResponse {
-  items: FeedbackEntry[];
-  total: number;
-}

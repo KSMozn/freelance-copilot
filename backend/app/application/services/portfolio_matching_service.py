@@ -12,7 +12,6 @@ query without touching the scoring rules.
 """
 from __future__ import annotations
 
-import math
 from uuid import UUID
 
 from app.application.dto.portfolio_dto import PortfolioMatch, PortfolioMatchesResponse
@@ -347,11 +346,6 @@ class PortfolioMatchingService:
         )
 
 
-# Re-export for testing: a tiny helper used in unit tests + the smoke script.
-def cosine_for_unit_vectors(a: list[float], b: list[float]) -> float:
-    return _cosine_unit(a, b)
-
-
 def hybrid_score(*, semantic: float, skill: float, domain: float, strategic: float) -> float:
     return (
         WEIGHT_SEMANTIC * semantic
@@ -359,8 +353,3 @@ def hybrid_score(*, semantic: float, skill: float, domain: float, strategic: flo
         + WEIGHT_DOMAIN * domain
         + WEIGHT_STRATEGIC * strategic
     )
-
-
-def euclidean_distance(a: list[float], b: list[float]) -> float:
-    """Available for diagnostics; not used in scoring."""
-    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=True)))
