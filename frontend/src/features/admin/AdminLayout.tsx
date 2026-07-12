@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
@@ -9,6 +10,7 @@ export function AdminLayout() {
   const admin = useAdminAuthStore((s) => s.admin);
   const accessToken = useAdminAuthStore((s) => s.accessToken);
   const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
 
   if (!accessToken || !admin) {
     return <Navigate to="/login" replace />;
@@ -32,12 +34,14 @@ export function AdminLayout() {
         <div className="space-y-1 border-t p-2 text-xs">
           <button
             type="button"
+            disabled={signingOut}
             onClick={() => {
+              setSigningOut(true);
               void logoutCurrentSurface().finally(() => navigate("/login", { replace: true }));
             }}
-            className="block w-full rounded-md px-3 py-2 text-left hover:bg-muted"
+            className="block w-full rounded-md px-3 py-2 text-left hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
           >
-            Sign out
+            {signingOut ? "Signing out…" : "Sign out"}
           </button>
         </div>
       </aside>

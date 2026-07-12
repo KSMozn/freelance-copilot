@@ -1,12 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-// Debounced auto-save. Calls `save(value)` `delay` ms after `value`
-// stops changing. Skips the first run so we don't write back the
-// initial server payload, and skips when `enabled` is false.
-//
-// The wizard uses this on each profile-bearing step: type, pause, the
-// patch fires. No explicit "save" click required, and navigating away
-// mid-step doesn't lose work.
+import { getPendingSaveGeneration, registerPendingSave } from "@/shared/lib/pendingSaves";
+
+interface PendingSave<T> {
+  generation: number;
+  serialized: string;
+  value: T;
+}
+
 export function useAutoSave<T>(
   value: T,
   save: (v: T) => Promise<unknown> | unknown,
@@ -14,21 +15,81 @@ export function useAutoSave<T>(
 ) {
   const { delay = 700, enabled = true } = opts;
   const firstRun = useRef(true);
-  const lastSaved = useRef<T>(value);
+  const lastSaved = useRef(JSON.stringify(value));
+  const lastQueued = useRef(lastSaved.current);
+  const latestSave = useRef(save);
+  const enabledRef = useRef(enabled);
+  const pending = useRef<PendingSave<T> | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveQueue = useRef(Promise.resolve());
+
+  latestSave.current = save;
+  enabledRef.current = enabled;
+
+  const queueSave = useCallback((next: PendingSave<T>): Promise<void> => {
+    if (next.serialized === lastQueued.current) return saveQueue.current;
+    lastQueued.current = next.serialized;
+    const saveValue = latestSave.current;
+    saveQueue.current = saveQueue.current
+      .then(async () => {
+        if (next.generation !== getPendingSaveGeneration()) return;
+        await saveValue(next.value);
+        if (next.generation !== getPendingSaveGeneration()) return;
+        lastSaved.current = next.serialized;
+      })
+      .catch(() => {
+        if (lastQueued.current === next.serialized) {
+          lastQueued.current = lastSaved.current;
+        }
+      });
+    return saveQueue.current;
+  }, []);
+
+  const flush = useCallback(async () => {
+    if (timer.current) clearTimeout(timer.current);
+    const unsaved = pending.current;
+    pending.current = null;
+    timer.current = null;
+    if (unsaved && enabledRef.current) queueSave(unsaved);
+    await saveQueue.current;
+  }, [queueSave]);
+
+  useEffect(() => {
+    const unregister = registerPendingSave(flush);
+    return () => {
+      unregister();
+      void flush();
+    };
+  }, [flush]);
 
   useEffect(() => {
     if (firstRun.current) {
       firstRun.current = false;
-      lastSaved.current = value;
+      lastSaved.current = JSON.stringify(value);
+      lastQueued.current = lastSaved.current;
       return;
     }
+    pending.current = null;
     if (!enabled) return;
-    // Cheap shallow check via JSON; objects are small (profile patch).
-    if (JSON.stringify(value) === JSON.stringify(lastSaved.current)) return;
-    const t = setTimeout(() => {
-      lastSaved.current = value;
-      void save(value);
+
+    const serialized = JSON.stringify(value);
+    if (serialized === lastQueued.current) return;
+
+    pending.current = {
+      generation: getPendingSaveGeneration(),
+      value,
+      serialized,
+    };
+    timer.current = setTimeout(() => {
+      const unsaved = pending.current;
+      pending.current = null;
+      timer.current = null;
+      if (unsaved) queueSave(unsaved);
     }, delay);
-    return () => clearTimeout(t);
+
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+    };
   }, [value, enabled, delay]); // eslint-disable-line react-hooks/exhaustive-deps
 }

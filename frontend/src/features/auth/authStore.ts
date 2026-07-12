@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from "@/shared/config/brand";
+import { clearSessionCache } from "@/app/queryClient";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -35,17 +36,21 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       activePersonaId: null,
-      setAuth: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken, activePersonaId: null }),
+      setAuth: (user, accessToken, refreshToken) => {
+        clearSessionCache();
+        set({ user, accessToken, refreshToken, activePersonaId: null });
+      },
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
       setActivePersonaId: (id) => set({ activePersonaId: id }),
-      logout: () =>
+      logout: () => {
+        clearSessionCache();
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           activePersonaId: null,
-        }),
+        });
+      },
     }),
     { name: STORAGE_KEYS.auth },
   ),

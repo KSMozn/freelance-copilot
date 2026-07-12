@@ -22,8 +22,8 @@ interface Props {
  */
 export function AuthShell({
   variant = "careero",
-  title = "Your AI Career Intelligence Platform",
-  subtitle = "Careero helps you build the career you're capable of — from skills to opportunities, resumes to interviews.",
+  title = "Build your first student CV with confidence",
+  subtitle = "Turn your education, projects, internships, and skills into an ATS-friendly CV you can download as PDF or DOCX.",
   slogan = BRAND.tagline,
   children,
 }: Props) {

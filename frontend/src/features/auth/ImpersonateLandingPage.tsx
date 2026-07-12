@@ -27,6 +27,7 @@ export function ImpersonateLanding() {
     if (consumed.current) return;
     consumed.current = true;
     const raw = window.location.hash.replace(/^#/, "");
+    window.history.replaceState(null, "", window.location.pathname);
     // Do NOT parse with URLSearchParams: it decodes "+" as a space, which
     // corrupts base64 payloads that happen to contain "+" (atob then throws
     // — an intermittent, content-dependent failure). The sender writes the
@@ -59,14 +60,11 @@ export function ImpersonateLanding() {
         selected_persona_kind: decoded.persona_kind,
       };
       setAuth(user, decoded.access_token, decoded.refresh_token);
-      // Wipe the fragment so a browser back-nav doesn't re-fire this.
-      window.history.replaceState(null, "", window.location.pathname);
       toast.success(`Now viewing as ${decoded.email}`);
       navigate(decoded.persona_kind === "student" ? "/student" : "/", {
         replace: true,
       });
-    } catch (err) {
-      console.error("Failed to decode impersonation payload", err);
+    } catch {
       toast.error("Invalid impersonation payload");
       navigate("/login", { replace: true });
     }

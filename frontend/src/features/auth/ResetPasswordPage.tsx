@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLayoutEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { getApiErrorMessage } from "@/shared/lib/getApiErrorMessage";
@@ -12,8 +12,11 @@ import { resetPasswordSchema } from "@/features/auth/authSchema";
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const location = useLocation();
+  const [token, setToken] = useState(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return params.get("token") ?? "";
+  });
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,6 +25,19 @@ export function ResetPasswordPage() {
     confirmPassword?: string;
   }>({});
   const [done, setDone] = useState(false);
+
+  useLayoutEffect(() => {
+    const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const nextToken = params.get("token");
+    if (!nextToken) return;
+
+    setToken(nextToken);
+    setPassword("");
+    setConfirmPassword("");
+    setFieldErrors({});
+    setDone(false);
+    navigate(`${location.pathname}${location.search}`, { replace: true });
+  }, [location.hash, location.pathname, location.search, navigate]);
 
   const resetPassword = useResetPassword();
 
@@ -79,8 +95,8 @@ export function ResetPasswordPage() {
         <div className="mb-6 space-y-1">
           <h2 className="text-2xl font-semibold tracking-tight">Password updated</h2>
           <p className="text-sm text-muted-foreground">
-            Your password has been changed and any other sessions were signed out. Sign in with your
-            new password.
+            Your password has been changed. Other devices will need to sign in again when their
+            current access expires.
           </p>
         </div>
         <Button
@@ -101,7 +117,7 @@ export function ResetPasswordPage() {
       <div className="mb-6 space-y-1">
         <h2 className="text-2xl font-semibold tracking-tight">Choose a new password</h2>
         <p className="text-sm text-muted-foreground">
-          It must be at least 8 characters. You'll be signed out everywhere else.
+          It must be at least 8 characters. Existing refresh sessions will be revoked.
         </p>
       </div>
       <form

@@ -197,10 +197,16 @@ export function StudentWizardPage() {
   }, [step.slug, profile?.completed_steps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function goNext() {
+    resumedRef.current = true;
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
   }
   function goPrev() {
+    resumedRef.current = true;
     setStepIndex((i) => Math.max(i - 1, 0));
+  }
+  function jumpToStep(index: number) {
+    resumedRef.current = true;
+    setStepIndex(index);
   }
 
   return (
@@ -224,7 +230,7 @@ export function StudentWizardPage() {
           steps={STEPS}
           stepIndex={stepIndex}
           completed={profile?.completed_steps ?? []}
-          onJump={(i) => setStepIndex(i)}
+          onJump={jumpToStep}
         />
 
         <Card className="mt-6 rounded-2xl border-border/60 shadow-sm">
@@ -342,6 +348,7 @@ function StepBody({
 function SignOutButton() {
   const navigate = useNavigate();
   const email = useAuthStore((s) => s.user?.email);
+  const [signingOut, setSigningOut] = useState(false);
   return (
     <div className="flex items-center gap-2">
       {email && (
@@ -351,12 +358,14 @@ function SignOutButton() {
       )}
       <button
         type="button"
+        disabled={signingOut}
         onClick={() => {
+          setSigningOut(true);
           void logoutCurrentSurface().finally(() => navigate("/login", { replace: true }));
         }}
-        className="rounded-md border border-border/60 px-2 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        className="rounded-md border border-border/60 px-2 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
       >
-        Sign out
+        {signingOut ? "Signing out…" : "Sign out"}
       </button>
     </div>
   );

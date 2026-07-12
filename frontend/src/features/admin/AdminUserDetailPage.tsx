@@ -768,7 +768,7 @@ function CvPreviewCard({ userId, userFullName }: { userId: string; userFullName:
               title="Admin CV preview"
               srcDoc={data.html}
               className="h-[900px] w-full"
-              sandbox="allow-same-origin"
+              sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             />
           </div>
         ) : null}

@@ -301,7 +301,7 @@ export function StepPreview() {
             title="CV preview"
             srcDoc={html}
             className="h-[900px] w-full"
-            sandbox="allow-same-origin"
+            sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           />
         ) : (
           <div className="p-8 text-center text-sm text-muted-foreground">No preview</div>

@@ -1,7 +1,9 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
+import { getSessionRequestContext, isCurrentSessionGeneration } from "@/app/sessionBoundary";
 import { useAdminAuthStore } from "@/features/admin/adminAuthStore";
 import { useAuthStore } from "@/features/auth/authStore";
+import { flushPendingSaves } from "@/shared/lib/pendingSaves";
 
 // Pick the backend URL from the current frontend host so the same bundle
 // works on all three deploys without a rebuild:
@@ -91,56 +93,113 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = isAdminSurface
+type SessionRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _sessionAccessToken?: string | null;
+  _sessionGeneration?: number;
+};
+
+function currentAccessToken(): string | null {
+  return isAdminSurface
     ? useAdminAuthStore.getState().accessToken
     : useAuthStore.getState().accessToken;
+}
+
+function sessionChangedError(config: InternalAxiosRequestConfig): AxiosError {
+  return new AxiosError("Session changed", AxiosError.ERR_CANCELED, config);
+}
+
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const request = config as SessionRequestConfig;
+  const context = getSessionRequestContext();
+  const token = currentAccessToken();
+  request._sessionGeneration = context.generation;
+  request._sessionAccessToken = token;
+  request.signal ??= context.signal;
   if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+    request.headers = request.headers ?? {};
+    request.headers.Authorization = `Bearer ${token}`;
   }
-  return config;
+  return request;
 });
 
 let refreshInFlight: Promise<string | null> | null = null;
 
 async function tryRefresh(): Promise<string | null> {
   if (isAdminSurface) {
-    const refreshToken = useAdminAuthStore.getState().refreshToken;
-    if (!refreshToken) return null;
+    const store = useAdminAuthStore.getState();
+    const refreshToken = store.refreshToken;
+    if (!refreshToken) {
+      if (store.accessToken) store.logout();
+      return null;
+    }
     try {
       const { data } = await axios.post<{ access_token: string; refresh_token: string }>(
         `${baseURL}/admin/auth/refresh`,
         { refresh_token: refreshToken },
       );
-      useAdminAuthStore.getState().setTokens(data.access_token, data.refresh_token);
+      const current = useAdminAuthStore.getState();
+      if (current.refreshToken !== refreshToken) return null;
+      current.setTokens(data.access_token, data.refresh_token);
       return data.access_token;
     } catch {
-      useAdminAuthStore.getState().logout();
+      const current = useAdminAuthStore.getState();
+      if (current.refreshToken === refreshToken) current.logout();
       return null;
     }
   }
-  const refreshToken = useAuthStore.getState().refreshToken;
-  if (!refreshToken) return null;
+  const store = useAuthStore.getState();
+  const refreshToken = store.refreshToken;
+  if (!refreshToken) {
+    if (store.accessToken) store.logout();
+    return null;
+  }
   try {
     const { data } = await axios.post<{ access_token: string; refresh_token: string }>(
       `${baseURL}/auth/refresh`,
       { refresh_token: refreshToken },
     );
-    useAuthStore.getState().setTokens(data.access_token, data.refresh_token);
+    const current = useAuthStore.getState();
+    if (current.refreshToken !== refreshToken) return null;
+    current.setTokens(data.access_token, data.refresh_token);
     return data.access_token;
   } catch {
-    useAuthStore.getState().logout();
+    const current = useAuthStore.getState();
+    if (current.refreshToken === refreshToken) current.logout();
     return null;
   }
 }
 
 api.interceptors.response.use(
-  (r) => r,
+  (response) => {
+    const request = response.config as SessionRequestConfig;
+    if (
+      request._sessionGeneration !== undefined &&
+      !isCurrentSessionGeneration(request._sessionGeneration)
+    ) {
+      return Promise.reject(sessionChangedError(request));
+    }
+    return response;
+  },
   async (error: AxiosError) => {
-    const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const original = error.config as SessionRequestConfig;
+    if (
+      original?._sessionGeneration !== undefined &&
+      !isCurrentSessionGeneration(original._sessionGeneration)
+    ) {
+      return Promise.reject(sessionChangedError(original));
+    }
     if (error.response?.status === 401 && !original._retry) {
+      const accessToken = currentAccessToken();
+      if (!original._sessionAccessToken || !accessToken) {
+        return Promise.reject(error);
+      }
       original._retry = true;
+      if (original._sessionAccessToken !== accessToken) {
+        original.headers = original.headers ?? {};
+        original.headers.Authorization = `Bearer ${accessToken}`;
+        return api.request(original);
+      }
       refreshInFlight ??= tryRefresh().finally(() => {
         refreshInFlight = null;
       });
@@ -164,13 +223,13 @@ export async function logoutCurrentSurface(): Promise<void> {
   const store = isAdminSurface ? useAdminAuthStore : useAuthStore;
   const path = isAdminSurface ? "/admin/auth/logout" : "/auth/logout";
   const refreshToken = store.getState().refreshToken;
+  await flushPendingSaves();
+  store.getState().logout();
   if (refreshToken) {
     try {
-      await axios.post(`${baseURL}${path}`, { refresh_token: refreshToken });
+      await axios.post(`${baseURL}${path}`, { refresh_token: refreshToken }, { timeout: 5_000 });
     } catch {
-      // Server-side revoke is best-effort; the local clear below is what the
-      // user sees. A stale token self-expires within its TTL regardless.
+      // Server-side revoke is best-effort; local state is already cleared.
     }
   }
-  store.getState().logout();
 }

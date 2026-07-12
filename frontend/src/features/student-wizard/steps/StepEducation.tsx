@@ -55,17 +55,13 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
   useAutoSave(
     { university, department, degree, major, year },
     async ({ university, department, degree, major, year }) => {
-      try {
-        await update.mutateAsync({
-          college: university || null,
-          department: department || null,
-          degree: degree || null,
-          major: major || null,
-          graduation_year: year ? Number(year) : null,
-        });
-      } catch {
-        // silent
-      }
+      await update.mutateAsync({
+        college: university || null,
+        department: department || null,
+        degree: degree || null,
+        major: major || null,
+        graduation_year: year ? Number(year) : null,
+      });
     },
   );
 

@@ -45,5 +45,5 @@ export function extractOtpCode(emails: DevEmail[] | undefined): string | null {
 
 export function extractResetToken(emails: DevEmail[] | undefined): string | null {
   const reset = emails?.find((e) => e.tags?.kind === "password_reset");
-  return reset ? (/[?&]token=([A-Za-z0-9_-]+)/.exec(reset.text_body)?.[1] ?? null) : null;
+  return reset ? (/#token=([A-Za-z0-9_-]+)/.exec(reset.text_body)?.[1] ?? null) : null;
 }

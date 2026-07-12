@@ -49,23 +49,25 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
         location: location || null,
         date_of_birth: dob,
       };
-      try {
-        await update.mutateAsync(payload);
-      } catch {
-        // Auto-save failures are silent; explicit Save & continue surfaces them.
-      }
+      await update.mutateAsync(payload);
     },
   );
 
-  async function checkEmail() {
-    if (!email.trim()) return;
+  async function checkEmail(): Promise<CoachWarning[]> {
+    if (!email.trim()) return [];
     const res = await coachEmail.mutateAsync({ email, full_name: fullName });
     setEmailWarnings(res.warnings);
     setEmailSuggestions(res.suggestions);
+    return res.warnings;
   }
 
   async function saveAndContinue() {
-    if (!emailConfirmed && emailWarnings.length === 0 && email) await checkEmail();
+    let warnings = emailWarnings;
+    if (!emailConfirmed && warnings.length === 0 && email) {
+      warnings = await checkEmail();
+    }
+    if (warnings.some((warning) => warning.severity === "block")) return;
+    if (warnings.length > 0 && !emailConfirmed) return;
     await update.mutateAsync({
       full_name: fullName || null,
       professional_email: email || null,

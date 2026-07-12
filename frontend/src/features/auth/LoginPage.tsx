@@ -346,11 +346,7 @@ export function LoginPage() {
                 className="text-primary hover:underline"
                 onClick={() =>
                   navigate("/register", {
-                    // Carry what they've already typed so /register
-                    // doesn't make them re-enter it. Password is
-                    // intentionally passed in route state (not query
-                    // string) — never URL-logged.
-                    state: { email, password },
+                    state: { email },
                   })
                 }
               >

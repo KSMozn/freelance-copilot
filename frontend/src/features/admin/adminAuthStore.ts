@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from "@/shared/config/brand";
+import { clearSessionCache } from "@/app/queryClient";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -29,9 +30,15 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       admin: null,
       accessToken: null,
       refreshToken: null,
-      setAuth: (admin, accessToken, refreshToken) => set({ admin, accessToken, refreshToken }),
+      setAuth: (admin, accessToken, refreshToken) => {
+        clearSessionCache();
+        set({ admin, accessToken, refreshToken });
+      },
       setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
-      logout: () => set({ admin: null, accessToken: null, refreshToken: null }),
+      logout: () => {
+        clearSessionCache();
+        set({ admin: null, accessToken: null, refreshToken: null });
+      },
     }),
     { name: STORAGE_KEYS.adminAuth },
   ),

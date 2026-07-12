@@ -36,18 +36,15 @@ export function RegisterPage() {
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  // Login passes whatever the user already typed there as route state so
-  // we don't make them re-enter it. Read once on mount; never round-trip.
-  const carried = (location.state as { email?: string; password?: string } | null) ?? {};
+  const carried = (location.state as { email?: string } | null) ?? {};
 
   const [step, setStep] = useState<Step>("identity");
   const [authMode, setAuthMode] = useState<AuthMode>("password");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState(carried.email ?? "");
-  const [password, setPassword] = useState(carried.password ?? "");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [expiresMin, setExpiresMin] = useState(10);
-  const credentialsCarriedOver = Boolean(carried.email && carried.password);
 
   const redirectAfter = (data: AuthResponse) => {
     setAuth(data.user, data.tokens.access_token, data.tokens.refresh_token);
@@ -117,11 +114,6 @@ export function RegisterPage() {
   });
 
   const header = HEADERS[step];
-  const description =
-    step === "identity" && credentialsCarriedOver
-      ? "We've got your email and password. Just need a name for your CV."
-      : header.description;
-
   return (
     <AuthShell
       title="Join Careero"
@@ -130,7 +122,7 @@ export function RegisterPage() {
       <ProgressDots step={step} authMode={authMode} />
       <div className="mb-6 mt-4 space-y-1">
         <h2 className="text-2xl font-semibold tracking-tight">{header.title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm text-muted-foreground">{header.description}</p>
       </div>
       <div>
         {step === "identity" && (
@@ -142,22 +134,6 @@ export function RegisterPage() {
               else requestCode.mutate();
             }}
           >
-            {credentialsCarriedOver && (
-              <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
-                <div className="font-medium">Using the email + password from sign-in</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {email}
-                  {" · "}
-                  <button
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={() => navigate("/login")}
-                  >
-                    change
-                  </button>
-                </div>
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="r-name">What should we call you?</Label>
               <Input
@@ -169,56 +145,52 @@ export function RegisterPage() {
                 placeholder="Sara Student"
               />
             </div>
-            {!credentialsCarriedOver && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="r-email">Email</Label>
-                  <Input
-                    id="r-email"
-                    type="email"
-                    value={email}
-                    required
-                    autoComplete="email"
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="sara.student@school.edu"
-                  />
-                </div>
-                {authMode === "password" ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="r-password">Password</Label>
-                    <Input
-                      id="r-password"
-                      type="password"
-                      value={password}
-                      required
-                      minLength={8}
-                      autoComplete="new-password"
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      At least 8 characters.{" "}
-                      <button
-                        type="button"
-                        className="text-primary hover:underline"
-                        onClick={() => setAuthMode("otp")}
-                      >
-                        Use email code instead
-                      </button>
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    We'll send a 6-digit code — no password needed.{" "}
-                    <button
-                      type="button"
-                      className="text-primary hover:underline"
-                      onClick={() => setAuthMode("password")}
-                    >
-                      Use a password instead
-                    </button>
-                  </p>
-                )}
-              </>
+            <div className="space-y-2">
+              <Label htmlFor="r-email">Email</Label>
+              <Input
+                id="r-email"
+                type="email"
+                value={email}
+                required
+                autoComplete="email"
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="sara.student@school.edu"
+              />
+            </div>
+            {authMode === "password" ? (
+              <div className="space-y-2">
+                <Label htmlFor="r-password">Password</Label>
+                <Input
+                  id="r-password"
+                  type="password"
+                  value={password}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  At least 8 characters.{" "}
+                  <button
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => setAuthMode("otp")}
+                  >
+                    Use email code instead
+                  </button>
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                We'll send a 6-digit code — no password needed.{" "}
+                <button
+                  type="button"
+                  className="text-primary hover:underline"
+                  onClick={() => setAuthMode("password")}
+                >
+                  Use a password instead
+                </button>
+              </p>
             )}
             <Button
               type="submit"

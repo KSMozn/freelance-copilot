@@ -1,5 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 
+import { advanceSessionBoundary } from "@/app/sessionBoundary";
+import { advancePendingSaveBoundary } from "@/shared/lib/pendingSaves";
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -9,3 +12,9 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export function clearSessionCache(): void {
+  advanceSessionBoundary();
+  advancePendingSaveBoundary();
+  queryClient.clear();
+}

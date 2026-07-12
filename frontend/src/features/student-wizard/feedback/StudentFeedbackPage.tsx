@@ -77,15 +77,18 @@ export function StudentFeedbackPage() {
 
 function SignOutLink() {
   const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
   return (
     <button
       type="button"
+      disabled={signingOut}
       onClick={() => {
+        setSigningOut(true);
         void logoutCurrentSurface().finally(() => navigate("/login", { replace: true }));
       }}
-      className="text-xs text-muted-foreground hover:text-foreground"
+      className="text-xs text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
     >
-      Sign out
+      {signingOut ? "Signing out…" : "Sign out"}
     </button>
   );
 }

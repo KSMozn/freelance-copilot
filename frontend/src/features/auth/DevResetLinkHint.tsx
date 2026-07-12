@@ -29,7 +29,7 @@ export function DevResetLinkHint({ email }: { email: string }) {
           <button
             type="button"
             className="rounded border border-muted-foreground/30 px-2 py-1 font-medium text-primary hover:bg-muted"
-            onClick={() => navigate(`/reset-password?token=${token}`)}
+            onClick={() => navigate(`/reset-password#token=${token}`)}
           >
             Open reset link
           </button>

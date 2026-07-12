@@ -1,57 +1,44 @@
-import { ArrowRight, FileUp, Github, SkipForward, Sparkles } from "lucide-react";
+import { ArrowRight, FileDown, GraduationCap, Sparkles, UserRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
-/**
- * Compact "one thing" onboarding page. The user has just verified their email
- * via OTP — instead of forcing a multi-step wizard, ask them to pick ONE
- * starting source. Whichever they pick (or skip), they land on the dashboard
- * and can add more sources in-context later.
- *
- * The CV-upload and GitHub cards target the professional surface
- * (/sources, /repositories), which is dormant — its routes are not
- * registered, so those cards are shown disabled with a "Coming soon"
- * badge instead of navigating into the wildcard redirect. Re-enable them
- * when the professional surface is mounted again.
- */
 export function OnboardingPage() {
   const navigate = useNavigate();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-3xl space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold">Welcome — let&apos;s build your profile.</h1>
+          <h1 className="text-2xl font-semibold">Welcome — let&apos;s build your first CV.</h1>
           <p className="text-sm text-muted-foreground">
-            Pick one thing to start with. You can add the others anytime.
+            Work through the guided steps in any order. Your profile changes save automatically.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <SourceCard
-            icon={<FileUp className="h-6 w-6" />}
-            title="Upload your CV"
-            description="PDF, DOCX, or paste plain text. We'll extract experiences, skills, and projects into your graph."
-            cta="Upload CV"
-            badge="Coming soon"
-            disabled
+            icon={<UserRound className="h-6 w-6" />}
+            title="Start with the basics"
+            description="Add your name, contact details, and location for the CV header."
+            cta="Add my details"
+            onClick={() => navigate("/student?step=basics")}
           />
           <SourceCard
-            icon={<Github className="h-6 w-6" />}
-            title="Connect GitHub"
-            description="We'll scan your repos for languages, frameworks, and architecture patterns."
-            cta="Connect GitHub"
-            badge="Coming soon"
-            disabled
-          />
-          <SourceCard
-            icon={<SkipForward className="h-6 w-6" />}
-            title="Skip for now"
-            description="Go straight to the dashboard. Add sources whenever you're ready."
-            cta="Continue to dashboard"
+            icon={<GraduationCap className="h-6 w-6" />}
+            title="Add your education"
+            description="Capture your university, degree, major, and expected graduation year."
+            cta="Add education"
             variant="outline"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/student?step=education")}
+          />
+          <SourceCard
+            icon={<FileDown className="h-6 w-6" />}
+            title="See the finished result"
+            description="Preview the five ATS-friendly designs and export your CV as PDF or DOCX."
+            cta="View preview"
+            variant="outline"
+            onClick={() => navigate("/student?step=preview")}
           />
         </div>
 
@@ -64,20 +51,22 @@ export function OnboardingPage() {
           </CardHeader>
           <CardContent className="space-y-1 text-sm text-muted-foreground">
             <p>
-              Whatever you add today becomes part of your{" "}
-              <strong>professional knowledge graph</strong> — experiences, projects, skills, and
-              certificates that future personas draw from.
+              The wizard guides you through education, skills, projects, internships, activities,
+              languages, certificates, and a professional summary.
             </p>
             <p>
-              When you paste your first job, we&apos;ll match it against the graph and generate a
-              tailored proposal with evidence chips citing your real work.
+              Coaching helps strengthen your wording without inventing experience, tools, or results
+              you did not provide.
             </p>
           </CardContent>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          <Link to="/" className="inline-flex items-center gap-1 hover:underline">
-            Skip everything and explore the dashboard <ArrowRight className="h-3 w-3" />
+          <Link
+            to="/student?step=basics"
+            className="inline-flex items-center gap-1 hover:underline"
+          >
+            Start building my CV <ArrowRight className="h-3 w-3" />
           </Link>
         </p>
       </div>
@@ -89,10 +78,8 @@ interface SourceCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  badge?: string;
   cta?: string;
   onClick?: () => void;
-  disabled?: boolean;
   variant?: "default" | "outline";
 }
 
@@ -100,29 +87,22 @@ function SourceCard({
   icon,
   title,
   description,
-  badge,
   cta,
   onClick,
-  disabled,
   variant = "default",
 }: SourceCardProps) {
   return (
-    <Card className={disabled ? "opacity-60" : ""}>
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="rounded-lg bg-muted p-2 text-primary">{icon}</div>
-          {badge && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-              {badge}
-            </span>
-          )}
         </div>
         <CardTitle className="mt-3 text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
         {cta && (
-          <Button variant={variant} className="w-full" disabled={disabled} onClick={onClick}>
+          <Button variant={variant} className="w-full" onClick={onClick}>
             {cta}
           </Button>
         )}

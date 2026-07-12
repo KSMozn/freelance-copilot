@@ -36,15 +36,11 @@ export function StepSummary({ onSaved }: { onSaved: () => Promise<void> | void }
   }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useAutoSave({ headline, summary, links }, async ({ headline, summary, links }) => {
-    try {
-      await update.mutateAsync({
-        headline: headline || null,
-        summary: summary || null,
-        links,
-      });
-    } catch {
-      // silent
-    }
+    await update.mutateAsync({
+      headline: headline || null,
+      summary: summary || null,
+      links,
+    });
   });
 
   async function generateDraft({ silent }: { silent?: boolean } = {}) {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useCoachPhoto } from "@/features/student-wizard/coaching/coachingApi";
@@ -11,6 +11,7 @@ import {
   useUpdateStudentProfile,
   useUploadStudentPhoto,
 } from "@/features/student-wizard/studentApi";
+import { registerPendingSave } from "@/shared/lib/pendingSaves";
 import { Button } from "@/shared/ui/button";
 
 export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) {
@@ -36,14 +37,41 @@ export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) 
   // Debounce autosave for the crop transform — the positioner fires
   // `onChange` on every pointer settle and every wheel tick.
   const saveTransformRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingTransformRef = useRef<{
+    photo_offset_x: number;
+    photo_offset_y: number;
+    photo_zoom: number;
+  } | null>(null);
+  const updateProfileRef = useRef(updateProfile);
+  updateProfileRef.current = updateProfile;
+
+  async function flushTransform() {
+    if (saveTransformRef.current) clearTimeout(saveTransformRef.current);
+    const pending = pendingTransformRef.current;
+    pendingTransformRef.current = null;
+    saveTransformRef.current = null;
+    if (pending) await updateProfileRef.current.mutateAsync(pending);
+  }
+
+  useEffect(() => {
+    const unregister = registerPendingSave(flushTransform);
+    return () => {
+      unregister();
+      void flushTransform().catch(() => undefined);
+    };
+  }, []);
+
   function saveTransform(next: {
     photo_offset_x: number;
     photo_offset_y: number;
     photo_zoom: number;
   }) {
     if (saveTransformRef.current) clearTimeout(saveTransformRef.current);
+    pendingTransformRef.current = next;
     saveTransformRef.current = setTimeout(() => {
-      void updateProfile.mutateAsync(next);
+      pendingTransformRef.current = null;
+      saveTransformRef.current = null;
+      void updateProfile.mutateAsync(next).catch(() => undefined);
     }, 250);
   }
 
