@@ -1,0 +1,35 @@
+Hi {first_name},
+
+We rebuilt {app_name} from the ground up — and it's the best it's ever been.
+
+Over the past few weeks we've reengineered the entire {app_name} app to
+make building your CV quicker, cleaner, and more reliable. Everything
+you've already created is right where you left it — just better.
+
+What's new:
+
+  * Noticeably faster
+    Pages load in a fraction of the time, so you spend less time waiting
+    and more time building.
+
+  * A cleaner, refreshed design
+    A polished new look from top to bottom — every step of the CV wizard
+    is clearer and easier to use.
+
+  * Your work is safer
+    Smarter autosave keeps your progress protected, and you can now reset
+    your password any time in seconds.
+
+Open the new {app_name}:
+{app_url}/student
+
+Noticed something off, or have an idea to make {app_name} even better?
+We'd love to hear it:
+{feedback_url}
+
+Same {app_name} you know — now faster, cleaner, and more reliable.
+
+— {app_name}
+Helping students build their first professional CV.
+
+You're receiving this because you have a {app_name} account.

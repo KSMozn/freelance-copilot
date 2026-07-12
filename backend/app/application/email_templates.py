@@ -93,6 +93,21 @@ EMAIL_TEMPLATES: dict[str, EmailTemplateSpec] = {
             "for students who've completed the CV wizard already."
         ),
     ),
+    "app_refresh_announcement": EmailTemplateSpec(
+        id="app_refresh_announcement",
+        name="Careero got a major refresh",
+        description=(
+            "One-off announcement — the whole app was rebuilt to be faster, "
+            "cleaner, and more reliable (new design, smarter autosave, "
+            "self-serve password reset). Reassures users their existing "
+            "work is untouched. CTA opens the wizard."
+        ),
+        subject="Your {app_name} just got faster and smoother",
+        audience_hint=(
+            "Any student with an account — a broad re-engagement announcement. "
+            "Especially good for lapsed students who haven't logged in recently."
+        ),
+    ),
 }
 
 

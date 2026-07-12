@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<!--
+  Template: app_refresh_announcement
+  Audience: all existing students, one-off announcement of the redesigned,
+            faster frontend (FSD rebuild + Base UI design system).
+  Placeholders used:
+    {first_name}   - the student's first name (falls back to "there")
+    {app_name}     - "Careero" in prod
+    {app_url}      - CTA "Open the new Careero" (routes to /student)
+    {feedback_url} - "Share your thoughts" link (routes to /feedback)
+  All single-brace because the renderer uses str.format_map. No <style> blocks
+  or literal braces anywhere — inline styles only.
+-->
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,0.06);">
+          <tr>
+            <td style="padding:28px 40px 8px 40px;text-align:center;">
+              <div style="font-size:24px;font-weight:800;color:#5b3fdf;letter-spacing:-0.02em;font-family:Arial,Helvetica,sans-serif;">
+                C+ {app_name}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:12px 24px 0 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#5b3fdf;border-radius:14px;">
+                <tr>
+                  <td style="padding:44px 32px;">
+                    <div style="font-size:13px;font-weight:700;letter-spacing:0.14em;color:#c7bbff;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">
+                      A brand-new experience
+                    </div>
+                    <div style="margin-top:12px;font-size:30px;line-height:1.15;font-weight:800;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
+                      {app_name} just got<br/>
+                      <span style="display:inline-block;background:#7c3aed;color:#ffffff;padding:2px 12px;border-radius:8px;">faster &amp; smoother.</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 40px 0 40px;">
+              <div style="font-size:20px;font-weight:700;color:#0f172a;">
+                Hi {first_name},
+              </div>
+              <div style="margin-top:10px;font-size:15px;font-weight:600;color:#7c3aed;">
+                We rebuilt {app_name} from the ground up &mdash; and it&rsquo;s the best it&rsquo;s ever been.
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 40px 0 40px;">
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#334155;">
+                Over the past few weeks we&rsquo;ve reengineered the entire
+                {app_name} app to make building your CV quicker, cleaner, and
+                more reliable. Everything you&rsquo;ve already created is right
+                where you left it &mdash; just better.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Feature 1: speed -->
+          <tr>
+            <td style="padding:22px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 18px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="52" valign="top">
+                          <div style="width:44px;height:44px;background:#7c3aed;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:22px;line-height:44px;text-align:center;border-radius:10px;">&#9889;</div>
+                        </td>
+                        <td valign="top" style="padding-left:14px;">
+                          <p style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">Noticeably faster</p>
+                          <p style="margin:4px 0 0;font-size:14px;line-height:1.55;color:#475569;">
+                            Pages load in a fraction of the time, so you spend
+                            less time waiting and more time building.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Feature 2: redesign -->
+          <tr>
+            <td style="padding:12px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 18px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="52" valign="top">
+                          <div style="width:44px;height:44px;background:#2563eb;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:22px;line-height:44px;text-align:center;border-radius:10px;">&#10024;</div>
+                        </td>
+                        <td valign="top" style="padding-left:14px;">
+                          <p style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">A cleaner, refreshed design</p>
+                          <p style="margin:4px 0 0;font-size:14px;line-height:1.55;color:#475569;">
+                            A polished new look from top to bottom &mdash; every
+                            step of the CV wizard is clearer and easier to use.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Feature 3: reliability -->
+          <tr>
+            <td style="padding:12px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 18px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="52" valign="top">
+                          <div style="width:44px;height:44px;background:#5b3fdf;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:22px;line-height:44px;text-align:center;border-radius:10px;">&#128274;</div>
+                        </td>
+                        <td valign="top" style="padding-left:14px;">
+                          <p style="margin:0;font-size:15px;font-weight:700;color:#1e293b;">Your work is safer</p>
+                          <p style="margin:4px 0 0;font-size:14px;line-height:1.55;color:#475569;">
+                            Smarter autosave keeps your progress protected, and
+                            you can now reset your password any time in seconds.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 40px 0 40px;text-align:center;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{app_url}/student" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="25%" strokecolor="#5b3fdf" fillcolor="#5b3fdf">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">Open the new Careero</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#5b3fdf" style="background-color:#5b3fdf;border-radius:14px;">
+                    <a href="{app_url}/student" style="display:inline-block;background-color:#5b3fdf;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;line-height:20px;padding:16px 40px;border-radius:14px;font-family:Arial,Helvetica,sans-serif;mso-padding-alt:0;">
+                      <span style="color:#ffffff;">Open the new {app_name} &rarr;</span>
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 18px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="42" valign="top">
+                          <div style="width:34px;height:34px;background:#2563eb;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:16px;line-height:34px;text-align:center;border-radius:999px;">?</div>
+                        </td>
+                        <td valign="top" style="padding-left:12px;">
+                          <p style="margin:0;font-size:13px;line-height:1.55;color:#1e3a8a;">
+                            Noticed something off, or have an idea to make
+                            {app_name} even better? We&rsquo;d love to hear it.
+                          </p>
+                          <a href="{feedback_url}" style="display:inline-block;margin-top:8px;font-size:13px;font-weight:700;color:#1d4ed8;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">
+                            Share your thoughts &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 40px 8px 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:14px;">
+                <tr>
+                  <td style="padding:16px 20px;" valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td width="42" valign="middle">
+                          <div style="width:34px;height:34px;background:#7c3aed;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:18px;line-height:34px;text-align:center;border-radius:999px;">&#10003;</div>
+                        </td>
+                        <td valign="middle" style="padding-left:12px;">
+                          <p style="margin:0;font-size:14px;line-height:1.55;color:#1e293b;">
+                            Same {app_name} you know &mdash;
+                            <span style="color:#7c3aed;font-weight:700;">now faster, cleaner, and more reliable.</span>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#0f172a;padding:18px 40px;color:#cbd5e1;font-size:12px;text-align:center;">
+              {app_name} — Helping students build their first professional CV.
+            </td>
+          </tr>
+        </table>
+
+        <div style="max-width:600px;width:100%;margin:16px auto 0;text-align:center;font-size:11px;color:#94a3b8;font-family:Arial,Helvetica,sans-serif;">
+          You're receiving this because you have a {app_name} account.
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
