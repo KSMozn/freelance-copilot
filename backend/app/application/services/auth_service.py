@@ -45,10 +45,16 @@ class AuthService:
         self._personas = persona_service
         self._refresh = refresh_tokens
 
-    async def _issue_tokens(self, user_id: UUID) -> TokenPair:
+    async def _issue_tokens(
+        self, user_id: UUID, *, expected_password_hash: str | None = None
+    ) -> TokenPair:
         if self._refresh is None:
             raise RuntimeError("Refresh-token manager is not configured")
-        access, refresh = await self._refresh.issue(user_id, "user")
+        access, refresh = await self._refresh.issue(
+            user_id,
+            "user",
+            expected_password_hash=expected_password_hash,
+        )
         return TokenPair(access_token=access, refresh_token=refresh)
 
     @staticmethod
@@ -97,7 +103,10 @@ class AuthService:
             raise InvalidCredentialsError("User is inactive")
         await self._users.touch_last_login(user.id, datetime.now(UTC))
         return AuthResponse(
-            user=self._to_read(user), tokens=await self._issue_tokens(user.id)
+            user=self._to_read(user),
+            tokens=await self._issue_tokens(
+                user.id, expected_password_hash=user.password_hash
+            ),
         )
 
     async def refresh(self, payload: RefreshRequest) -> TokenPair:

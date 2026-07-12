@@ -36,19 +36,26 @@ class RefreshTokenManager:
         return now + timedelta(days=self._ttl_days)
 
     async def issue(
-        self, subject_id: UUID, principal_type: str
+        self,
+        subject_id: UUID,
+        principal_type: str,
+        *,
+        expected_password_hash: str | None = None,
     ) -> tuple[str, str]:
         """Mint a fresh (access, refresh) pair in a brand-new family."""
         now = datetime.now(UTC)
         family_id = uuid4()
         jti = uuid4()
-        await self._repo.create(
+        created = await self._repo.create(
             jti=jti,
             family_id=family_id,
             principal_type=principal_type,
             subject_id=subject_id,
             expires_at=self._expiry(now),
+            expected_password_hash=expected_password_hash,
         )
+        if not created:
+            raise InvalidCredentialsError("Credentials changed; sign in again")
         return (
             create_access_token(subject_id, principal_type=principal_type),  # type: ignore[arg-type]
             create_refresh_token(
@@ -71,14 +78,25 @@ class RefreshTokenManager:
         jti_claim = data.get("jti")
         fid_claim = data.get("fid")
 
-        # Legacy token (minted before this feature) or an impersonation token:
-        # no jti to check against the store — bootstrap into a tracked family.
         if not jti_claim or not fid_claim:
-            return await self.issue(subject_id, principal_type)
+            raise InvalidCredentialsError("Refresh token not recognized")
 
-        row = await self._repo.get(UUID(str(jti_claim)))
+        try:
+            jti = UUID(str(jti_claim))
+            family_id = UUID(str(fid_claim))
+        except ValueError as exc:
+            raise InvalidCredentialsError("Refresh token not recognized") from exc
+
+        row = await self._repo.get(jti)
         if row is None:
             # Claimed a jti we never issued (forged, or pruned) — reject.
+            raise InvalidCredentialsError("Refresh token not recognized")
+
+        if (
+            row.family_id != family_id
+            or row.principal_type != principal_type
+            or row.subject_id != subject_id
+        ):
             raise InvalidCredentialsError("Refresh token not recognized")
 
         if row.revoked_at is not None:
@@ -87,23 +105,30 @@ class RefreshTokenManager:
             if already_rotated and past_grace:
                 # A rotated token resurfacing well after rotation == theft.
                 await self._repo.revoke_family(
-                    row.family_id, reason="reuse_detected", at=now
+                    row.family_id,
+                    principal_type=row.principal_type,
+                    subject_id=row.subject_id,
+                    reason="reuse_detected",
+                    at=now,
                 )
             raise InvalidCredentialsError("Refresh token already used")
 
         if row.expires_at <= now:
             raise InvalidCredentialsError("Refresh token expired")
 
-        # Valid — revoke the presented token and issue its successor.
-        await self._repo.revoke(row.id, reason="rotated", at=now)
+        # Valid — revoke the presented token and issue its successor atomically.
         new_jti = uuid4()
-        await self._repo.create(
-            jti=new_jti,
+        claimed = await self._repo.rotate(
+            current_jti=row.id,
+            new_jti=new_jti,
             family_id=row.family_id,
             principal_type=principal_type,
             subject_id=subject_id,
             expires_at=self._expiry(now),
+            at=now,
         )
+        if not claimed:
+            raise InvalidCredentialsError("Refresh token already used")
         return (
             create_access_token(subject_id, principal_type=principal_type),  # type: ignore[arg-type]
             create_refresh_token(
@@ -134,10 +159,18 @@ class RefreshTokenManager:
         """
         now = datetime.now(UTC)
         fid_claim = data.get("fid")
-        jti_claim = data.get("jti")
-        if fid_claim:
+        principal_type = data.get("pt")
+        subject_claim = data.get("sub")
+        if fid_claim and principal_type in {"user", "admin"} and subject_claim:
+            try:
+                family_id = UUID(str(fid_claim))
+                subject_id = UUID(str(subject_claim))
+            except ValueError:
+                return
             await self._repo.revoke_family(
-                UUID(str(fid_claim)), reason="logout", at=now
+                family_id,
+                principal_type=principal_type,
+                subject_id=subject_id,
+                reason="logout",
+                at=now,
             )
-        elif jti_claim:
-            await self._repo.revoke(UUID(str(jti_claim)), reason="logout", at=now)

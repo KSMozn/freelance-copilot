@@ -109,6 +109,9 @@ class FakeEmailOtpRepository:
         self.rows.append(otp)
         return otp
 
+    async def delete(self, otp_id: UUID) -> None:
+        self.rows = [otp for otp in self.rows if otp.id != otp_id]
+
     async def count_recent_issues(
         self, *, email: str, purpose: str, since: datetime
     ) -> int:
@@ -119,22 +122,20 @@ class FakeEmailOtpRepository:
         )
 
     async def get_active(self, *, email: str, purpose: str) -> EmailOtp | None:
-        live = [
-            o
-            for o in self.rows
-            if o.email == email and o.purpose == purpose and o.consumed_at is None
-        ]
-        return live[-1] if live else None
+        matching = [o for o in self.rows if o.email == email and o.purpose == purpose]
+        return matching[-1] if matching else None
 
     async def increment_attempts(self, otp_id: UUID) -> None:
         for o in self.rows:
             if o.id == otp_id:
                 o.attempts += 1
 
-    async def mark_consumed(self, otp_id: UUID, consumed_at: datetime) -> None:
+    async def mark_consumed(self, otp_id: UUID, consumed_at: datetime) -> bool:
         for o in self.rows:
-            if o.id == otp_id:
+            if o.id == otp_id and o.consumed_at is None:
                 o.consumed_at = consumed_at
+                return True
+        return False
 
 
 class FakeRefreshTokenRepository:
@@ -142,8 +143,20 @@ class FakeRefreshTokenRepository:
 
     def __init__(self) -> None:
         self.rows: dict[UUID, RefreshTokenRecord] = {}
+        self.reject_password_bound_issue = False
 
-    async def create(self, *, jti, family_id, principal_type, subject_id, expires_at) -> None:
+    async def create(
+        self,
+        *,
+        jti,
+        family_id,
+        principal_type,
+        subject_id,
+        expires_at,
+        expected_password_hash=None,
+    ) -> bool:
+        if expected_password_hash is not None and self.reject_password_bound_issue:
+            return False
         self.rows[jti] = RefreshTokenRecord(
             id=jti,
             family_id=family_id,
@@ -154,18 +167,63 @@ class FakeRefreshTokenRepository:
             revoked_reason=None,
             created_at=datetime.now(UTC),
         )
+        return True
 
     async def get(self, jti: UUID) -> RefreshTokenRecord | None:
         return self.rows.get(jti)
 
-    async def revoke(self, jti: UUID, *, reason: str, at: datetime) -> None:
-        row = self.rows.get(jti)
-        if row is not None and row.revoked_at is None:
-            self.rows[jti] = dataclasses.replace(row, revoked_at=at, revoked_reason=reason)
+    async def rotate(
+        self,
+        *,
+        current_jti: UUID,
+        new_jti: UUID,
+        family_id: UUID,
+        principal_type: str,
+        subject_id: UUID,
+        expires_at: datetime,
+        at: datetime,
+    ) -> bool:
+        row = self.rows.get(current_jti)
+        if (
+            row is not None
+            and row.revoked_at is None
+            and row.expires_at > at
+            and row.family_id == family_id
+            and row.principal_type == principal_type
+            and row.subject_id == subject_id
+        ):
+            self.rows[current_jti] = dataclasses.replace(
+                row, revoked_at=at, revoked_reason="rotated"
+            )
+            self.rows[new_jti] = RefreshTokenRecord(
+                id=new_jti,
+                family_id=family_id,
+                principal_type=principal_type,
+                subject_id=subject_id,
+                expires_at=expires_at,
+                revoked_at=None,
+                revoked_reason=None,
+                created_at=at,
+            )
+            return True
+        return False
 
-    async def revoke_family(self, family_id: UUID, *, reason: str, at: datetime) -> None:
+    async def revoke_family(
+        self,
+        family_id: UUID,
+        *,
+        principal_type: str,
+        subject_id: UUID,
+        reason: str,
+        at: datetime,
+    ) -> None:
         for jti, row in list(self.rows.items()):
-            if row.family_id == family_id and row.revoked_at is None:
+            if (
+                row.family_id == family_id
+                and row.principal_type == principal_type
+                and row.subject_id == subject_id
+                and row.revoked_at is None
+            ):
                 self.rows[jti] = dataclasses.replace(
                     row, revoked_at=at, revoked_reason=reason
                 )
@@ -193,13 +251,20 @@ def state():  # type: ignore[no-untyped-def]
         app_name="Careero",
         from_address="no-reply@careero.test",
     )
+    refresh_repo = FakeRefreshTokenRepository()
     service = AuthService(
         users,
         otp_service,
         None,  # persona provisioning is optional and DB-backed — skip it
-        RefreshTokenManager(FakeRefreshTokenRepository()),
+        RefreshTokenManager(refresh_repo),
     )
-    return {"users": users, "emails": emails, "otps": otps, "service": service}
+    return {
+        "users": users,
+        "emails": emails,
+        "otps": otps,
+        "refresh_repo": refresh_repo,
+        "service": service,
+    }
 
 
 @pytest.fixture
@@ -281,6 +346,24 @@ def test_login_wrong_password_returns_401(client: TestClient) -> None:
     )
     assert resp.status_code == 401
     assert resp.json()["detail"] == "Invalid email or password"
+
+
+def test_login_cannot_issue_session_after_password_changes(
+    client: TestClient, state
+) -> None:  # type: ignore[no-untyped-def]
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "login.race@example.com", "password": "old-password-1"},
+    )
+    state["refresh_repo"].reject_password_bound_issue = True
+
+    resp = client.post(
+        "/api/v1/auth/login",
+        json={"email": "login.race@example.com", "password": "old-password-1"},
+    )
+
+    assert resp.status_code == 401
+    assert "sign in again" in resp.json()["detail"]
 
 
 # ---- OTP flow ------------------------------------------------------------
@@ -375,6 +458,47 @@ def test_verify_code_cannot_be_reused(client: TestClient, state) -> None:  # typ
     assert resp.status_code == 400  # consumed on first use
 
 
+def test_new_otp_supersedes_previous_code(
+    client: TestClient, state, monkeypatch: pytest.MonkeyPatch
+) -> None:  # type: ignore[no-untyped-def]
+    codes = iter([111111, 222222])
+    monkeypatch.setattr("app.application.services.email_otp_service.secrets.randbelow", lambda _: next(codes))
+    request = {"email": "otp.superseded@example.com", "purpose": "register"}
+
+    assert client.post("/api/v1/auth/request-code", json=request).status_code == 200
+    first_code = _sent_code(state["emails"])
+    assert client.post("/api/v1/auth/request-code", json=request).status_code == 200
+    second_code = _sent_code(state["emails"])
+
+    first = client.post(
+        "/api/v1/auth/verify-code",
+        json={**request, "code": first_code},
+    )
+    assert first.status_code == 400
+    assert client.post(
+        "/api/v1/auth/verify-code",
+        json={**request, "code": second_code},
+    ).status_code == 200
+
+
+def test_lost_otp_claim_does_not_authenticate(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
+    request = {"email": "otp.race@example.com", "purpose": "register"}
+    assert client.post("/api/v1/auth/request-code", json=request).status_code == 200
+    code = _sent_code(state["emails"])
+
+    async def lose_claim(otp_id: UUID, consumed_at: datetime) -> bool:
+        return False
+
+    state["otps"].mark_consumed = lose_claim
+    response = client.post(
+        "/api/v1/auth/verify-code",
+        json={**request, "code": code},
+    )
+
+    assert response.status_code == 400
+    assert state["users"].rows == {}
+
+
 def test_request_code_provider_failure_returns_503(client: TestClient, state) -> None:  # type: ignore[no-untyped-def]
     async def boom(message):  # type: ignore[no-untyped-def]
         raise RuntimeError("provider down")
@@ -386,6 +510,7 @@ def test_request_code_provider_failure_returns_503(client: TestClient, state) ->
     )
     assert resp.status_code == 503
     assert "couldn't send the email" in resp.json()["detail"]
+    assert state["otps"].rows == []
 
 
 # ---- /auth/me ------------------------------------------------------------

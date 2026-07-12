@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.application.dto.auth_dto import (
@@ -45,6 +47,7 @@ from app.domain.exceptions import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
@@ -143,10 +146,10 @@ async def forgot_password(
     forgot_password_ip_limiter.check(f"forgot:{client_ip(request)}")
     try:
         await resets.request_reset(email=str(payload.email))
-    except EmailDeliveryError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
-        ) from exc
+    except EmailDeliveryError:
+        # Keep the response identical to an unknown account. Provider failures
+        # are observable through provider/Cloud Run logs, not this public route.
+        logger.exception("Password reset email delivery failed")
     return ForgotPasswordResponse()
 
 

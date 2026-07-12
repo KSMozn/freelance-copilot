@@ -36,10 +36,16 @@ class AdminAuthService:
         self._admins = admin_repo
         self._refresh = refresh_tokens
 
-    async def _issue_tokens(self, admin_id: UUID) -> AdminTokenPair:
+    async def _issue_tokens(
+        self, admin_id: UUID, *, expected_password_hash: str | None = None
+    ) -> AdminTokenPair:
         if self._refresh is None:
             raise RuntimeError("Refresh-token manager is not configured")
-        access, refresh = await self._refresh.issue(admin_id, "admin")
+        access, refresh = await self._refresh.issue(
+            admin_id,
+            "admin",
+            expected_password_hash=expected_password_hash,
+        )
         return AdminTokenPair(access_token=access, refresh_token=refresh)
 
     @staticmethod
@@ -66,7 +72,10 @@ class AdminAuthService:
             raise InvalidCredentialsError("Admin account is disabled")
         await self._admins.touch_last_login(admin.id, datetime.now(UTC))
         return AdminAuthResponse(
-            user=self._to_read(admin), tokens=await self._issue_tokens(admin.id)
+            user=self._to_read(admin),
+            tokens=await self._issue_tokens(
+                admin.id, expected_password_hash=admin.password_hash
+            ),
         )
 
     async def refresh(self, payload: AdminRefreshRequest) -> AdminTokenPair:

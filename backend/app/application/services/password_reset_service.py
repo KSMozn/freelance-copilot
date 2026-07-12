@@ -5,6 +5,14 @@ the store keeps a SHA-256 digest, so a leaked table row cannot be replayed as
 a link. A successful reset burns every outstanding link for the user and
 revokes all of their refresh-token sessions — the old credential and any
 stolen session die together.
+
+Issuance holds no database state across the provider call: the token row is
+committed in its own short transaction, the email round-trips with no
+connection or lock parked, and only then are strictly-older active links
+burned — a commutative step, so overlapping requests always leave the newest
+created-and-delivered link active regardless of completion order. A failed
+send deletes the undelivered row, keeping an older delivered link usable
+through a provider outage.
 """
 from __future__ import annotations
 
@@ -12,11 +20,11 @@ import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from app.application.services.refresh_token_manager import RefreshTokenManager
 from app.core.security import hash_password
 from app.domain.exceptions import EmailDeliveryError, PasswordResetInvalidError
 from app.domain.providers.email_provider import EmailMessage, EmailProvider
 from app.domain.repositories.password_reset_token_repository import (
+    PasswordResetCommitter,
     PasswordResetTokenRepository,
 )
 from app.domain.repositories.user_repository import UserRepository
@@ -39,7 +47,7 @@ class PasswordResetService:
         *,
         user_repo: UserRepository,
         reset_repo: PasswordResetTokenRepository,
-        refresh_tokens: RefreshTokenManager,
+        reset_committer: PasswordResetCommitter,
         email_provider: EmailProvider,
         app_name: str,
         frontend_base_url: str,
@@ -47,7 +55,7 @@ class PasswordResetService:
     ) -> None:
         self._users = user_repo
         self._resets = reset_repo
-        self._refresh = refresh_tokens
+        self._committer = reset_committer
         self._email = email_provider
         self._app_name = app_name
         self._frontend_base_url = frontend_base_url.rstrip("/")
@@ -66,9 +74,10 @@ class PasswordResetService:
 
         now = datetime.now(UTC)
         token = secrets.token_urlsafe(48)
-        # Only the newest link should work: burn earlier outstanding ones.
-        await self._resets.invalidate_active_for_user(user.id, now)
-        await self._resets.create(
+        # Committed before the provider call — no transaction, connection, or
+        # advisory lock survives into the email round-trip (which can block
+        # for the provider's full timeout).
+        record = await self._resets.create(
             user_id=user.id,
             token_hash=_hash_token(token),
             expires_at=now + timedelta(minutes=self._expires_minutes),
@@ -76,7 +85,7 @@ class PasswordResetService:
 
         context = {
             "app_name": self._app_name,
-            "reset_url": f"{self._frontend_base_url}/reset-password?token={token}",
+            "reset_url": f"{self._frontend_base_url}/reset-password#token={token}",
             "expires_in_minutes": self._expires_minutes,
         }
         try:
@@ -90,9 +99,17 @@ class PasswordResetService:
                 )
             )
         except Exception as exc:
+            # The link never reached an inbox: remove it so an older delivered
+            # link keeps working through a provider outage.
+            await self._resets.delete(record.id)
             raise EmailDeliveryError(
                 "We couldn't send the email right now. Please try again shortly."
             ) from exc
+        # Only the newest delivered link should work. Burning strictly-older
+        # actives after delivery is commutative across overlapping requests:
+        # this token can only be burned by a yet-newer one, so out-of-order
+        # completion never kills every delivered link.
+        await self._resets.invalidate_older_active_for_user(user.id, record.id, now)
 
     async def reset_password(self, *, token: str, new_password: str) -> None:
         """Consume a reset token: set the new password and kill old sessions.
@@ -109,19 +126,14 @@ class PasswordResetService:
         ):
             raise PasswordResetInvalidError(_INVALID_MESSAGE)
 
-        user = await self._users.get_by_id(record.user_id)
-        if user is None or not user.is_active:
+        consumed = await self._committer.consume(
+            token_id=record.id,
+            user_id=record.user_id,
+            password_hash=hash_password(new_password),
+            at=now,
+        )
+        if not consumed:
             raise PasswordResetInvalidError(_INVALID_MESSAGE)
-
-        await self._users.set_password(user.id, hash_password(new_password))
-        # Completing a reset proves control of the inbox — same signal the
-        # OTP flow uses to verify an email.
-        if user.email_verified_at is None:
-            await self._users.mark_email_verified(user.id, now)
-        # Burn this link and any other outstanding one.
-        await self._resets.invalidate_active_for_user(user.id, now)
-        # Old refresh tokens must not outlive the old password.
-        await self._refresh.revoke_all_for(user.id, "user")
 
 
 def _as_aware(dt: datetime) -> datetime:

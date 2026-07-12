@@ -189,16 +189,28 @@ async def test_password_reset_email_is_captured_in_dev_outbox(outbox: Path) -> N
             return user if email == user.email else None
 
     class _MinimalResetRepo:
-        async def create(self, **kwargs: object) -> None:
+        async def create(self, **kwargs: object):  # type: ignore[no-untyped-def]
+            from app.domain.entities.password_reset_token import PasswordResetToken
+
+            return PasswordResetToken(
+                id=uuid4(),
+                user_id=user.id,
+                token_hash=str(kwargs["token_hash"]),
+                expires_at=kwargs["expires_at"],  # type: ignore[arg-type]
+                used_at=None,
+                created_at=now,
+            )
+
+        async def delete(self, *args: object) -> None:
             return None
 
-        async def invalidate_active_for_user(self, *args: object) -> None:
+        async def invalidate_older_active_for_user(self, *args: object) -> None:
             return None
 
     service = PasswordResetService(
         user_repo=_MinimalUserRepo(),  # type: ignore[arg-type]
         reset_repo=_MinimalResetRepo(),  # type: ignore[arg-type]
-        refresh_tokens=None,  # type: ignore[arg-type]  # not reached by request_reset
+        reset_committer=None,  # type: ignore[arg-type]  # not reached by request_reset
         email_provider=MockEmailProvider(outbox_path=outbox),
         app_name="Careero",
         frontend_base_url="http://localhost:5173",
@@ -209,6 +221,6 @@ async def test_password_reset_email_is_captured_in_dev_outbox(outbox: Path) -> N
     assert record["to"] == "captured.reset@example.com"
     assert record["tags"] == {"kind": "password_reset"}
     assert re.search(
-        r"http://localhost:5173/reset-password\?token=[A-Za-z0-9_-]+",
+        r"http://localhost:5173/reset-password#token=[A-Za-z0-9_-]+",
         str(record["text_body"]),
     )

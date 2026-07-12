@@ -272,10 +272,11 @@ def get_password_reset_service(
     settings: SettingsDep,
     email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
 ) -> PasswordResetService:
+    reset_repo = SQLAlchemyPasswordResetTokenRepository(session)
     return PasswordResetService(
         user_repo=SQLAlchemyUserRepository(session),
-        reset_repo=SQLAlchemyPasswordResetTokenRepository(session),
-        refresh_tokens=RefreshTokenManager(SQLAlchemyRefreshTokenRepository(session)),
+        reset_repo=reset_repo,
+        reset_committer=reset_repo,
         email_provider=email_provider,
         app_name=settings.app_name,
         frontend_base_url=settings.frontend_base_url,

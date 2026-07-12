@@ -116,9 +116,9 @@ def create_refresh_token(
     """Mint a refresh token.
 
     When `jti`/`family_id` are supplied they are embedded so the token can be
-    tracked server-side for rotation + reuse detection. Omitting them (e.g.
-    admin impersonation) yields an untracked token that the refresh flow
-    treats as legacy and bootstraps into a tracked family on first use.
+    tracked server-side for rotation + reuse detection. Refresh endpoints
+    reject tokens without both claims; omission is only useful in tests that
+    exercise token-type or principal-type validation.
     """
     settings = get_settings()
     extra: dict[str, Any] = {}

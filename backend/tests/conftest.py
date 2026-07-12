@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-os.environ.setdefault("SECRET_KEY", "test-secret-key-please-change")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-at-least-32-characters")
 os.environ.setdefault("POSTGRES_USER", "upwork")
 os.environ.setdefault("POSTGRES_PASSWORD", "upwork")
 os.environ.setdefault("POSTGRES_DB", "upwork_intel_test")

@@ -70,7 +70,7 @@ class EmailOtpService:
         code_hash = _OTP_HASH_CTX.hash(code)
         expires_at = now + timedelta(minutes=self._expires_minutes)
 
-        await self._otps.create(
+        otp = await self._otps.create(
             email=email,
             code_hash=code_hash,
             purpose=purpose,
@@ -100,6 +100,7 @@ class EmailOtpService:
                 )
             )
         except Exception as exc:
+            await self._otps.delete(otp.id)
             # A provider outage must be a visible, actionable error — not an
             # opaque 500 — and it must not differ between mock and real
             # providers (same flow, different adapter).
@@ -122,7 +123,7 @@ class EmailOtpService:
         code = code.strip()
 
         otp = await self._otps.get_active(email=email, purpose=purpose)
-        if otp is None:
+        if otp is None or otp.consumed_at is not None:
             raise OtpInvalidError("No active code for this email. Request a new one.")
 
         now = datetime.now(UTC)
@@ -139,7 +140,8 @@ class EmailOtpService:
             await self._otps.increment_attempts(otp.id)
             raise OtpInvalidError("Incorrect code.")
 
-        await self._otps.mark_consumed(otp.id, now)
+        if not await self._otps.mark_consumed(otp.id, now):
+            raise OtpInvalidError("No active code for this email. Request a new one.")
 
 
 def _as_aware(dt: datetime) -> datetime:
