@@ -8,19 +8,19 @@ contribution into paperwork. Read it once, keep it open in a tab.
 
 ## 1. Project Overview
 
-Careero (formerly Freelance Copilot) is a student-only CV builder.
+Careero is a student-only CV builder.
 
-| Layer | Stack |
-|---|---|
-| Frontend | React 18, Vite, TypeScript, Tailwind, react-query |
-| Backend | Python 3.13, FastAPI, SQLAlchemy async, Pydantic v2 |
-| Database | PostgreSQL 15 (+ pgvector) |
-| PDF | WeasyPrint (Jinja2 templates) |
-| DOCX | python-docx (programmatic) |
-| Auth | JWT, OTP email login |
-| AI | OpenAI-compatible API (Groq in prod) |
-| Email | Resend (`noreply@personaarmory.com`) |
-| Hosting | Google Cloud Run + Cloud SQL + GCS, Cloudflare DNS |
+| Layer    | Stack                                               |
+| -------- | --------------------------------------------------- |
+| Frontend | React 18, Vite, TypeScript, Tailwind, react-query   |
+| Backend  | Python 3.13, FastAPI, SQLAlchemy async, Pydantic v2 |
+| Database | PostgreSQL 16 (+ pgvector)                          |
+| PDF      | WeasyPrint (Jinja2 templates)                       |
+| DOCX     | python-docx (programmatic)                          |
+| Auth     | JWT, OTP email login                                |
+| AI       | OpenAI-compatible API (Groq in prod)                |
+| Email    | Resend (`noreply@personaarmory.com`)                |
+| Hosting  | Google Cloud Run + Cloud SQL + GCS, Cloudflare DNS  |
 
 Current scope is **student-only**. Every product decision goes through the student CV
 journey: register → wizard → preview → download.
@@ -35,9 +35,10 @@ journey: register → wizard → preview → download.
 - **External contributors:** open a fork PR from `main`, follow this document.
 
 Every contributor should have:
+
 - A GitHub account with 2FA enabled.
 - Docker Desktop (or Colima) installed.
-- Node 20+, Python 3.13+.
+- Node 22+, Python 3.13+.
 - Familiarity with the CV creation journey before touching anything on it.
 
 ---
@@ -46,41 +47,42 @@ Every contributor should have:
 
 ```bash
 git clone <repo-url>
-cd freelance-copilot
+cd <repo-dir>
 
 # 1. Environment
-cp backend/.env.example backend/.env
+cp .env.example .env
 cp frontend/.env.example frontend/.env       # only if present
-# Ask Khaled for OPENAI_API_KEY, RESEND_API_KEY, JWT_SECRET_KEY.
+# Mock AI, embeddings, and email work offline by default. Real provider keys
+# are needed only when explicitly testing a provider integration.
 
 # 2. Start the stack
 docker compose up -d
 
-# 3. Apply migrations
+# 3. Apply migrations (optional — the backend container already runs
+#    `alembic upgrade head` on start; rerun manually only if you need to)
 docker compose exec backend alembic upgrade head
 
-# 4. Seed a local admin user
-docker compose exec \
-  -e ADMIN_EMAIL=you@example.com \
-  -e ADMIN_PASSWORD='strong-password' \
-  -e ADMIN_FULL_NAME='Your Name' \
-  backend python -m app.scripts.create_admin
+# 4. Seed a local admin user (prompts securely for password + optional name)
+make create-admin email=you@example.com
 
 # 5. Verify
 open http://localhost:5173             # student surface
-open "http://localhost:5173/?surface=admin"   # admin surface
+open "http://localhost:5173/login?surface=admin"   # admin surface
 ```
 
-Health check: `curl http://localhost:8000/openapi.json | jq '.info.title'`.
+Admin passwords must contain at least 12 characters. Resetting an existing
+admin password also revokes that admin's active refresh sessions.
+
+Health check: `curl http://localhost:8000/api/v1/health`.
 
 ### Environment Variables
 
-Never commit real secrets. `backend/.env.example` lists every variable the backend reads,
-with placeholder values. Add new variables there whenever the code starts consuming a
-new key, in the same PR. Real values live in Secret Manager (prod) and `backend/.env`
-(local, git-ignored).
+Never commit real secrets. The root `.env.example` configures Compose and mirrors every
+backend setting; `backend/.env.example` supports running the backend directly. Keep both
+in sync with `backend/app/core/config.py`. Real values live in Secret Manager (prod) and
+the root `.env` (local, git-ignored).
 
-Sensitive keys — `OPENAI_API_KEY`, `JWT_SECRET_KEY`, `DB_PASSWORD`, `RESEND_API_KEY` —
+Sensitive keys — `OPENAI_API_KEY`, `SECRET_KEY`, `POSTGRES_PASSWORD`, `RESEND_API_KEY` —
 are fetched from GCP Secret Manager at runtime in prod. Rotating them is a maintainer
 task; do not put real values in commits, in issues, or in any chat.
 
@@ -91,12 +93,12 @@ task; do not put real values in commits, in issues, or in any chat.
 We follow **GitHub Flow**. `main` is always production-ready. Branch off `main`, ship a
 PR, delete the branch after merge.
 
-| Prefix | Purpose | Example |
-|---|---|---|
-| `feature/` | New user-facing capability | `feature/internship-section` |
-| `fix/` | Bug fix (non-urgent) | `fix/docx-hyperlink-color` |
-| `chore/` | Refactor, docs, tooling, deps | `chore/upgrade-vite-6` |
-| `hotfix/` | Urgent production bug | `hotfix/login-500` |
+| Prefix     | Purpose                       | Example                      |
+| ---------- | ----------------------------- | ---------------------------- |
+| `feature/` | New user-facing capability    | `feature/internship-section` |
+| `fix/`     | Bug fix (non-urgent)          | `fix/docx-hyperlink-color`   |
+| `chore/`   | Refactor, docs, tooling, deps | `chore/upgrade-vite-6`       |
+| `hotfix/`  | Urgent production bug         | `hotfix/login-500`           |
 
 - Keep names lowercase, kebab-case, under ~50 characters.
 - One branch = one focused change.
@@ -198,7 +200,8 @@ For any PR that changes what a user sees:
   users table, activity kinds, email templates).
 
 If the change reworks a wizard step, include a note in the PR on how the new step
-integrates with the auto-mark-done logic in `StudentWizard.tsx`.
+integrates with the auto-mark-done logic in
+`frontend/src/features/student-wizard/StudentWizardPage.tsx`.
 
 ---
 
@@ -207,9 +210,10 @@ integrates with the auto-mark-done logic in `StudentWizard.tsx`.
 Every PR runs through this before requesting review:
 
 - [ ] `docker compose up -d` and the app boots without errors.
-- [ ] `npx tsc --noEmit` in `frontend/` passes.
-- [ ] `pytest` in the backend container passes for touched modules.
+- [ ] `make lint` passes (Ruff, mypy, Prettier check, ESLint, TypeScript, marketing syntax).
+- [ ] `make backend-test` passes.
 - [ ] `npm run build` in `frontend/` succeeds (catches Vite issues type-check misses).
+- [ ] `npm run build` in `marketing/` succeeds when marketing or shared release config changes.
 - [ ] CV creation still works (register a fresh student, hit each step of the wizard).
 - [ ] CV editing still works (open an existing entry, edit, save, verify persisted).
 - [ ] PDF download works and the file opens.
@@ -242,6 +246,7 @@ A PR is done when:
 - [ ] The issue is closed by the PR (`Closes #N`) or explicitly marked as follow-up.
 
 Definition of Done for a **feature** additionally requires:
+
 - The feature works for a partial-profile student (empty states clean).
 - The feature has a mobile view.
 - If admin-facing metrics are relevant, the admin panel reflects them.
@@ -262,7 +267,7 @@ Definition of Done for a **feature** additionally requires:
 - **Never skip the migrate job** even if you think no schema changed — it's a no-op
   when there's nothing to do.
 - **Rollback anchors** are always the previous revision id (visible in `gcloud run
-  revisions list`). Note them in the PR description when the change is risky.
+revisions list`). Note them in the PR description when the change is risky.
 
 ---
 
@@ -379,8 +384,7 @@ Templates live at `backend/app/infrastructure/email/templates/*.html` + `.txt`.
 **Every email template change PR must:**
 
 - Render locally through `render(template_name, ctx)` and confirm zero unresolved
-  `{placeholder}` literals. Placeholder leaks in production are a common bug — the
-  smoke test in `verify` should catch them.
+  `{placeholder}` literals — placeholder leaks in production are a common bug.
 - Include screenshots of the rendered HTML in both Gmail and (if reachable) Outlook.
 - Use Outlook VML fallbacks for any CTA button (`<!--[if mso]><v:roundrect ...`).
 - Not use inline HTML comments that contain `{placeholder}` values — Gmail's parser

@@ -72,8 +72,3 @@ class AdminFeedbackListResponse(BaseModel):
     items: list[AdminFeedbackItem]
     total: int
     unresolved_count: int
-
-
-class FeedbackListResponse(BaseModel):
-    items: list[FeedbackRead]
-    total: int

@@ -1,4 +1,6 @@
+from collections.abc import Awaitable, Callable
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
@@ -22,7 +24,8 @@ router = APIRouter(prefix="/career-fitness", tags=["career-fitness"])
 async def get_career_fitness(
     user: CurrentUser,
     assemble: Annotated[
-        callable, Depends(get_career_fitness_assembler)
+        Callable[[UUID], Awaitable[CareerFitness]],
+        Depends(get_career_fitness_assembler),
     ],
 ) -> CareerFitnessRead:
     """Aggregated market signals + gaps + repo nudges for the current user.

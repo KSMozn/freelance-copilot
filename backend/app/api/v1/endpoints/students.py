@@ -32,6 +32,7 @@ from fastapi import (
     status,
 )
 
+from app.api.uploads import read_upload_limited
 from app.application.dto.feedback_dto import (
     FeedbackRead,
     GeneralFeedbackCreate,
@@ -162,7 +163,7 @@ def _profile_to_read(row: StudentProfile, *, photo_url: str | None) -> StudentPr
 def _entry_to_read(row: StudentProfileEntry) -> StudentEntryRead:
     return StudentEntryRead(
         id=row.id,
-        kind=row.kind,  # type: ignore[arg-type]
+        kind=row.kind,
         title=row.title,
         organization=row.organization,
         start_date=row.start_date,
@@ -234,12 +235,11 @@ async def upload_photo(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail=f"Unsupported photo type: {file.content_type}. Use JPEG, PNG, or WebP.",
         )
-    content = await file.read()
-    if len(content) > MAX_PHOTO_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Photo too large (max {MAX_PHOTO_BYTES // (1024 * 1024)} MB)",
-        )
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_PHOTO_BYTES,
+        detail=f"Photo too large (max {MAX_PHOTO_BYTES // (1024 * 1024)} MB)",
+    )
     profile, _ = await svc.attach_photo(
         user_id=user.id,
         filename=file.filename or "photo",
@@ -306,7 +306,10 @@ async def delete_entry(
 
 
 @router.post("/coach/email", response_model=EmailCoachResponse)
-async def coach_email(payload: EmailCoachRequest) -> EmailCoachResponse:
+async def coach_email(user: CurrentUser, payload: EmailCoachRequest) -> EmailCoachResponse:
+    # Gated like every other /students route — the wizard is the only
+    # caller and always sends a token. (This was the lone unauthenticated
+    # /students endpoint; rule-based, but no reason to serve it anonymously.)
     return StudentCoachService.check_email(payload)
 
 
@@ -321,12 +324,11 @@ async def coach_photo(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail=f"Unsupported photo type: {file.content_type}.",
         )
-    content = await file.read()
-    if len(content) > MAX_PHOTO_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Photo too large.",
-        )
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_PHOTO_BYTES,
+        detail="Photo too large.",
+    )
     coach = StudentCoachService(ai)
     start = time.perf_counter()
     try:

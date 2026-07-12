@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     confidence,
     content_items,
     cv_uploads,
+    dev,
     evidence,
     health,
     jobs,
@@ -35,6 +36,9 @@ from app.api.v1.endpoints import (
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
+# Dev-only mailbox — the endpoint itself 404s outside development+mock,
+# so registering it unconditionally is safe (and testable).
+api_router.include_router(dev.router)
 api_router.include_router(jobs.router)
 api_router.include_router(analyses.router)
 api_router.include_router(portfolio.router)

@@ -1,4 +1,4 @@
-.PHONY: help up down logs build migrate revision seed backend-dev frontend-dev backend-test fmt lint
+.PHONY: help up down logs build migrate revision seed create-admin backend-dev frontend-dev backend-test fmt lint
 
 help:
 	@echo "Targets:"
@@ -7,7 +7,8 @@ help:
 	@echo "  logs           tail compose logs"
 	@echo "  migrate        run alembic upgrade head inside backend container"
 	@echo "  revision m=... create a new alembic revision (autogenerate)"
-	@echo "  seed           insert a demo user"
+	@echo "  seed           seed the DORMANT professional demo (job/portfolios/resumes)"
+	@echo "  create-admin   create/reset an admin user (email=...; prompts for password/name)"
 	@echo "  backend-dev    run backend locally with reload (no docker)"
 	@echo "  frontend-dev   run vite dev server locally (no docker)"
 	@echo "  backend-test   pytest inside backend container"
@@ -33,22 +34,32 @@ revision:
 	@test -n "$(m)" || (echo "usage: make revision m=\"add foo\"" && exit 1)
 	docker compose exec backend alembic revision --autogenerate -m "$(m)"
 
+# Seeds the DORMANT professional surface's demo data (job, portfolios,
+# resumes, applications). For the live product, use create-admin instead.
 seed:
 	docker compose exec backend python -m app.scripts.seed
 
+# Create (or reset the password of) a PersonaArmory admin user. Idempotent.
+create-admin:
+	@test -n "$(email)" || (echo 'usage: make create-admin email=you@example.com' && exit 1)
+	docker compose exec -e ADMIN_EMAIL=$(email) backend python -m app.scripts.create_admin
+
+# uv run syncs .venv from uv.lock on demand — no manual activation needed.
 backend-dev:
-	cd backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 frontend-dev:
 	cd frontend && npm run dev
 
 backend-test:
-	docker compose exec backend pytest
+	docker compose exec -e ENVIRONMENT=test backend pytest
 
 fmt:
-	cd backend && ruff format . && ruff check --fix .
+	cd backend && uv run --extra dev ruff format . && uv run --extra dev ruff check --fix .
 	cd frontend && npm run format
 
 lint:
-	cd backend && ruff check .
-	cd frontend && npm run lint && npm run typecheck
+	cd backend && uv run --extra dev ruff check .
+	cd backend && uv run --extra dev mypy app
+	cd frontend && npm run format:check && npm run lint && npm run typecheck
+	cd marketing && npm run lint

@@ -13,7 +13,7 @@ from app.infrastructure.db.base import Base
 # lineage (reuse detection). `principal_type` mirrors the JWT `pt` claim so a
 # user and admin token can never collide even if ids overlap.
 PRINCIPAL_TYPES = ("user", "admin")
-REVOKE_REASONS = ("rotated", "logout", "reuse_detected")
+REVOKE_REASONS = ("rotated", "logout", "reuse_detected", "password_reset")
 
 
 class RefreshToken(Base):

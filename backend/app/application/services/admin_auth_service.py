@@ -18,9 +18,10 @@ from app.application.dto.admin_auth_dto import (
     AdminUserRead,
 )
 from app.application.services.refresh_token_manager import RefreshTokenManager
-from app.core.security import decode_token, verify_password
+from app.core.security import decode_token, dummy_verify_password, verify_password
 from app.domain.entities.admin_user import AdminUser
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
+from app.domain.services.email_normalization import normalize_email
 from app.infrastructure.db.repositories.sqlalchemy_admin_user_repository import (
     SQLAlchemyAdminUserRepository,
 )
@@ -35,10 +36,16 @@ class AdminAuthService:
         self._admins = admin_repo
         self._refresh = refresh_tokens
 
-    async def _issue_tokens(self, admin_id: UUID) -> AdminTokenPair:
+    async def _issue_tokens(
+        self, admin_id: UUID, *, expected_password_hash: str | None = None
+    ) -> AdminTokenPair:
         if self._refresh is None:
             raise RuntimeError("Refresh-token manager is not configured")
-        access, refresh = await self._refresh.issue(admin_id, "admin")
+        access, refresh = await self._refresh.issue(
+            admin_id,
+            "admin",
+            expected_password_hash=expected_password_hash,
+        )
         return AdminTokenPair(access_token=access, refresh_token=refresh)
 
     @staticmethod
@@ -53,14 +60,22 @@ class AdminAuthService:
         )
 
     async def login(self, payload: AdminLoginRequest) -> AdminAuthResponse:
-        admin = await self._admins.get_by_email(str(payload.email))
-        if admin is None or not verify_password(payload.password, admin.password_hash):
+        admin = await self._admins.get_by_email(normalize_email(str(payload.email)))
+        if admin is None:
+            # Burn a bcrypt check anyway so an unknown email costs the same
+            # as a wrong password — timing can't enumerate admin accounts.
+            dummy_verify_password()
+            raise InvalidCredentialsError("Invalid email or password")
+        if not verify_password(payload.password, admin.password_hash):
             raise InvalidCredentialsError("Invalid email or password")
         if not admin.is_active:
             raise InvalidCredentialsError("Admin account is disabled")
         await self._admins.touch_last_login(admin.id, datetime.now(UTC))
         return AdminAuthResponse(
-            user=self._to_read(admin), tokens=await self._issue_tokens(admin.id)
+            user=self._to_read(admin),
+            tokens=await self._issue_tokens(
+                admin.id, expected_password_hash=admin.password_hash
+            ),
         )
 
     async def refresh(self, payload: AdminRefreshRequest) -> AdminTokenPair:

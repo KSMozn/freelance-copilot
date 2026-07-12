@@ -1,5 +1,16 @@
 # Architecture
 
+> **Which surface is live (2026-07).** The professional-surface sections
+> below — Phases A–H (knowledge graph, personas, source ingestion, match
+> reports, outputs, market signals, tracker) and the Phase 2–7 subsystems —
+> describe the **dormant** professional Career-OS. Its backend endpoints
+> still run and this documentation is kept accurate as historical/dormant
+> reference, but the frontend routes are not registered
+> (`frontend/src/features/professional/` is quarantined). The **live**
+> product is Careero — the Phase-K student surface — plus the PersonaArmory
+> admin console (Phases L–M) and the Phase-P auth hardening, documented at
+> the end of this file. Frontend architecture lives in `frontend/CLAUDE.md`.
+
 ## Principles
 
 - **Clean Architecture** — dependencies point inward. The Domain layer knows
@@ -67,14 +78,40 @@ JWT (HS256 in dev, RS256-ready in `core/security.py`). Two parallel sign-in
 paths share the same token model:
 
 **Password (legacy):**
+
 - `POST /api/v1/auth/register` — create user with email + password, return access + refresh tokens.
 - `POST /api/v1/auth/login` — verify credentials, return tokens.
 
 **Email OTP (Phase A — primary path going forward):**
+
 - `POST /api/v1/auth/request-code` — issue a 6-digit code, email it via the configured provider. Rate-limited (3 / 15 min / email).
 - `POST /api/v1/auth/verify-code` — verify the code. If the email isn't yet registered, the account is created on the fly (no password). Marks `email_verified_at` and returns tokens.
 
+**Forgot / reset password:**
+
+- `POST /api/v1/auth/forgot-password` — issue a single-use reset link if the
+  account exists; the response is the same generic success either way (no
+  account enumeration), including when email delivery fails. Rate-limited
+  per-email (3 / 15 min) + per-IP. The raw token is carried in a URL fragment,
+  never the query string, so it does not enter frontend/nginx access logs; the
+  SPA consumes and removes the fragment through React Router before rendering
+  the form.
+- `POST /api/v1/auth/reset-password` — consume the token: set the new
+  password (bcrypt), mark the email verified (inbox control proven), burn all
+  outstanding links, and revoke **every** refresh-token session for the user
+  (`revoked_reason=password_reset`). OTP-only accounts use this same flow to
+  set their first password.
+
+Reset tokens are `secrets.token_urlsafe(48)`; only the SHA-256 digest is
+stored (`password_reset_tokens`, migration `0044`) — high-entropy tokens make
+an unsalted deterministic digest safe, and it allows lookup-by-hash. Expiry
+defaults to 30 min (`PASSWORD_RESET_EXPIRES_MINUTES`).
+`PasswordResetService` (`application/services/password_reset_service.py`)
+depends on the domain repository protocols + `EmailProvider`, wired in
+`core/deps.py`.
+
 **Shared:**
+
 - `POST /api/v1/auth/refresh` — rotate access token from refresh token.
 - `GET  /api/v1/auth/me` — current user (includes `email_verified_at`, `last_login_at`).
 
@@ -97,19 +134,30 @@ class EmailProvider(Protocol):
 ```
 
 Implementations in `infrastructure/email/`:
+
 - `MockEmailProvider` (dev default) — writes outgoing messages to `var/dev-emails.jsonl` and logs the OTP code. Zero network.
 - `ResendEmailProvider` — calls the Resend transactional email API. Recommended prod default.
 
 Templates live next to the providers under `infrastructure/email/templates/`
-(`otp_login.html` + `otp_login.txt`) and render via `template_renderer.render()`
-— plain `str.format_map` for now, easy to swap for Jinja2 if templates grow.
+(`otp_login.html`/`.txt`, `password_reset.html`/`.txt`, …) and render via
+`template_renderer.render()` — plain `str.format_map` for now, easy to swap
+for Jinja2 if templates grow.
 
 Selection via `EMAIL_PROVIDER=mock|resend` in `app/core/config.py`, factory in
-`app/infrastructure/email/factory.py`.
+`app/infrastructure/email/factory.py`. Delivery failures surface as the domain
+`EmailDeliveryError` → HTTP 503 with a readable message (never a silent drop),
+identically for both providers.
+
+**Dev mailbox (live, development-only):** `GET /api/v1/dev/emails` returns the
+mock provider's captured emails (filter `?to=`, newest first). It 404s unless
+`ENVIRONMENT=development` **and** `EMAIL_PROVIDER=mock`; staging/production
+additionally refuse to boot on the mock provider. The SPA's OTP screens show a
+dev-only "Fill the latest code" hint on top of it, and the Playwright suite
+reads the same mailbox from disk.
 
 ## Professional Knowledge Graph (Phase B)
 
-The graph holds the *facts* of a user's professional identity in a normalized
+The graph holds the _facts_ of a user's professional identity in a normalized
 shape that personas (Phase C) project lenses over. Tables and entities:
 
 - `skill_catalog` — global normalized skill master list (slug + name +
@@ -140,7 +188,7 @@ Services in `app/application/services/`:
 - **`PersonaProfileResolver`** (`persona_profile_resolver.py`) — produces
   the legacy `FreelancerProfile` dataclass shape from per-user
   `user_skills` + `skill_catalog`, so the scoring engine code stays
-  untouched but every user now drives scoring from *their own* graph.
+  untouched but every user now drives scoring from _their own_ graph.
   Falls back to `DEFAULT_FREELANCER_PROFILE` for users with an empty pot.
 
 The Phase B backfill migration (`0019_phase_b_backfill`) walks every existing
@@ -151,11 +199,12 @@ row per portfolio + per repository. Idempotent: safe to re-run.
 
 ## Personas as lenses (Phase C)
 
-A persona is a *lens* over the user's knowledge graph — not a copy of it.
+A persona is a _lens_ over the user's knowledge graph — not a copy of it.
 The same user_skills / experiences / projects feed every persona; what
 changes is how they're weighted, ordered, framed, and surfaced.
 
 Tables:
+
 - `persona_archetypes` — system-seeded templates (11 today: IC, Senior
   Engineer, Tech Lead, Staff, Principal, Eng Manager, Director, AI Engineer,
   Solutions Architect, Consultant, Freelancer). Immutable from user CRUD.
@@ -166,6 +215,7 @@ Tables:
   Exactly one `is_default` per user, enforced by a partial unique index.
 
 Services:
+
 - **`PersonaService`** (`persona_service.py`) — CRUD + lifecycle. Notable
   methods: `instantiate_from_archetype` (auto-uniques the name across the
   user's personas), `ensure_primary` (idempotent default-persona creation,
@@ -179,6 +229,7 @@ Services:
   unchanged.
 
 Wiring:
+
 - `get_scoring_service` and `get_portfolio_matching_service` in
   `core/deps.py` are now async — they await
   `PersonaProfileResolver.load_for_user(user_id)` and pass the resulting
@@ -191,6 +242,7 @@ Wiring:
   archetype) before they hit the dashboard.
 
 API surface (`/api/v1/personas`):
+
 - `GET /personas/archetypes` — list the 11 seeded archetypes.
 - `GET /personas` — list the current user's personas.
 - `GET /personas/current` — the user's default persona (idempotent — creates
@@ -204,6 +256,7 @@ API surface (`/api/v1/personas`):
   auto-promotes another to default if the deleted one was default.
 
 Frontend:
+
 - `PersonaSwitcher` in the topbar — dropdown with the active persona,
   switch list, "+ New persona", "Manage personas." Switching calls
   `/personas/{id}/set-default` so the choice persists across reloads.
@@ -274,6 +327,7 @@ CRUD-only surfaces:
   signals.
 
 API surface (all under `/api/v1`):
+
 - `GET /cv-uploads`, `POST /cv-uploads` (multipart), `POST /cv-uploads/paste`.
 - `GET /linkedin`, `POST /linkedin/import` (multipart PDF).
 - `GET /certificates`, `POST /certificates`, `PATCH /certificates/{id}`,
@@ -282,6 +336,7 @@ API surface (all under `/api/v1`):
   `DELETE /content-items/{id}`.
 
 Frontend:
+
 - `/sources` page — unified entry point for all four ingest paths,
   card-per-source layout, paste-or-upload toggle for CVs.
 - Onboarding "Upload CV" card now routes to `/sources` (the placeholder
@@ -316,18 +371,21 @@ Callers ask for `force=true` to recompute; otherwise the cached row is
 returned.
 
 Overall score recomposes when leadership / soft are scored:
+
 - No extras → `0.50·tech + 0.30·arch + 0.20·domain`
 - With extras → `0.45·tech + 0.25·arch + 0.15·domain + 0.15/N` per
   scored extra (so leadership-heavy roles can lift Eng Manager scores
   without inflating IC scores).
 
 API (`/api/v1`):
+
 - `POST /jobs/{id}/match-report?persona_id=…&force=…` — build-or-get.
   Default persona is used when `persona_id` is omitted.
 - `GET /jobs/{id}/match-reports` — list all persona-keyed reports for a
   job (used in Phase F's parallel-analyses tab strip).
 
 Frontend:
+
 - `MatchReportCard` on the Job Detail page reads the active persona from
   the Zustand store, calls the build-or-get endpoint, and renders the
   overall score + dimension bars + recommendation cards. "Re-run" sends
@@ -360,15 +418,15 @@ generate(kind, job_id?, persona_id?)
 Per-kind prompt rules (word budget + structure) live in
 `output_prompts.py`:
 
-| Kind                 | Budget    | Structure                                           |
-|----------------------|-----------|-----------------------------------------------------|
-| `upwork_proposal`    | 120-180w  | concrete proof first; close with call invite        |
-| `cover_letter`       | 200-300w  | 3 paragraphs; optional bullet list                  |
-| `recruiter_reply`    | 60-100w   | warm, brief, next-step ask                          |
-| `linkedin_message`   | 40-70w    | hook + 1 relevance sentence + CTA                   |
-| `consulting_proposal`| 400-600w  | ## Understanding / ## Approach / ## Why me / etc.   |
-| `screening_answer`   | 100-160w  | direct answer + 2 proofs + 30-day plan              |
-| `resume_tailored`    | 8-12 bul  | `### Role @ Company` headers + bullets              |
+| Kind                  | Budget   | Structure                                         |
+| --------------------- | -------- | ------------------------------------------------- |
+| `upwork_proposal`     | 120-180w | concrete proof first; close with call invite      |
+| `cover_letter`        | 200-300w | 3 paragraphs; optional bullet list                |
+| `recruiter_reply`     | 60-100w  | warm, brief, next-step ask                        |
+| `linkedin_message`    | 40-70w   | hook + 1 relevance sentence + CTA                 |
+| `consulting_proposal` | 400-600w | ## Understanding / ## Approach / ## Why me / etc. |
+| `screening_answer`    | 100-160w | direct answer + 2 proofs + 30-day plan            |
+| `resume_tailored`     | 8-12 bul | `### Role @ Company` headers + bullets            |
 
 The mock `AIProvider` recognises `OUTPUT_MARKER` and routes to
 `_build_output_payload`, which returns deterministic per-kind canned
@@ -381,30 +439,33 @@ Deterministic substring matching (no LLM, no embeddings). For each graph
 node in the supplied `GraphSnapshot` (experiences, projects, top skills)
 the service searches for word-boundary occurrences of the node's name in
 `content_markdown`. Each hit produces a `Citation` row with:
-  - `claim`: the matched phrase
-  - `evidence_type`: one of `experience`, `project`, `repository`,
-    `certificate`, `content_item`, `skill`
-  - `evidence_id`: the originating graph row's UUID
-  - `evidence_label`: human-readable (e.g. "Senior Backend Engineer @ Acme")
-  - `snippet`: ±60-char excerpt for the UI to display in a tooltip
+
+- `claim`: the matched phrase
+- `evidence_type`: one of `experience`, `project`, `repository`,
+  `certificate`, `content_item`, `skill`
+- `evidence_id`: the originating graph row's UUID
+- `evidence_label`: human-readable (e.g. "Senior Backend Engineer @ Acme")
+- `snippet`: ±60-char excerpt for the UI to display in a tooltip
 
 Capped at 20 citations per output. Phase G can layer an LLM-backed
 grounding pass on top when market signals + persona context are
 available to prioritise.
 
 API (`/api/v1`):
+
 - `POST /outputs` — generate. Body: `{kind, job_id?, persona_id?}`.
 - `GET /outputs?job_id=…&kind=…` — list (per-user, optionally filtered).
 - `GET /outputs/{id}` — single read.
 - `DELETE /outputs/{id}` — soft scoping by user_id.
 
 Frontend:
+
 - `OutputsCard` on Job Detail — 7 one-click "Generate" buttons (per kind)
-  + collapsible list of past drafts for this job. Each draft expands to
-  show the markdown body, a chip row of evidence citations
-  (per-evidence-type icon; hover for the snippet), and Copy / Delete
-  actions. `activePersonaId` flows through to the generator — switching
-  personas re-tones future outputs without invalidating past ones.
+  - collapsible list of past drafts for this job. Each draft expands to
+    show the markdown body, a chip row of evidence citations
+    (per-evidence-type icon; hover for the snippet), and Copy / Delete
+    actions. `activePersonaId` flows through to the generator — switching
+    personas re-tones future outputs without invalidating past ones.
 
 ## Market signals + Career Fitness (Phase G)
 
@@ -414,6 +475,7 @@ tables** — everything is derived on demand from existing rows, so the
 dashboard stays as fresh as the underlying data.
 
 `MarketSignalService` (pure):
+
 - `skill_demand` — every skill cited across the user's `job_analyses`,
   weighted required (1.0) vs preferred (0.5).
 - `domain_demand` — count per `business_domain`.
@@ -425,6 +487,7 @@ dashboard stays as fresh as the underlying data.
   across multiple `match_reports`.
 
 `CareerFitnessService` (composes signals + user state):
+
 - `market_skills` — join market demand with the user's `user_skills`
   pot to mark each skill "you have at proficiency N" vs "missing."
 - `top_gaps` — skills where the user lacks proficiency ≥ 3. Severity
@@ -439,6 +502,7 @@ API: `GET /career-fitness` returns the whole composed payload in one
 query.
 
 Frontend:
+
 - `/career-fitness` route with seven cards: Top gaps · Market demand ·
   Application feedback (positive/negative split) · Recurring critical
   gaps · Business domain demand · Repo README suggestions. One HTTP
@@ -459,15 +523,17 @@ denormalized with `user_id` for tenant-scoped queries:
   (pending → pass / fail / cancelled). Outcomes can be updated inline
   from the UI without opening an edit form.
 - `follow_up_reminders` — personal to-do list per application. Partial
-  unique index `(user_id, due_at) WHERE completed_at IS NULL` makes the
+  index `(user_id, due_at) WHERE completed_at IS NULL` makes the
   "open reminders for me" query a single index scan.
 
 Two new FK columns on `applications` close the loop with Phase F:
+
 - `resume_output_id` → `outputs.id` (SET NULL) — the exact resume sent.
 - `cover_letter_output_id` → `outputs.id` (SET NULL) — the exact cover
   letter sent.
 
 API (all under `/api/v1`):
+
 - Per-application:
   `GET /applications/{id}/activity` returns the full three-list bundle
   in one query.
@@ -478,6 +544,7 @@ API (all under `/api/v1`):
   user's applications, ordered by due date. Backs the dashboard widget.
 
 Frontend:
+
 - `ApplicationActivityCard` on the existing `/applications/{id}` page —
   three collapsible sections (reminders, interviews, interactions) each
   with an inline "Add" form and per-row actions. Overdue reminders get
@@ -491,7 +558,7 @@ A second, intentionally simpler product surface — picked at registration.
 The student picks "I'm a Student" on the Register screen; that writes
 `users.selected_persona_kind = 'student'` and routes the user to a
 dedicated wizard at `/student`. Everything else in this document
-describes the *professional* surface — students never see it.
+describes the _professional_ surface — students never see it.
 
 **Why this exists.** Most students don't have jobs to track, proposals
 to generate, or match reports to analyse. They want a guided way to build
@@ -501,18 +568,20 @@ the student surface is its own page, its own routes, and its own
 service.
 
 **Data.** Two tables, both keyed by user_id:
+
 - `student_profiles` — 1:1 with user; carries the wizard's
   Basics + Education + Photo + Summary + Links payload + wizard progress
   markers (`completed_steps` JSONB, `current_step`).
 - `student_profile_entries` — repeating items discriminated by enum
-  `student_entry_kind` (`course / project / volunteer / certificate /
-  skill / award / extracurricular / language`). Common columns + a
-  per-kind `details` JSONB; one table beats eight.
+  `student_entry_kind` (`course / project / internship / volunteer /
+certificate / skill / award / extracurricular / language`). Common
+  columns + a per-kind `details` JSONB; one table covers all nine kinds.
 
 The `uploaded_files` registry from Phase D backs the profile photo
 (`photo_file_id` FK, sha256 dedup).
 
 **Services.**
+
 - `StudentProfileService` — wizard CRUD + photo upload. Speaks
   SQLAlchemy directly (the surface is small enough that a separate
   repository layer is ceremony without benefit).
@@ -525,12 +594,14 @@ The `uploaded_files` registry from Phase D backs the profile photo
   - **Text rewrite**: LLM tightens summaries / project blurbs /
     volunteer descriptions. Never invents achievements, stays within
     ~15% of original length.
-- `StudentCvRenderer` — Jinja2 template (`classic.html`) for the HTML
-  preview (`/students/cv/preview`) and (via WeasyPrint) for the PDF
-  download (`/students/cv.pdf`). The HTML path always works; the PDF
-  path requires WeasyPrint's native libs and degrades to a clean 503
-  when they're missing. The backend `Dockerfile` installs them so
-  production images can render out of the box.
+- `StudentCvRenderer` — five Jinja2 templates (`classic`, `modern`,
+  `minimal`, `academic`, `creative`) for HTML preview
+  (`/students/cv/preview`) and, via WeasyPrint, PDF download
+  (`/students/cv.pdf`). `StudentCvDocxRenderer` produces editable Word
+  downloads (`/students/cv.docx`) with the same selected design. The HTML
+  path always works; the PDF path requires WeasyPrint's native libs and
+  degrades to a clean 503 when they're missing. The backend `Dockerfile`
+  installs them so production images can render out of the box.
 
 **Persona archetype.** Migration 0028 seeds a `student` row in
 `persona_archetypes` so the existing `PersonaService` can instantiate a
@@ -693,12 +764,187 @@ Analytics never joins back to mutable `jobs`/`proposals`/`resumes` rows —
 the Phase-6 snapshot is the source of truth. That's the same guarantee
 Phase 8's learning loop will lean on.
 
+## PersonaArmory Admin console (Phases L–M)
+
+The live operator surface, served from `admin.*` hosts by the same SPA
+build. Everything under `/api/v1/admin` is gated by `CurrentAdmin`.
+
+**Separate identity space.** `admin_users` (migration 0031) is fully
+independent from `users` — the same email can exist on both sides with
+independent passwords and lifecycles. JWTs carry a `pt`
+(principal-type) claim set in `core/security.py`; the two token
+families are mutually rejected: `AuthService.get_user_by_token` refuses
+`pt == "admin"` and `AdminAuthService.get_admin_by_token` refuses
+anything but `pt == "admin"`. `get_current_admin` in `core/deps.py` is
+the gate (it also 403s disabled admins). The old `users.is_superuser`
+gate (`require_superuser`) is legacy and no longer used by admin
+endpoints.
+
+**Admin auth (`admin_auth.py`, `/admin/auth`).** Password-only login —
+no OTP, no self-registration; accounts are seeded via the `create_admin`
+job. Login is the hardest-throttled surface (per-target-email +
+per-IP limiters), plus `refresh` (rotating, via the shared
+`RefreshTokenManager`), `logout` (revokes the token family), and `me`.
+
+**The `/admin` surface (`admin.py`).**
+
+- _Overview + activity_ — aggregated by `AdminService` from
+  `usage_events`, the append-only log every meaningful call emits
+  fire-and-forget through `usage_event_service.fire()` (a failed or slow
+  log write can never affect a user request). The overview derives a
+  funnel over the 13 wizard steps from `student_profiles.completed_steps`,
+  with the final "downloaded" stage counted from `cv.pdf` usage events.
+- _Users_ — list with rich filters, detail, read-only entries audit
+  (inspect AI-generated content without impersonating), direct
+  student-profile edits (same DTO + service the wizard uses),
+  enable / disable / reset-wizard / delete (email-confirmation
+  required), and per-user CV preview / PDF / DOCX rendering.
+- _Impersonation_ — `POST /users/{id}/impersonate` mints a short-lived,
+  **non-refreshable** `pt=user` access token carrying an `act` claim
+  naming the admin (`create_impersonation_token`). The frontend hands it
+  to the app surface via URL **fragment** (never sent to a server);
+  `/impersonate` decodes it, stores it, and wipes the fragment. The
+  session simply expires — there is no refresh token to revoke.
+- _CV templates_ — `cv_templates` (migration 0033) is a seeded registry
+  matching the Jinja files 1:1; admins toggle `is_visible` /
+  `sort_order` only.
+- _Emails_ — template list / per-user preview / send / bulk send with
+  dry-run; send history is read straight back out of
+  `admin.action(send_email)` usage events. `POST /admin/tasks/daily-report`
+  is a machine endpoint for Cloud Scheduler authenticated by an
+  `X-Task-Secret` header (constant-time compare; fail-closed outside
+  development).
+- _Feedback triage (Phase M)_ — inbox over `feedback_entries` with
+  resolve / unresolve; the resolving admin's identity lands in the row's
+  `meta` JSONB (no FK across identity spaces).
+- _LLM call / cost tracking_ — LLM emit sites stash
+  `prompt_tokens` / `completion_tokens` / `model` / `provider` /
+  `cost_usd` (priced by the static table in `llm_cost.py`) into
+  `usage_events.meta`; `/admin/llm-calls` and per-user `llm-spend`
+  drill into them.
+
+**Audit trail.** Every admin mutation fires an `admin.action` usage
+event. `user_id` stays NULL (an `admin_users.id` can't satisfy the FK to
+`users`); the actor's id + email travel in `meta` instead.
+
+**Layering note.** `AdminService` talks to the SQLAlchemy models and
+session directly — a documented deviation from the repository pattern.
+Every method is a query (aggregations, filtered lists, narrow
+mutations); pushing them behind repository protocols would add ceremony
+without a seam anyone swaps.
+
+## Auth hardening (Phase P)
+
+**Refresh-token rotation with family revocation.** The `refresh_tokens`
+table (migration 0043) stores one row per minted refresh token — the
+row id **is** the JWT `jti`, and `family_id` links a rotation chain.
+`RefreshTokenManager` (`application/services/refresh_token_manager.py`),
+shared by the user and admin auth services, rotates on every refresh:
+the presented token is revoked (`rotated`) and a successor is issued in
+the same family. Replaying an already-rotated token after a 15-second
+grace window (double-submit tolerance) is treated as theft — the whole
+family is revoked (`reuse_detected`) so both attacker and victim are
+forced to re-login. `POST /auth/logout` and `/admin/auth/logout` revoke
+the family. PostgreSQL transaction-scoped advisory locks serialize token
+issuance, rotation, logout, password reset, and admin credential reset per
+principal. Rotation revokes the old token and inserts its successor in one
+transaction; password reset atomically claims the link, changes the password,
+invalidates sibling links, and revokes every refresh session. Password login
+binds issuance to the exact credential hash it verified, so an old-password
+request racing a reset cannot mint a post-reset session. Refresh tokens
+without both tracking claims are rejected;
+sessions minted before migration 0043 therefore require a one-time
+re-login. Impersonation sessions are access-token-only and cannot refresh.
+Access tokens stay stateless and short-lived.
+
+**Frontend identity boundary.** Every API request captures the current auth
+token and a session generation. Login, logout, and impersonation advance the
+generation, abort in-flight Axios requests, and clear TanStack Query state;
+responses from an older generation are rejected before refresh retry or query
+callbacks can write cache data. In-app logout awaits registered profile
+autosaves before clearing credentials.
+
+**In-process rate limiting.** `core/rate_limit.py` is a dependency-free
+sliding-window counter applied to the auth surfaces only: user + admin
+login, refresh, OTP request, OTP verify. Two dimensions per endpoint:
+per-account/email (the primary control — not IP-spoofable) and per-IP
+(defense in depth; trusts the left-most `X-Forwarded-For` entry, which
+is documented as spoofable). Redis/slowapi is deliberately avoided —
+limiters are per-instance, and at Cloud Run scale the effective limit
+being `limit × instance_count` is an accepted trade-off. 429 responses
+carry `Retry-After`.
+
+**Login anti-enumeration.** Unknown-email logins burn a dummy bcrypt
+verification (`core/security.py:dummy_verify_password`) on both the user
+and admin paths, so a lookup miss costs the same as a wrong password and
+response timing can't reveal which emails are registered. OTP issuance
+and forgot-password are response-identical for known and unknown emails.
+**Deliberate exception:** `POST /auth/register` returns `409 Email
+already registered` — a documented UX trade-off (signup needs a clear
+signal); the endpoint is rate-limited per-IP, and the
+enumeration-sensitive flows above stay non-disclosing.
+
+**Email canonicalization.** All email columns (`users`, `admin_users`,
+`email_otp_codes`) are CITEXT, so matching and uniqueness are
+case-insensitive at the database level — mixed-case duplicates are
+impossible. On top of that, `domain/services/email_normalization.py`
+lowercases + trims at every service boundary (register, login, OTP,
+reset, admin login, `create_admin`) so stored values are canonical and
+in-memory comparisons agree with the DB semantics.
+
+**Admin lockout — known limitation (accepted, tracked).** Admin login is
+password-only (no MFA) and its brute-force control is the in-process
+limiter above: per-instance state that resets on restart/deploy and
+scales with instance count. The per-email dimension still makes online
+guessing impractical, and unknown-admin timing is equalized, but there
+is no durable per-account lockout. If this risk profile changes, the
+designed fix is: `failed_login_count` + `locked_until` columns on
+`admin_users` (one migration), incremented on failure and cleared on
+success, with exponential backoff and a `423`/generic-401 response —
+deliberately NOT auto-locking on IP signals alone (spoofable → DoS
+vector). Not implemented today: it adds an operator-lockout failure mode
+that currently outweighs the marginal gain over the existing limiter.
+
+**Transport & headers.** `main.py` adds a security-header middleware
+(`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: no-referrer`, CSP `frame-ancestors 'none'`, HSTS in
+deployed environments) and disables `/docs` + the OpenAPI schema in
+production. `config.py` validates at startup: wildcard CORS origins are
+refused in every environment (credentials are always allowed, so `*`
+would be a silent hole), and staging/production reject placeholder or
+short `SECRET_KEY`s. The three live multipart upload routes have a 6 MiB
+ASGI request ceiling applied before FastAPI parses the body; endpoint readers
+separately enforce the exact 5 MiB file limit. Exported student profile and
+entry links are reconstructed into canonical `http`/`https` URLs without
+userinfo, backslashes, encoded host separators, control characters, or
+WHATWG legacy numeric-host forms; both HTML and DOCX renderers suppress unsafe
+legacy values already present in stored JSON. HTML preview links open in a
+new top-level tab so the sandboxed iframe never navigates to an external
+origin; both student and admin preview sandboxes explicitly allow popups to
+escape while still blocking scripts/forms. Reset-link issuance parks no database state on the
+email provider: the token row is committed in its own short transaction, the
+email round-trips with no connection or advisory lock held, and delivery then
+burns strictly-older active links — a commutative step, so overlapping
+requests always leave the newest created-and-delivered link active regardless
+of completion order. Known delivery failures delete their undelivered token
+row, keeping any older delivered link usable through a provider outage.
+
 ## Testing strategy
 
-- **Unit** — services and domain logic with in-memory fake repositories.
-- **Integration** — pytest with a disposable Postgres (Docker) verifying
-  repositories and end-to-end API flows.
-- **E2E** — Playwright drives the frontend against a seeded backend.
+- **Unit (the automated suite)** — 402 tests (incl. the live-surface API suite: auth, students, admin), no database needed.
+  Services and domain logic run against the in-memory fakes in
+  `tests/factories.py`; API tests use FastAPI's `TestClient` with
+  `app.dependency_overrides` swapping in fakes and a stub current user.
+  Hardening has dedicated coverage (`test_refresh_rotation.py`,
+  `test_hardening.py`); architecture layering is enforced by
+  `test_architecture.py` (AST import walker + shrink-only allowlist).
+- **E2E (live surfaces)** — a committed 34-test Playwright suite
+  (`frontend/e2e/`) drives the real docker-compose stack with deterministic
+  mock AI/email providers: OTP auth, the full 13-step wizard, CV preview/DOCX export,
+  the admin console, the impersonation bridge, and professional-surface
+  dormancy. CI runs it on every PR (`e2e` job). Releases are additionally
+  gated by the release checklist in `README_DEVELOPMENT_PROCESS.md`,
+  plus a post-deploy smoke test in prod.
 
 ## Configuration
 

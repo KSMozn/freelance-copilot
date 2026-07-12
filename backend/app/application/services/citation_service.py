@@ -11,7 +11,6 @@ LLM-backed grounding pass on top when we have market signals to feed it.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -31,9 +30,6 @@ class GraphSnapshot:
     experiences: list[Experience]
     projects: list[Project]
     skills: list[tuple[UUID, str]]
-
-
-_WORD_BOUNDARY = re.compile(r"\b")
 
 
 class CitationService:

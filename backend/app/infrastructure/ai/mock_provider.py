@@ -1069,7 +1069,6 @@ def _build_output_payload(user_prompt: str) -> dict[str, Any]:
     """
     kind = _extract_kind(user_prompt)
     job_title = _extract_section(user_prompt, "Title:") or "the role"
-    # persona = _extract_section(user_prompt, "Persona:") or "Default"  # currently unused; tone comes from system prompt
     target_role = _extract_section(user_prompt, "Target role:") or "the role"
     top_skills = _extract_csv_section(user_prompt, "## Top skills")
     top_experiences = _extract_bullet_section(user_prompt, "## Recent experiences")

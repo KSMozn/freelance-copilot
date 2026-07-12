@@ -20,8 +20,15 @@ class FakeRefreshTokenRepo:
         self.rows: dict[UUID, RefreshTokenRecord] = {}
 
     async def create(
-        self, *, jti, family_id, principal_type, subject_id, expires_at
-    ) -> None:
+        self,
+        *,
+        jti,
+        family_id,
+        principal_type,
+        subject_id,
+        expires_at,
+        expected_password_hash=None,
+    ) -> bool:
         now = datetime.now(UTC)
         self.rows[jti] = RefreshTokenRecord(
             id=jti,
@@ -33,20 +40,57 @@ class FakeRefreshTokenRepo:
             revoked_reason=None,
             created_at=now,
         )
+        return True
 
     async def get(self, jti):
         return self.rows.get(jti)
 
-    async def revoke(self, jti, *, reason, at) -> None:
-        row = self.rows.get(jti)
-        if row is not None and row.revoked_at is None:
-            self.rows[jti] = dataclasses.replace(
-                row, revoked_at=at, revoked_reason=reason
+    async def rotate(
+        self,
+        *,
+        current_jti,
+        new_jti,
+        family_id,
+        principal_type,
+        subject_id,
+        expires_at,
+        at,
+    ) -> bool:
+        row = self.rows.get(current_jti)
+        if (
+            row is not None
+            and row.revoked_at is None
+            and row.expires_at > at
+            and row.family_id == family_id
+            and row.principal_type == principal_type
+            and row.subject_id == subject_id
+        ):
+            self.rows[current_jti] = dataclasses.replace(
+                row, revoked_at=at, revoked_reason="rotated"
             )
+            self.rows[new_jti] = RefreshTokenRecord(
+                id=new_jti,
+                family_id=family_id,
+                principal_type=principal_type,
+                subject_id=subject_id,
+                expires_at=expires_at,
+                revoked_at=None,
+                revoked_reason=None,
+                created_at=at,
+            )
+            return True
+        return False
 
-    async def revoke_family(self, family_id, *, reason, at) -> None:
+    async def revoke_family(
+        self, family_id, *, principal_type, subject_id, reason, at
+    ) -> None:
         for jti, row in list(self.rows.items()):
-            if row.family_id == family_id and row.revoked_at is None:
+            if (
+                row.family_id == family_id
+                and row.principal_type == principal_type
+                and row.subject_id == subject_id
+                and row.revoked_at is None
+            ):
                 self.rows[jti] = dataclasses.replace(
                     row, revoked_at=at, revoked_reason=reason
                 )
@@ -84,6 +128,22 @@ async def test_rotate_revokes_old_and_issues_successor() -> None:
     assert new["jti"] != old["jti"]
     new_row = repo.rows[UUID(new["jti"])]
     assert new_row.revoked_at is None
+
+
+async def test_rotate_does_not_issue_successor_when_claim_loses() -> None:
+    repo = FakeRefreshTokenRepo()
+    mgr = RefreshTokenManager(repo)
+    uid = uuid4()
+    _, refresh = await mgr.issue(uid, "user")
+    data = _payload(refresh)
+
+    async def lose_claim(**kwargs):  # type: ignore[no-untyped-def]
+        return False
+
+    repo.rotate = lose_claim  # type: ignore[method-assign]
+    with pytest.raises(InvalidCredentialsError, match="already used"):
+        await mgr.rotate(data, "user", uid)
+    assert len(repo.rows) == 1
 
 
 async def test_reuse_after_grace_revokes_whole_family() -> None:
@@ -144,15 +204,26 @@ async def test_unknown_jti_rejected() -> None:
         await mgr.rotate(forged, "user", uid)
 
 
-async def test_legacy_token_without_jti_bootstraps() -> None:
+async def test_legacy_token_without_tracking_claims_is_rejected() -> None:
     repo = FakeRefreshTokenRepo()
     mgr = RefreshTokenManager(repo)
     uid = uuid4()
     legacy = {"sub": str(uid), "pt": "user"}  # pre-feature token: no jti/fid
-    _, refresh = await mgr.rotate(legacy, "user", uid)
+    with pytest.raises(InvalidCredentialsError):
+        await mgr.rotate(legacy, "user", uid)
+    assert repo.rows == {}
+
+
+async def test_tracking_claims_must_match_stored_session() -> None:
+    repo = FakeRefreshTokenRepo()
+    mgr = RefreshTokenManager(repo)
+    uid = uuid4()
+    _, refresh = await mgr.issue(uid, "user")
     data = _payload(refresh)
-    assert "jti" in data
-    assert len(repo.rows) == 1  # a fresh tracked family was created
+    data["fid"] = str(uuid4())
+
+    with pytest.raises(InvalidCredentialsError):
+        await mgr.rotate(data, "user", uid)
 
 
 async def test_expired_row_rejected() -> None:

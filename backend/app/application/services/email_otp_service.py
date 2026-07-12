@@ -3,12 +3,17 @@ from __future__ import annotations
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # type: ignore[import-untyped]  # passlib ships no stubs
 
 from app.domain.entities.email_otp import OtpPurpose
-from app.domain.exceptions import OtpInvalidError, RateLimitedError
+from app.domain.exceptions import (
+    EmailDeliveryError,
+    OtpInvalidError,
+    RateLimitedError,
+)
 from app.domain.providers.email_provider import EmailMessage, EmailProvider
 from app.domain.repositories.email_otp_repository import EmailOtpRepository
+from app.domain.services.email_normalization import normalize_email
 from app.infrastructure.email.template_renderer import render
 
 _OTP_HASH_CTX = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -50,7 +55,7 @@ class EmailOtpService:
         user_agent: str | None = None,
     ) -> None:
         """Generate a code, persist its hash, and email the plaintext to the user."""
-        email = email.strip().lower()
+        email = normalize_email(email)
         now = datetime.now(UTC)
 
         recent = await self._otps.count_recent_issues(
@@ -65,7 +70,7 @@ class EmailOtpService:
         code_hash = _OTP_HASH_CTX.hash(code)
         expires_at = now + timedelta(minutes=self._expires_minutes)
 
-        await self._otps.create(
+        otp = await self._otps.create(
             email=email,
             code_hash=code_hash,
             purpose=purpose,
@@ -84,15 +89,24 @@ class EmailOtpService:
             "register": "sign-up",
             "email_change": "email change",
         }[purpose]
-        await self._email.send(
-            EmailMessage(
-                to=email,
-                subject=f"Your {self._app_name} {subject_label} code: {code}",
-                html_body=render("otp_login.html", context),
-                text_body=render("otp_login.txt", context),
-                tags={"purpose": purpose, "kind": "otp"},
+        try:
+            await self._email.send(
+                EmailMessage(
+                    to=email,
+                    subject=f"Your {self._app_name} {subject_label} code: {code}",
+                    html_body=render("otp_login.html", context),
+                    text_body=render("otp_login.txt", context),
+                    tags={"purpose": purpose, "kind": "otp"},
+                )
             )
-        )
+        except Exception as exc:
+            await self._otps.delete(otp.id)
+            # A provider outage must be a visible, actionable error — not an
+            # opaque 500 — and it must not differ between mock and real
+            # providers (same flow, different adapter).
+            raise EmailDeliveryError(
+                "We couldn't send the email right now. Please try again shortly."
+            ) from exc
 
     async def verify(
         self,
@@ -105,11 +119,11 @@ class EmailOtpService:
 
         On success the code is marked consumed so it cannot be reused.
         """
-        email = email.strip().lower()
+        email = normalize_email(email)
         code = code.strip()
 
         otp = await self._otps.get_active(email=email, purpose=purpose)
-        if otp is None:
+        if otp is None or otp.consumed_at is not None:
             raise OtpInvalidError("No active code for this email. Request a new one.")
 
         now = datetime.now(UTC)
@@ -126,7 +140,8 @@ class EmailOtpService:
             await self._otps.increment_attempts(otp.id)
             raise OtpInvalidError("Incorrect code.")
 
-        await self._otps.mark_consumed(otp.id, now)
+        if not await self._otps.mark_consumed(otp.id, now):
+            raise OtpInvalidError("No active code for this email. Request a new one.")
 
 
 def _as_aware(dt: datetime) -> datetime:

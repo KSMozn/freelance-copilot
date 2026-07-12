@@ -1,9 +1,10 @@
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from typing import Any, Literal
 from uuid import UUID
 
 import jwt
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # type: ignore[import-untyped]  # passlib ships no stubs
 
 from app.core.config import get_settings
 
@@ -14,11 +15,32 @@ PrincipalType = Literal["user", "admin"]
 
 
 def hash_password(password: str) -> str:
-    return _pwd_ctx.hash(password)
+    # CryptContext is untyped (passlib has no stubs); hash() returns str at runtime.
+    hashed: str = _pwd_ctx.hash(password)
+    return hashed
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return _pwd_ctx.verify(password, hashed)
+    # CryptContext is untyped (passlib has no stubs); verify() returns bool at runtime.
+    ok: bool = _pwd_ctx.verify(password, hashed)
+    return ok
+
+
+@lru_cache(maxsize=1)
+def _dummy_password_hash() -> str:
+    # Hashed through the same context as real passwords so the cost matches
+    # whatever bcrypt work factor is configured.
+    return hash_password("timing-equalization-dummy")
+
+
+def dummy_verify_password() -> None:
+    """Burn one bcrypt verification against a throwaway hash.
+
+    Called on the login path when the account lookup misses (unknown email or
+    passwordless OTP-only account) so the rejection costs the same as a real
+    wrong-password check — response timing can't enumerate registered emails.
+    """
+    verify_password("not-the-dummy-password", _dummy_password_hash())
 
 
 def _create_token(
@@ -94,9 +116,9 @@ def create_refresh_token(
     """Mint a refresh token.
 
     When `jti`/`family_id` are supplied they are embedded so the token can be
-    tracked server-side for rotation + reuse detection. Omitting them (e.g.
-    admin impersonation) yields an untracked token that the refresh flow
-    treats as legacy and bootstraps into a tracked family on first use.
+    tracked server-side for rotation + reuse detection. Refresh endpoints
+    reject tokens without both claims; omission is only useful in tests that
+    exercise token-type or principal-type validation.
     """
     settings = get_settings()
     extra: dict[str, Any] = {}

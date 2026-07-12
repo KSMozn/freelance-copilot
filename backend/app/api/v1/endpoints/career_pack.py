@@ -8,10 +8,12 @@ GitHub API).
 from __future__ import annotations
 
 import time
-from typing import Annotated
+from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from app.api.uploads import read_upload_limited
 from app.application.dto.career_pack_dto import (
     CareerPackRead,
     ClearRequest,
@@ -43,6 +45,8 @@ from app.domain.providers.blob_store import BlobStore
 
 router = APIRouter(prefix="/students/career-pack", tags=["student", "career-pack"])
 
+MAX_LINKEDIN_PDF_BYTES = 5 * 1024 * 1024
+
 
 def _student_svc(session: SessionDep, blobs: Annotated[BlobStore, Depends(get_blob_store)]) -> StudentProfileService:
     return StudentProfileService(session, blobs)
@@ -52,7 +56,14 @@ StudentSvc = Annotated[StudentProfileService, Depends(_student_svc)]
 AiDep = Annotated[AIProvider, Depends(get_ai_provider)]
 
 
-def _emit(user_id, name: str, start: float, meta=None, error=None, career=None) -> None:
+def _emit(
+    user_id: UUID,
+    name: str,
+    start: float,
+    meta: dict[str, Any] | None = None,
+    error: str | None = None,
+    career: CareerPackService | None = None,
+) -> None:
     latency_ms = int((time.perf_counter() - start) * 1000)
     final_meta = dict(meta or {})
     if career is not None:
@@ -128,7 +139,11 @@ async def review_linkedin(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Fill in your CV basics first.",
         )
-    content = await file.read()
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_LINKEDIN_PDF_BYTES,
+        detail=f"File too large (max {MAX_LINKEDIN_PDF_BYTES // (1024 * 1024)} MB)",
+    )
     try:
         profile_text = extract_text(
             content=content, content_type=file.content_type or ""

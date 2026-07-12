@@ -2,15 +2,50 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import SpooledTemporaryFile
 
 import pytest
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 
+from app.api.uploads import read_upload_limited
 from app.application.services.student_profile_service import _safe_filename
-from app.core.config import Settings
-from app.core.rate_limit import SlidingWindowLimiter
+from app.application.url_policy import normalize_external_http_url
+from app.core.config import Settings, get_settings
+from app.core.rate_limit import SlidingWindowLimiter, otp_request_ip_limiter
 from app.infrastructure.http.url_fetcher import UrlFetchError, _assert_public_url
 from app.infrastructure.storage.local_blob_store import LocalBlobStore
+
+# ---- external-link normalization ---------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("myportfolio.com", "https://myportfolio.com"),
+        ("www.behance.net/me", "https://www.behance.net/me"),
+        ("  linkedin.com/in/you  ", "https://linkedin.com/in/you"),
+        ("http://foo.com/x", "http://foo.com/x"),
+        ("https://foo.com/x", "https://foo.com/x"),
+        (None, None),
+        ("", None),
+    ],
+)
+def test_normalize_defaults_missing_scheme_to_https(
+    raw: str | None, expected: str | None
+) -> None:
+    # Bare domains (what students actually type) must normalize, not 422.
+    assert normalize_external_http_url(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["ftp://foo.com", "mailto:me@foo.com", "javascript:alert(1)", "file:///etc/passwd"],
+)
+def test_normalize_still_rejects_non_http_schemes(raw: str) -> None:
+    # An explicit non-http(s) scheme is never silently upgraded to https.
+    with pytest.raises(ValueError):
+        normalize_external_http_url(raw)
+
 
 # ---- rate limiter ------------------------------------------------------
 
@@ -31,6 +66,37 @@ def test_rate_limiter_keys_are_independent() -> None:
     limiter.check("b")  # different key, not throttled
     with pytest.raises(HTTPException):
         limiter.check("a")
+
+
+def test_otp_request_ip_limit_is_configured_not_hardcoded() -> None:
+    # The dev/e2e compose stack raises OTP_REQUEST_IP_LIMIT_PER_MIN (one
+    # runner IP signs in every e2e account); production must keep 8.
+    assert otp_request_ip_limiter.limit == get_settings().otp_request_ip_limit_per_min
+    assert Settings.model_fields["otp_request_ip_limit_per_min"].default == 8
+
+
+# ---- bounded uploads --------------------------------------------------
+
+
+async def test_read_upload_limited_reads_only_one_byte_past_cap() -> None:
+    upload = UploadFile(file=SpooledTemporaryFile(), filename="large.bin")
+    await upload.write(b"123456")
+    await upload.seek(0)
+
+    with pytest.raises(HTTPException) as exc:
+        await read_upload_limited(upload, max_bytes=4, detail="Too large")
+
+    assert exc.value.status_code == 413
+    assert exc.value.detail == "Too large"
+    assert await upload.read() == b"6"
+
+
+async def test_read_upload_limited_returns_content_within_cap() -> None:
+    upload = UploadFile(file=SpooledTemporaryFile(), filename="small.bin")
+    await upload.write(b"1234")
+    await upload.seek(0)
+
+    assert await read_upload_limited(upload, max_bytes=4, detail="Too large") == b"1234"
 
 
 # ---- filename sanitisation --------------------------------------------
@@ -65,20 +131,158 @@ def test_safe_filename(raw: str, expected: str) -> None:
         "http://169.254.169.254/latest/meta-data/",  # cloud metadata
         "http://10.0.0.5/",
         "http://192.168.1.1/",
+        "http://100.64.0.1/",  # CGNAT — only caught by the is_global predicate
         "http://[::1]/",
         "file:///etc/passwd",
         "ftp://example.com/",
         "http:///no-host",
     ],
 )
-def test_assert_public_url_rejects_internal_and_bad_scheme(url: str) -> None:
+async def test_assert_public_url_rejects_internal_and_bad_scheme(url: str) -> None:
     with pytest.raises(UrlFetchError):
-        _assert_public_url(url)
+        await _assert_public_url(url)
 
 
-def test_assert_public_url_allows_public_ip_literal() -> None:
+async def test_assert_public_url_allows_public_ip_literal() -> None:
     # Literal public IP — no DNS, no rejection.
-    _assert_public_url("http://8.8.8.8/")
+    await _assert_public_url("http://8.8.8.8/")
+
+
+# ---- SSRF guard: redirect hops (fetch_page manual-redirect loop) --------
+#
+# A public URL must not be able to 302-bounce the fetch into an internal
+# address. DNS is faked (public hostname → public IP, internal names →
+# private IPs) and the HTTP layer is a MockTransport, so no test traffic
+# leaves the process.
+
+_REDIRECTS = {
+    "https://safe-public.example/to-metadata": "http://169.254.169.254/latest/meta-data/",
+    "https://safe-public.example/to-localhost": "http://localhost/admin",
+    "https://safe-public.example/to-private": "http://internal.corp/secrets",
+    "https://safe-public.example/to-final": "https://safe-public.example/final",
+}
+
+_FAKE_DNS = {
+    "safe-public.example": "93.184.216.34",  # public
+    "internal.corp": "10.0.0.5",  # private
+    "localhost": "127.0.0.1",  # loopback
+}
+
+
+def _install_fetch_fakes(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ipaddress
+    import socket as socket_mod
+
+    import httpx
+
+    from app.infrastructure.http import url_fetcher
+
+    def fake_getaddrinfo(host, port, *args, **kwargs):  # type: ignore[no-untyped-def]
+        ip = _FAKE_DNS.get(host, host)
+        try:
+            ipaddress.ip_address(ip)
+        except ValueError:
+            raise socket_mod.gaierror(f"fake DNS has no entry for {host!r}") from None
+        return [(socket_mod.AF_INET, socket_mod.SOCK_STREAM, 6, "", (ip, port or 80))]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        url = str(request.url)
+        if url in _REDIRECTS:
+            return httpx.Response(302, headers={"location": _REDIRECTS[url]})
+        return httpx.Response(
+            200, html="<html><title>Safe</title><body>public content</body></html>"
+        )
+
+    transport = httpx.MockTransport(handler)
+    real_client = httpx.AsyncClient
+    monkeypatch.setattr(url_fetcher.socket, "getaddrinfo", fake_getaddrinfo)
+    monkeypatch.setattr(
+        url_fetcher.httpx,
+        "AsyncClient",
+        lambda **kw: real_client(transport=transport, **kw),
+    )
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["to-metadata", "to-localhost", "to-private"],
+)
+async def test_fetch_page_blocks_redirect_to_internal_address(
+    monkeypatch: pytest.MonkeyPatch, path: str
+) -> None:
+    from app.infrastructure.http.url_fetcher import fetch_page
+
+    _install_fetch_fakes(monkeypatch)
+    with pytest.raises(UrlFetchError, match=r"non-public|Cannot resolve"):
+        await fetch_page(f"https://safe-public.example/{path}")
+
+
+async def test_fetch_page_follows_public_redirect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Positive control: a public→public redirect still works."""
+    from app.infrastructure.http.url_fetcher import fetch_page
+
+    _install_fetch_fakes(monkeypatch)
+    page = await fetch_page("https://safe-public.example/to-final")
+    assert page.final_url == "https://safe-public.example/final"
+    assert page.title == "Safe"
+    assert "public content" in page.text
+
+
+async def test_fetch_page_stops_streaming_at_raw_size_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import httpx
+
+    from app.infrastructure.http import url_fetcher
+
+    real_client = httpx.AsyncClient
+    _install_fetch_fakes(monkeypatch)
+    monkeypatch.setattr(url_fetcher, "MAX_BYTES", 16)
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(200, content=b"x" * 17)
+    )
+    monkeypatch.setattr(
+        url_fetcher.httpx,
+        "AsyncClient",
+        lambda **kw: real_client(transport=transport, **kw),
+    )
+
+    # Oversized bodies are truncated to the cap, not rejected — the fetch
+    # still succeeds so company-URL research keeps working on large pages.
+    page = await url_fetcher.fetch_page("https://safe-public.example/oversized")
+    assert len(page.text) <= 16
+    assert set(page.text) == {"x"}
+
+
+async def test_fetch_page_preserves_declared_response_charset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import httpx
+
+    from app.infrastructure.http import url_fetcher
+
+    real_client = httpx.AsyncClient
+    _install_fetch_fakes(monkeypatch)
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            200,
+            headers={"content-type": "text/html; charset=iso-8859-1"},
+            content="<html><title>Café</title><body>Résumé</body></html>".encode(
+                "iso-8859-1"
+            ),
+        )
+    )
+    monkeypatch.setattr(
+        url_fetcher.httpx,
+        "AsyncClient",
+        lambda **kw: real_client(transport=transport, **kw),
+    )
+
+    page = await url_fetcher.fetch_page("https://safe-public.example/latin-1")
+    assert page.title == "Café"
+    assert page.text == "Café Résumé"
 
 
 # ---- blob store containment -------------------------------------------
@@ -146,3 +350,78 @@ def test_config_rejects_wildcard_cors() -> None:
             email_provider="mock",
             cors_origins="https://app.example.com,*",
         )
+
+
+# ---- runtime middleware: security headers + CORS ------------------------
+
+
+def test_responses_carry_security_headers() -> None:
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as client:
+        resp = client.get("/")
+    assert resp.headers["X-Content-Type-Options"] == "nosniff"
+    assert resp.headers["X-Frame-Options"] == "DENY"
+    assert resp.headers["Referrer-Policy"] == "no-referrer"
+    assert resp.headers["Content-Security-Policy"] == "frame-ancestors 'none'"
+    # HSTS only makes sense on deployed (TLS) environments; tests aren't one.
+    assert "Strict-Transport-Security" not in resp.headers
+
+
+def test_oversized_upload_is_rejected_before_auth_or_multipart_parsing() -> None:
+    from fastapi.testclient import TestClient
+
+    from app.core.config import get_settings
+    from app.core.request_size_limit import MAX_REQUEST_BODY_BYTES
+    from app.main import app
+
+    origin = get_settings().cors_origin_list[0]
+    with TestClient(app) as client:
+        resp = client.post(
+            "/api/v1/students/profile/photo",
+            content=b"x" * (MAX_REQUEST_BODY_BYTES + 1),
+            headers={
+                "content-type": "multipart/form-data; boundary=unused",
+                "origin": origin,
+            },
+        )
+
+    assert resp.status_code == 413
+    assert resp.json() == {"detail": "Request body too large"}
+    assert resp.headers["access-control-allow-origin"] == origin
+    assert resp.headers["X-Content-Type-Options"] == "nosniff"
+    assert resp.headers["X-Frame-Options"] == "DENY"
+
+
+def test_cors_preflight_refuses_unknown_origin() -> None:
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as client:
+        resp = client.options(
+            "/api/v1/auth/login",
+            headers={
+                "Origin": "https://evil.example",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+    assert "access-control-allow-origin" not in resp.headers
+
+
+def test_cors_preflight_allows_configured_origin() -> None:
+    from fastapi.testclient import TestClient
+
+    from app.core.config import get_settings
+    from app.main import app
+
+    origin = get_settings().cors_origin_list[0]
+    with TestClient(app) as client:
+        resp = client.options(
+            "/api/v1/auth/login",
+            headers={"Origin": origin, "Access-Control-Request-Method": "POST"},
+        )
+    assert resp.headers.get("access-control-allow-origin") == origin
+    assert resp.headers.get("access-control-allow-credentials") == "true"

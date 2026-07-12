@@ -5,49 +5,113 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   backend:
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_USER: upwork
-          POSTGRES_PASSWORD: upwork
-          POSTGRES_DB: upwork_intel_test
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd="pg_isready -U upwork -d upwork_intel_test"
-          --health-interval=5s --health-timeout=5s --health-retries=10
+    # Unit tests need no database (in-memory fakes + TestClient); conftest.py
+    # provides safe defaults for everything else.
     env:
-      POSTGRES_USER: upwork
-      POSTGRES_PASSWORD: upwork
-      POSTGRES_DB: upwork_intel_test
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: 5432
-      SECRET_KEY: ci-secret-key-please-change
+      SECRET_KEY: ci-secret-key-at-least-32-characters
       ENVIRONMENT: test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.13" }
+      # uv + uv.lock govern the dependency set (repo rule: backend = uv);
+      # --frozen fails the job if the lock drifts from pyproject.toml.
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - working-directory: backend
-        run: |
-          pip install -e ".[dev]"
+        run: uv sync --frozen --extra dev --python 3.13
       - working-directory: backend
-        run: ruff check .
+        run: uv run ruff check .
+      # Strict mypy with the explicit ratchet baseline in pyproject.toml —
+      # exits 0 today; the baseline may only shrink.
       - working-directory: backend
-        run: pytest -q
+        run: uv run mypy app
+      - working-directory: backend
+        run: uv run pytest -q
 
   frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "22" }
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - working-directory: frontend
-        run: npm ci || npm install
+        run: npm ci
+      # Lint enforces the feature-boundary zones (import-x/no-restricted-paths)
+      # — without this step the architecture rules are only checked locally.
+      - working-directory: frontend
+        run: npm run lint
+      - working-directory: frontend
+        run: npm run format:check
       - working-directory: frontend
         run: npm run typecheck
       - working-directory: frontend
         run: npm run build
+
+  marketing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: marketing/package-lock.json
+      - working-directory: marketing
+        run: npm ci
+      - working-directory: marketing
+        run: npm run lint
+      - working-directory: marketing
+        run: npm run build
+      - working-directory: marketing
+        run: npm run validate
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # ORDER MATTERS — install before `docker compose up`. frontend/node_modules
+      # is gitignored, so it does not exist on a fresh checkout; the compose
+      # frontend service bind-mounts ./frontend:/app with an anonymous
+      # /app/node_modules volume, and mounting it makes the Docker daemon (root)
+      # create frontend/node_modules on the host. A later `npm ci` then runs as
+      # `runner` and dies with EACCES. Creating the directory here first (owned
+      # by `runner`) means Docker mounts over an existing dir instead.
+      - working-directory: frontend
+        run: npm ci
+      - name: Start the stack
+        # --wait blocks on the compose healthchecks (backend /health after
+        # migrations, frontend Vite) and fails fast if a container dies.
+        run: docker compose up -d --build --wait --wait-timeout 240
+      - working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      # global-setup creates the E2E admin via docker compose exec; OTP codes
+      # are read from the mock mailbox at backend/var/dev-emails.jsonl.
+      - working-directory: frontend
+        run: npx playwright test
+      - name: Collect compose logs
+        if: failure()
+        run: docker compose logs --no-color > compose-logs.txt
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-failure-artifacts
+          path: |
+            frontend/playwright-report
+            compose-logs.txt
+          retention-days: 7

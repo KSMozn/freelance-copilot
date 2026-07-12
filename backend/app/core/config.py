@@ -23,7 +23,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    environment: Literal["development", "staging", "production", "test"] = "development"
+    environment: Literal["development", "staging", "production", "test"]
 
     postgres_user: str = "upwork"
     postgres_password: str = "upwork"
@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     otp_expires_minutes: int = 10
     otp_max_attempts: int = 5
     otp_rate_limit_per_15min: int = 3
+    # Per-IP request-code budget (sliding 60s window). The dev/e2e compose
+    # stack raises it: the whole Playwright suite signs unique accounts in
+    # from one runner IP and averages right at the production default.
+    otp_request_ip_limit_per_min: int = 8
+    # Forgot-password links are single-use and short-lived; 15-30 min is the
+    # accepted window for email-delivered reset tokens.
+    password_reset_expires_minutes: int = 30
     frontend_base_url: str = "http://localhost:5173"
     # Shared secret Cloud Scheduler sends in `X-Task-Secret` when kicking
     # the daily-report endpoint. Left None in dev so local invocations
@@ -154,4 +161,4 @@ def _build_database_url(settings: "Settings", *, scheme: str) -> str:
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]
+    return Settings()

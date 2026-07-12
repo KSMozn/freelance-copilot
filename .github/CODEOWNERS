@@ -14,7 +14,8 @@
 /backend/app/application/services/student_cv_renderer.py             @KSMozn
 /backend/app/application/services/student_cv_docx_renderer.py        @KSMozn
 /backend/app/application/templates/student_cv/                       @KSMozn
-/frontend/src/pages/StudentWizard.tsx                                @KSMozn
+/frontend/src/features/student-wizard/StudentWizardPage.tsx          @KSMozn
+/frontend/src/features/student-wizard/steps/                         @KSMozn
 
 # ---- AI prompts / coach services --------------------------------------
 /backend/app/application/services/student_coach_service.py           @KSMozn
@@ -29,16 +30,19 @@
 /backend/app/api/v1/endpoints/admin_auth.py                          @KSMozn
 /backend/app/application/services/admin_auth_service.py              @KSMozn
 /backend/app/core/security.py                                        @KSMozn
-/frontend/src/pages/Login.tsx                                        @KSMozn
-/frontend/src/pages/admin/AdminLoginPage.tsx                         @KSMozn
-/frontend/src/stores/auth.ts                                         @KSMozn
-/frontend/src/stores/adminAuth.ts                                    @KSMozn
+/frontend/src/features/auth/LoginPage.tsx                            @KSMozn
+/frontend/src/features/auth/authStore.ts                             @KSMozn
+/frontend/src/features/auth/ImpersonateLandingPage.tsx               @KSMozn
+/frontend/src/features/admin/AdminLoginPage.tsx                      @KSMozn
+/frontend/src/features/admin/adminAuthStore.ts                       @KSMozn
+/frontend/src/app/apiClient.ts                                       @KSMozn
 
 # ---- Database schema + migrations -------------------------------------
 /backend/alembic/                                                    @KSMozn
 /backend/app/infrastructure/db/                                      @KSMozn
 
 # ---- Environment / config / secrets -----------------------------------
+/.env.example                                                        @KSMozn
 /backend/.env.example                                                @KSMozn
 /backend/app/core/config.py                                          @KSMozn
 /backend/Dockerfile                                                  @KSMozn
@@ -48,6 +52,8 @@
 
 # ---- Deploy tooling ---------------------------------------------------
 /frontend/cloudbuild.yaml                                            @KSMozn
+/marketing/cloudbuild.yaml                                           @KSMozn
+/marketing/Dockerfile.prod                                           @KSMozn
 /.github/workflows/                                                  @KSMozn
 
 # ---- Governance docs (this list itself) -------------------------------

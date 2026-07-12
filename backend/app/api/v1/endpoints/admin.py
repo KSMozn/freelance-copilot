@@ -253,7 +253,7 @@ async def list_llm_calls(
                 id=ev.id,
                 created_at=ev.created_at,
                 kind=ev.kind,
-                status=ev.status,  # type: ignore[arg-type]
+                status=ev.status,
                 user_id=ev.user_id,
                 user_email=target.email if target else None,
                 prompt_tokens=pt,
@@ -624,7 +624,7 @@ async def list_email_sends(
             AdminEmailSendRow(
                 id=ev.id,
                 sent_at=ev.created_at,
-                status=ev.status,  # type: ignore[arg-type]
+                status=ev.status,
                 template_id=template_slug,
                 template_name=spec.name if spec else None,
                 target_user_id=target_uuid,

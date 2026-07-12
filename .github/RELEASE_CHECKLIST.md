@@ -12,10 +12,11 @@ skim on Safari and mobile.
 ## 0. Deploy Sanity
 
 - [ ] `gcloud run services list --region=europe-west1` shows the new revision serving
-      100% of traffic for both `freelance-copilot-backend` and `-frontend`.
+      100% of traffic for `freelance-copilot-backend`, `-frontend`, and
+      `marketing` when its source changed.
 - [ ] Backend logs since deploy contain **no** `ERROR` or `Traceback` lines.
-- [ ] `curl -sf https://api.careero.app/openapi.json | jq -r '.info.title'` returns
-      the app title.
+- [ ] `curl -sf https://api.careero.app/api/v1/health | jq -e '.status == "ok"'`
+      succeeds. Production API docs are intentionally disabled.
 
 ## 1. Student CV Creation Journey
 
@@ -137,6 +138,8 @@ Test in Chrome DevTools at **375px** viewport. Then eyeball at 414px.
 
 ## 14. Production Environment Variables
 
+- [ ] `ENVIRONMENT=production` is set on the backend service — the setting has
+      no default, and a missing value fails startup.
 - [ ] Backend startup log contains `Application startup complete.` without any
       "environment variable not set" warnings.
 - [ ] `POST /api/v1/auth/request-code` returns 200 (OTP delivery uses `RESEND_API_KEY`).
@@ -145,14 +148,18 @@ Test in Chrome DevTools at **375px** viewport. Then eyeball at 414px.
 - [ ] `GET /api/v1/students/cv.pdf` returns 200 (WeasyPrint system libs present).
 - [ ] `GET /api/v1/students/cv.docx` returns 200 (python-docx works).
 - [ ] Photo upload succeeds (GCS bucket writable).
-- [ ] Admin login succeeds at `https://admin.careero.app` (`JWT_SECRET_KEY` set).
+- [ ] Admin login succeeds at `https://admin.careero.app` (`SECRET_KEY` set).
 
 ## 15. Sign-off
 
 - [ ] Rollback anchor recorded: backend previous revision =
-      `___________________`, frontend previous = `___________________`.
+      `___________________`, frontend previous = `___________________`, marketing previous =
+      `___________________`.
 - [ ] Release notes commented on each merged PR since the last release, or captured
       in a GitHub release tag (`gh release create`) with the commit SHA and any known
       issues.
+- [ ] Release notes call out any change that invalidates existing sessions
+      (e.g. the 2026-07 refresh-token hardening signs every pre-deploy session
+      out once) so the logout wave is expected, not reported as a bug.
 - [ ] If any item above failed, opened an issue AND either rolled back or triggered
       a follow-up PR before closing the release.

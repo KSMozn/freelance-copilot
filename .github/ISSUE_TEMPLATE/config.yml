@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Contributor guide
-    url: https://github.com/KSMozn/careero/blob/main/CONTRIBUTING.md
+    url: https://github.com/KSMozn/freelance-copilot/blob/main/CONTRIBUTING.md
     about: Local setup, branch rules, PR flow, testing checklist. Read this first.
   - name: Development process
-    url: https://github.com/KSMozn/careero/blob/main/README_DEVELOPMENT_PROCESS.md
+    url: https://github.com/KSMozn/freelance-copilot/blob/main/README_DEVELOPMENT_PROCESS.md
     about: Environments, release / hotfix flow, quality gates, weekly rhythm.
   - name: Security disclosure
     url: mailto:samir.k@mozn.sa

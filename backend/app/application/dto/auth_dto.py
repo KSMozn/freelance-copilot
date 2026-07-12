@@ -57,6 +57,33 @@ class AuthResponse(BaseModel):
     tokens: TokenPair
 
 
+# --- Forgot / reset password -------------------------------------------------
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Always the same body — the endpoint never reveals whether the email
+    belongs to an account."""
+
+    sent: bool = True
+    message: str = (
+        "If this account exists, password reset instructions were sent."
+    )
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=16, max_length=256)
+    # Same policy as RegisterRequest.password.
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class ResetPasswordResponse(BaseModel):
+    ok: bool = True
+
+
 # --- OTP (Phase A) ---------------------------------------------------------
 
 

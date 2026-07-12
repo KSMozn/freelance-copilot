@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.email_otp import EmailOtp, OtpPurpose
@@ -62,17 +62,21 @@ class SQLAlchemyEmailOtpRepository:
         )
         return int((await self._session.execute(stmt)).scalar_one() or 0)
 
+    async def delete(self, otp_id: UUID) -> None:
+        row = await self._session.get(EmailOtpCode, otp_id)
+        if row is not None:
+            await self._session.delete(row)
+            await self._session.commit()
+
     async def get_active(
         self, *, email: str, purpose: OtpPurpose
     ) -> EmailOtp | None:
-        # Newest unconsumed code for this (email, purpose). Expiry is checked
-        # by the caller so we can return a friendly "code expired" message
-        # rather than silently treating expired codes as "no code issued."
+        # Always return the newest code, even if consumed. Otherwise consuming
+        # it would make an older unconsumed code active again.
         stmt = (
             select(EmailOtpCode)
             .where(EmailOtpCode.email == email)
             .where(EmailOtpCode.purpose == purpose)
-            .where(EmailOtpCode.consumed_at.is_(None))
             .order_by(EmailOtpCode.created_at.desc())
             .limit(1)
         )
@@ -80,15 +84,21 @@ class SQLAlchemyEmailOtpRepository:
         return _to_domain(row) if row else None
 
     async def increment_attempts(self, otp_id: UUID) -> None:
-        row = await self._session.get(EmailOtpCode, otp_id)
-        if row is None:
-            return
-        row.attempts = (row.attempts or 0) + 1
+        await self._session.execute(
+            update(EmailOtpCode)
+            .where(EmailOtpCode.id == otp_id)
+            .where(EmailOtpCode.consumed_at.is_(None))
+            .values(attempts=EmailOtpCode.attempts + 1)
+        )
         await self._session.commit()
 
-    async def mark_consumed(self, otp_id: UUID, consumed_at: datetime) -> None:
-        row = await self._session.get(EmailOtpCode, otp_id)
-        if row is None:
-            return
-        row.consumed_at = consumed_at
+    async def mark_consumed(self, otp_id: UUID, consumed_at: datetime) -> bool:
+        result = await self._session.execute(
+            update(EmailOtpCode)
+            .where(EmailOtpCode.id == otp_id)
+            .where(EmailOtpCode.consumed_at.is_(None))
+            .values(consumed_at=consumed_at)
+            .returning(EmailOtpCode.id)
+        )
         await self._session.commit()
+        return result.scalar_one_or_none() is not None

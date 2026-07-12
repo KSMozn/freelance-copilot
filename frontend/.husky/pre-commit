@@ -1,0 +1,5 @@
+# Format and lint staged frontend files before committing.
+# The git root is the repo root (one level up); lint-staged's config and
+# file globs live in frontend/package.json, so run from there. Commits that
+# touch no frontend files pass through instantly.
+cd frontend && npx lint-staged

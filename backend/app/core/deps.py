@@ -1,5 +1,6 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -30,6 +31,7 @@ from app.application.services.match_report_service import MatchReportService
 from app.application.services.output_generation_service import (
     OutputGenerationService,
 )
+from app.application.services.password_reset_service import PasswordResetService
 from app.application.services.persona_profile_resolver import PersonaProfileResolver
 from app.application.services.persona_service import PersonaService
 from app.application.services.portfolio_matching_service import PortfolioMatchingService
@@ -60,6 +62,8 @@ from app.application.services.skill_catalog_service import SkillCatalogService
 from app.application.services.skill_evidence_service import SkillEvidenceService
 from app.core.config import Settings, get_settings
 from app.core.database import AsyncSessionLocal
+from app.domain.entities.match_report import MatchReport
+from app.domain.entities.skill_catalog import SkillCatalogEntry
 from app.domain.entities.user import User
 from app.domain.exceptions import InvalidCredentialsError, NotFoundError
 from app.domain.providers.ai_provider import AIProvider
@@ -97,6 +101,9 @@ from app.infrastructure.db.repositories.sqlalchemy_match_report_repository impor
 from app.infrastructure.db.repositories.sqlalchemy_output_repository import (
     SQLAlchemyOutputRepository,
 )
+from app.infrastructure.db.repositories.sqlalchemy_password_reset_token_repository import (
+    SQLAlchemyPasswordResetTokenRepository,
+)
 from app.infrastructure.db.repositories.sqlalchemy_persona_repository import (
     SQLAlchemyPersonaArchetypeRepository,
     SQLAlchemyPersonaRepository,
@@ -124,6 +131,7 @@ from app.infrastructure.db.repositories.sqlalchemy_user_skill_repository import 
     SQLAlchemyUserSkillRepository,
 )
 from app.infrastructure.email.factory import build_email_provider
+from app.infrastructure.email.mock_provider import read_dev_outbox
 from app.infrastructure.github.github_client import GithubClient
 from app.infrastructure.storage.factory import build_blob_store
 
@@ -145,6 +153,18 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 def get_email_provider(settings: SettingsDep) -> EmailProvider:
     return build_email_provider(settings)
+
+
+# Callable (to, limit) -> captured dev emails, newest first. Kept behind DI so
+# the dev-mailbox endpoint stays decoupled from the mock provider's storage.
+DevOutboxReader = Callable[[str | None, int], list[dict[str, object]]]
+
+
+def get_dev_outbox_reader() -> DevOutboxReader:
+    return read_dev_outbox
+
+
+DevOutboxReaderDep = Annotated[DevOutboxReader, Depends(get_dev_outbox_reader)]
 
 
 def get_ai_provider(settings: SettingsDep) -> AIProvider:
@@ -245,6 +265,28 @@ def get_auth_service(
         persona_service,
         RefreshTokenManager(SQLAlchemyRefreshTokenRepository(session)),
     )
+
+
+def get_password_reset_service(
+    session: SessionDep,
+    settings: SettingsDep,
+    email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+) -> PasswordResetService:
+    reset_repo = SQLAlchemyPasswordResetTokenRepository(session)
+    return PasswordResetService(
+        user_repo=SQLAlchemyUserRepository(session),
+        reset_repo=reset_repo,
+        reset_committer=reset_repo,
+        email_provider=email_provider,
+        app_name=settings.app_name,
+        frontend_base_url=settings.frontend_base_url,
+        expires_minutes=settings.password_reset_expires_minutes,
+    )
+
+
+PasswordResetServiceDep = Annotated[
+    PasswordResetService, Depends(get_password_reset_service)
+]
 
 
 def get_job_service(session: SessionDep) -> JobService:
@@ -578,7 +620,7 @@ async def get_career_fitness_assembler(
     service: Annotated[
         CareerFitnessService, Depends(get_career_fitness_service)
     ],
-):
+) -> Callable[[UUID], Awaitable[CareerFitness]]:
     """Return a callable ``(user_id) -> CareerFitness`` bundling repo reads.
 
     Saves the endpoint from threading six repos through its signature;
@@ -596,7 +638,7 @@ async def get_career_fitness_assembler(
     user_skill_repo = SQLAlchemyUserSkillRepository(session)
     catalog_repo = SQLAlchemySkillCatalogRepository(session)
 
-    async def _assemble(user_id) -> CareerFitness:
+    async def _assemble(user_id: UUID) -> CareerFitness:
         analyses = await analysis_repo.list_for_user(user_id)
         # `list_for_analytics` returns a plain list without pagination —
         # exactly the shape we want for the dashboard aggregation.
@@ -604,7 +646,7 @@ async def get_career_fitness_assembler(
 
         # match_repo doesn't have a list-by-user (only by job). We
         # aggregate by iterating the user's analyses' jobs.
-        match_reports = []
+        match_reports: list[MatchReport] = []
         for a in analyses:
             match_reports.extend(
                 await match_repo.list_for_job(user_id=user_id, job_id=a.job_id)
@@ -613,7 +655,7 @@ async def get_career_fitness_assembler(
         user_skills = await user_skill_repo.list_for_user(user_id)
 
         # Hydrate catalog rows we need so the service stays free of DB IO.
-        catalog_by_id = {}
+        catalog_by_id: dict[UUID, SkillCatalogEntry] = {}
         for row in user_skills:
             entry = await catalog_repo.get_by_id(row.skill_id)
             if entry is not None:
@@ -697,23 +739,6 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
-
-
-async def require_superuser(user: CurrentUser) -> User:
-    """LEGACY superuser gate (Phase L.1).
-
-    Superseded by `require_admin_user` — kept in case a caller still
-    references it. New admin endpoints should use `SuperAdmin`.
-    """
-    if not user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Superuser access required",
-        )
-    return user
-
-
-SuperUser = Annotated[User, Depends(require_superuser)]
 
 
 # ---- Admin identity (Phase L.2) --------------------------------------

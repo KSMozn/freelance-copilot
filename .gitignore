@@ -42,3 +42,6 @@ backend/dist/
 # Playwright
 playwright-report/
 test-results/
+storybook-static/
+.playwright-mcp/
+frontend/e2e/.auth/

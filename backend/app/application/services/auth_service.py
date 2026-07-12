@@ -16,7 +16,12 @@ from app.application.dto.auth_dto import (
 from app.application.services.email_otp_service import EmailOtpService
 from app.application.services.persona_service import PersonaService
 from app.application.services.refresh_token_manager import RefreshTokenManager
-from app.core.security import decode_token, hash_password, verify_password
+from app.core.security import (
+    decode_token,
+    dummy_verify_password,
+    hash_password,
+    verify_password,
+)
 from app.domain.entities.user import User
 from app.domain.exceptions import (
     AlreadyExistsError,
@@ -24,6 +29,7 @@ from app.domain.exceptions import (
     NotFoundError,
 )
 from app.domain.repositories.user_repository import UserRepository
+from app.domain.services.email_normalization import normalize_email
 
 
 class AuthService:
@@ -39,10 +45,16 @@ class AuthService:
         self._personas = persona_service
         self._refresh = refresh_tokens
 
-    async def _issue_tokens(self, user_id: UUID) -> TokenPair:
+    async def _issue_tokens(
+        self, user_id: UUID, *, expected_password_hash: str | None = None
+    ) -> TokenPair:
         if self._refresh is None:
             raise RuntimeError("Refresh-token manager is not configured")
-        access, refresh = await self._refresh.issue(user_id, "user")
+        access, refresh = await self._refresh.issue(
+            user_id,
+            "user",
+            expected_password_hash=expected_password_hash,
+        )
         return TokenPair(access_token=access, refresh_token=refresh)
 
     @staticmethod
@@ -60,11 +72,15 @@ class AuthService:
         )
 
     async def register(self, payload: RegisterRequest) -> AuthResponse:
-        existing = await self._users.get_by_email(payload.email)
+        # The 409 on a taken email is a deliberate UX trade-off: signup needs
+        # a clear signal. Enumeration-sensitive flows (OTP, forgot-password)
+        # stay non-disclosing; this endpoint is additionally rate-limited.
+        email = normalize_email(str(payload.email))
+        existing = await self._users.get_by_email(email)
         if existing is not None:
             raise AlreadyExistsError("Email already registered")
         user = await self._users.create(
-            email=str(payload.email),
+            email=email,
             password_hash=hash_password(payload.password),
             full_name=payload.full_name,
             selected_persona_kind=payload.persona_kind,
@@ -75,18 +91,22 @@ class AuthService:
         )
 
     async def login(self, payload: LoginRequest) -> AuthResponse:
-        user = await self._users.get_by_email(str(payload.email))
-        if (
-            user is None
-            or user.password_hash is None
-            or not verify_password(payload.password, user.password_hash)
-        ):
+        user = await self._users.get_by_email(normalize_email(str(payload.email)))
+        if user is None or user.password_hash is None:
+            # Burn a bcrypt check anyway so an unknown email costs the same
+            # as a wrong password — timing can't enumerate accounts.
+            dummy_verify_password()
+            raise InvalidCredentialsError("Invalid email or password")
+        if not verify_password(payload.password, user.password_hash):
             raise InvalidCredentialsError("Invalid email or password")
         if not user.is_active:
             raise InvalidCredentialsError("User is inactive")
         await self._users.touch_last_login(user.id, datetime.now(UTC))
         return AuthResponse(
-            user=self._to_read(user), tokens=await self._issue_tokens(user.id)
+            user=self._to_read(user),
+            tokens=await self._issue_tokens(
+                user.id, expected_password_hash=user.password_hash
+            ),
         )
 
     async def refresh(self, payload: RefreshRequest) -> TokenPair:
@@ -168,11 +188,12 @@ class AuthService:
         )
 
         now = datetime.now(UTC)
-        user = await self._users.get_by_email(str(payload.email))
+        email = normalize_email(str(payload.email))
+        user = await self._users.get_by_email(email)
         if user is None:
             # First time we've seen this email — create the account.
             user = await self._users.create(
-                email=str(payload.email),
+                email=email,
                 password_hash=None,
                 full_name=payload.full_name,
                 email_verified_at=now,
@@ -181,7 +202,7 @@ class AuthService:
         elif user.email_verified_at is None:
             await self._users.mark_email_verified(user.id, now)
             # Reload so the response shows the new verified_at.
-            user = await self._users.get_by_id(user.id)  # type: ignore[assignment]
+            user = await self._users.get_by_id(user.id)
 
         if user is None or not user.is_active:
             raise InvalidCredentialsError("User is inactive")

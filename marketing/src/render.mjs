@@ -20,30 +20,26 @@ export const absUrl = (path = "") => {
 const isInternal = (href) => href.startsWith("/") || href.startsWith("#");
 
 // ---- inline brand mark (self-contained SVG, matches app.careero.app) -------
-const brandMark = (size = 30) => `
+const brandMark = (size = 30, gradientId = "careero-gradient") => `
 <svg viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true" class="brand-mark">
   <defs>
-    <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${site.brand.from}"/>
       <stop offset="55%" stop-color="${site.brand.mid}"/>
       <stop offset="100%" stop-color="${site.brand.to}"/>
     </linearGradient>
   </defs>
-  <path d="M 46.6 21.4 A 18 18 0 1 0 46.6 42.6" fill="none" stroke="url(#cg)"
+  <path d="M 46.6 21.4 A 18 18 0 1 0 46.6 42.6" fill="none" stroke="url(#${gradientId})"
         stroke-width="7.5" stroke-linecap="round"/>
   <path d="M 46 32 L 50 30 L 46 28 L 44 24 L 42 28 L 38 30 L 42 32 L 44 36 Z"
-        fill="url(#cg)"/>
+        fill="url(#${gradientId})"/>
 </svg>`;
 
 // ---- primary CTA -----------------------------------------------------------
 export const cta = (text, href = site.appUrl, cls = "btn btn-primary") => {
   const ext = !isInternal(href);
   const attrs = ext ? ' rel="noopener"' : "";
-  // Name app-bound CTAs for analytics (see assets/analytics.js).
-  const dataCta = href.startsWith(site.appUrl)
-    ? ` data-cta="${esc(text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""))}"`
-    : "";
-  return `<a class="${cls}" href="${esc(href)}"${attrs}${dataCta}>${esc(text)}</a>`;
+  return `<a class="${cls}" href="${esc(href)}"${attrs}>${esc(text)}</a>`;
 };
 
 // ---- header / nav ----------------------------------------------------------
@@ -54,19 +50,21 @@ const navGroup = (group) => {
   }
   return `
   <li class="nav-item">
-    <button type="button" class="nav-trigger" aria-haspopup="true" aria-expanded="false">
-      ${esc(group.label)}<span class="caret" aria-hidden="true">▾</span>
-    </button>
-    <ul class="nav-menu">
-      ${group.items
-        .map((it) => {
-          const ext = !isInternal(it.href);
-          return `<li><a href="${esc(it.href)}"${
-            ext ? ' rel="noopener"' : ""
-          }>${esc(it.label)}</a></li>`;
-        })
-        .join("")}
-    </ul>
+    <details class="nav-details">
+      <summary class="nav-trigger">
+        ${esc(group.label)}<span class="caret" aria-hidden="true">▾</span>
+      </summary>
+      <ul class="nav-menu">
+        ${group.items
+          .map((it) => {
+            const ext = !isInternal(it.href);
+            return `<li><a href="${esc(it.href)}"${
+              ext ? ' rel="noopener"' : ""
+            }>${esc(it.label)}</a></li>`;
+          })
+          .join("")}
+      </ul>
+    </details>
   </li>`;
 };
 
@@ -74,13 +72,12 @@ const header = () => `
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="/" aria-label="Careero home">
-      ${brandMark(30)}<span class="brand-word">Careero</span>
+      ${brandMark(30, "careero-header-gradient")}<span class="brand-word">Careero</span>
     </a>
-    <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true">
-    <label for="nav-toggle" class="nav-burger" aria-label="Toggle navigation">
+    <button type="button" class="nav-burger" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">
       <span></span><span></span><span></span>
-    </label>
-    <nav class="site-nav" aria-label="Primary">
+    </button>
+    <nav id="site-nav" class="site-nav" aria-label="Primary">
       <ul class="nav-list">
         ${nav.map(navGroup).join("")}
       </ul>
@@ -117,7 +114,7 @@ const footer = () => {
   <div class="container">
     <div class="foot-grid">
       <div class="foot-brand">
-        <a class="brand" href="/" aria-label="Careero home">${brandMark(28)}<span class="brand-word">Careero</span></a>
+        <a class="brand" href="/" aria-label="Careero home">${brandMark(28, "careero-footer-gradient")}<span class="brand-word">Careero</span></a>
         <p>${esc(site.productDescription)}</p>
         ${cta("Create My CV", site.appUrl, "btn btn-primary")}
       </div>
@@ -135,9 +132,7 @@ const footer = () => {
 // ---- content blocks --------------------------------------------------------
 const bulletList = (items = []) =>
   items.length
-    ? `<ul class="ticks">${items
-        .map((b) => `<li>${b}</li>`)
-        .join("")}</ul>`
+    ? `<ul class="ticks">${items.map((b) => `<li>${b}</li>`).join("")}</ul>`
     : "";
 
 const renderHero = (b) => `
@@ -204,10 +199,7 @@ const renderSteps = (b) => `
     ${b.intro ? `<p class="section-intro">${b.intro}</p>` : ""}
     <ol class="steps">
       ${b.items
-        .map(
-          (s) =>
-            `<li><h3>${esc(s.title)}</h3><p>${s.text}</p></li>`,
-        )
+        .map((s) => `<li><h3>${esc(s.title)}</h3><p>${s.text}</p></li>`)
         .join("")}
     </ol>
   </div>
@@ -258,14 +250,10 @@ const jsonLdScript = (obj) =>
 
 const breadcrumbLd = (page) => {
   if (!page.slug) return null;
-  const parts = page.slug.split("/").filter(Boolean);
-  const items = [{ name: "Home", url: absUrl("/") }];
-  let acc = "";
-  parts.forEach((p, i) => {
-    acc += `/${p}`;
-    const isLast = i === parts.length - 1;
-    items.push({ name: isLast ? page.h1 || page.title : titleCase(p), url: absUrl(acc) });
-  });
+  const items = [
+    { name: "Home", url: absUrl("/") },
+    { name: page.h1 || page.title, url: absUrl(page.slug) },
+  ];
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -277,9 +265,6 @@ const breadcrumbLd = (page) => {
     })),
   };
 };
-
-const titleCase = (s) =>
-  s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 const faqLdFromBlocks = (page) => {
   const faq = (page.blocks || []).find((b) => b.type === "faq");
@@ -296,7 +281,10 @@ const faqLdFromBlocks = (page) => {
 };
 
 const stripTags = (html = "") =>
-  html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  html
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const organizationLd = () => ({
   "@context": "https://schema.org",
@@ -343,7 +331,7 @@ const articleLd = (page) => ({
     logo: { "@type": "ImageObject", url: absUrl("/icon.svg") },
   },
   mainEntityOfPage: { "@type": "WebPage", "@id": absUrl(page.slug) },
-  image: absUrl(page.ogImage || "/og-default.png"),
+  image: absUrl(page.ogImage || ogImagePath(page.slug)),
 });
 
 const buildJsonLd = (page) => {
@@ -413,12 +401,6 @@ const head = (page) => {
   ${buildJsonLd(page)}`;
 };
 
-// Cookieless Cloudflare Web Analytics beacon (only when a token is configured).
-const analytics = () =>
-  site.cloudflareAnalyticsToken
-    ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${site.cloudflareAnalyticsToken}"}'></script>`
-    : "";
-
 // ---- full document ---------------------------------------------------------
 export const renderPage = (page) => `<!doctype html>
 <html lang="en">
@@ -430,7 +412,6 @@ ${header()}
 ${renderBlocks(page.blocks)}
 </main>
 ${footer()}
-${analytics()}
-<script defer src="/analytics.js"></script>
+<script defer src="/site.js" data-cloudflare-token="${esc(site.cloudflareAnalyticsToken)}"></script>
 </body>
 </html>`;

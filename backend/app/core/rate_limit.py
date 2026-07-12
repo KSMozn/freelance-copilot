@@ -19,10 +19,12 @@ from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request, status
 
+from app.core.config import get_settings
+
 
 class SlidingWindowLimiter:
     def __init__(self, limit: int, window_s: float) -> None:
-        self._limit = limit
+        self.limit = limit
         self._window = window_s
         self._hits: dict[str, deque[float]] = defaultdict(deque)
 
@@ -33,7 +35,7 @@ class SlidingWindowLimiter:
         dq = self._hits[key]
         while dq and dq[0] < cutoff:
             dq.popleft()
-        if len(dq) >= self._limit:
+        if len(dq) >= self.limit:
             retry_after = int(dq[0] + self._window - now) + 1
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -71,4 +73,17 @@ login_ip_limiter = SlidingWindowLimiter(limit=20, window_s=60.0)
 login_account_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
 refresh_ip_limiter = SlidingWindowLimiter(limit=40, window_s=60.0)
 otp_verify_limiter = SlidingWindowLimiter(limit=10, window_s=60.0)
-otp_request_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
+# Env-tunable (OTP_REQUEST_IP_LIMIT_PER_MIN, default 8): the dev/e2e compose
+# stack raises it because the whole Playwright suite arrives from one IP.
+otp_request_ip_limiter = SlidingWindowLimiter(
+    limit=get_settings().otp_request_ip_limit_per_min, window_s=60.0
+)
+# Password registration does a bcrypt hash per call and creates rows — it was
+# the only unlimited auth endpoint (account-spam / CPU vector).
+register_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
+# Forgot-password sends an email per call; the per-account window is long
+# (15 min) so it can't be used to flood one inbox, mirroring the DB-backed
+# OTP issuance limit. Reset-password does a bcrypt hash per call.
+forgot_password_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)
+forgot_password_account_limiter = SlidingWindowLimiter(limit=3, window_s=900.0)
+reset_password_ip_limiter = SlidingWindowLimiter(limit=8, window_s=60.0)

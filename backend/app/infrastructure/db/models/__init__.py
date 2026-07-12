@@ -26,6 +26,7 @@ from app.infrastructure.db.models.job_analysis import JobAnalysis
 from app.infrastructure.db.models.match_report import MatchReport
 from app.infrastructure.db.models.opportunity_score import OpportunityScore
 from app.infrastructure.db.models.output import Output
+from app.infrastructure.db.models.password_reset_token import PasswordResetToken
 from app.infrastructure.db.models.persona import Persona, PersonaArchetype
 from app.infrastructure.db.models.portfolio import Portfolio, PortfolioSkill
 from app.infrastructure.db.models.project import (
@@ -78,6 +79,7 @@ __all__ = [
     "MatchReport",
     "OpportunityScore",
     "Output",
+    "PasswordResetToken",
     "Persona",
     "PersonaArchetype",
     "Portfolio",

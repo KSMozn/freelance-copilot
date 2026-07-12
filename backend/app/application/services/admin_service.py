@@ -626,7 +626,7 @@ class AdminService:
                     user_id=ev.user_id,
                     user_email=email,
                     kind=ev.kind,
-                    status=ev.status,  # type: ignore[arg-type]
+                    status=ev.status,
                     duration_ms=ev.duration_ms,
                     error_message=ev.error_message,
                     meta=dict(ev.meta or {}),

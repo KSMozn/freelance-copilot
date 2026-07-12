@@ -17,11 +17,12 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any
+from collections.abc import Callable
+from typing import Any, TypeVar
 from urllib.parse import urlparse
 
 import httpx
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -44,6 +45,9 @@ from app.infrastructure.db.models.student_profile import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Response-shape type for the AI plumbing below (any career-pack DTO).
+_ModelT = TypeVar("_ModelT", bound=BaseModel)
 
 
 class CareerPackError(RuntimeError):
@@ -224,7 +228,7 @@ class CareerPackService:
         linkedin_url = links.get("linkedin") or None
         github_url = links.get("github") or None
 
-        def _shape(cls: type, key: str):
+        def _shape(cls: type[_ModelT], key: str) -> _ModelT | None:
             raw = pack.get(key)
             if not isinstance(raw, dict):
                 return None
@@ -466,9 +470,9 @@ class CareerPackService:
         *,
         system: str,
         user: str,
-        schema: type,
-        fallback,
-    ):
+        schema: type[_ModelT],
+        fallback: Callable[[dict[str, Any]], _ModelT],
+    ) -> _ModelT:
         try:
             raw = self._capture(
                 await self._ai.complete_json(system_prompt=system, user_prompt=user)

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -23,6 +24,21 @@ from app.core.database import AsyncSessionLocal
 from app.infrastructure.db.models.usage_event import UsageEvent
 
 logger = logging.getLogger(__name__)
+
+# ---- test seam ---------------------------------------------------------
+# When a sink is installed, record() hands the event payload to it instead
+# of opening a real database session. Tests install an in-memory capture
+# (see tests/conftest.py) so background event writes neither attempt DB
+# connections nor emit "Future exception was never retrieved" noise at
+# event-loop shutdown. Production never sets a sink.
+Sink = Callable[[dict[str, Any]], Awaitable[None]]
+_sink: Sink | None = None
+
+
+def set_sink(sink: Sink | None) -> None:
+    """Install (or with None, remove) the event sink. Test-only seam."""
+    global _sink
+    _sink = sink
 
 
 async def record(
@@ -39,6 +55,21 @@ async def record(
     Uses its own AsyncSessionLocal — the caller's DB session is likely
     already committed / closed by the time we log.
     """
+    if _sink is not None:
+        try:
+            await _sink(
+                {
+                    "user_id": user_id,
+                    "kind": kind,
+                    "status": status,
+                    "duration_ms": duration_ms,
+                    "error_message": error_message,
+                    "meta": meta or {},
+                }
+            )
+        except Exception as exc:  # the seam must be as unbreakable as the real path
+            logger.warning("Usage-event sink failed for %s: %s", kind, exc)
+        return
     try:
         async with AsyncSessionLocal() as session:
             row = UsageEvent(

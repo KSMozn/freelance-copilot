@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Careero palette — HSL, so shadcn utilities light up automatically.
+       Reference hexes: #3B82F6 (blue) → 217 91% 60%,
+       #8B5CF6 (violet) → 258 90% 66%,
+       #6C5CE7 (indigo bridge) → 250 74% 63%,
+       #F4F6F9 (light gray bg) → 220 20% 96%,
+       #0D0F1A (dark navy bg) → 226 33% 8%. */
+    --background: 220 20% 98%;
+    --foreground: 226 33% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 226 33% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 226 33% 12%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 220 20% 98%;
+    --secondary: 220 20% 96%;
+    --secondary-foreground: 226 33% 20%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 226 12% 46%;
+    --accent: 258 90% 66%;
+    --accent-foreground: 220 20% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 220 20% 98%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+
+    /* Brand gradient stops — used by .bg-brand-gradient utility below and
+       by inline <linearGradient> defs in the C / P logo SVGs. */
+    --brand-from: 217 91% 60%; /* #3B82F6 */
+    --brand-mid: 250 74% 63%; /* #6C5CE7 */
+    --brand-to: 258 90% 66%; /* #8B5CF6 */
+  }
+
+  .dark {
+    --background: 226 33% 8%; /* #0D0F1A */
+    --foreground: 220 20% 98%;
+    --card: 226 33% 11%;
+    --card-foreground: 220 20% 98%;
+    --popover: 226 33% 11%;
+    --popover-foreground: 220 20% 98%;
+    --primary: 217 91% 65%;
+    --primary-foreground: 226 33% 8%;
+    --secondary: 226 20% 18%;
+    --secondary-foreground: 220 20% 98%;
+    --muted: 226 20% 18%;
+    --muted-foreground: 220 12% 66%;
+    --accent: 258 90% 70%;
+    --accent-foreground: 220 20% 98%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 220 20% 98%;
+    --border: 226 20% 20%;
+    --input: 226 20% 20%;
+    --ring: 217 91% 65%;
+
+    --brand-from: 217 91% 65%;
+    --brand-mid: 250 74% 68%;
+    --brand-to: 258 90% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Careero brand gradient — used sparingly: primary CTAs, logo fills,
+     hero accents. Do NOT apply to entire backgrounds outside the login
+     brand column; the brief calls for gradients to *emphasize*, not
+     dominate. */
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--brand-from)) 0%,
+      hsl(var(--brand-mid)) 55%,
+      hsl(var(--brand-to)) 100%
+    );
+  }
+  .bg-brand-gradient-soft {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--brand-from) / 0.08) 0%,
+      hsl(var(--brand-to) / 0.08) 100%
+    );
+  }
+  .text-brand-gradient {
+    background-image: linear-gradient(135deg, hsl(var(--brand-from)), hsl(var(--brand-to)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .ring-brand-gradient {
+    /* Two-layer trick: gradient border over inset panel. Apply to a
+       relative element that owns a filled child (e.g. picker card). */
+    box-shadow:
+      inset 0 0 0 2px transparent,
+      0 0 0 2px hsl(var(--brand-from)),
+      0 0 0 2px hsl(var(--brand-to));
+  }
+}

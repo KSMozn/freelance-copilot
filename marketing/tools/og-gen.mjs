@@ -21,10 +21,7 @@ const CHROME =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 const xml = (s = "") =>
-  String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 // Decode the handful of HTML entities that appear in H1 text so the OG image
 // shows real characters, not entity codes.
@@ -58,7 +55,7 @@ const keyFor = (slug) => (slug ? slug.replace(/\//g, "-") : "home");
 
 function svgFor(page) {
   const hero = (page.blocks || []).find((b) => b.type === "hero");
-  const kicker = xml(hero?.kicker || site.tagline);
+  const kicker = xml((hero?.kicker || site.tagline).toUpperCase());
   const h1 = deent(page.h1 || page.title);
   const lines = wrap(h1, 24, 3);
   const fs = lines.length >= 3 ? 58 : 64;
@@ -85,7 +82,7 @@ function svgFor(page) {
     <path d="M 60 50 L 69 46 L 60 42 L 56 33 L 52 42 L 43 46 L 52 50 L 56 59 Z" fill="url(#g)"/>
     <text x="100" y="62" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, Arial, sans-serif" font-size="46" font-weight="700" fill="#ffffff">Careero</text>
   </g>
-  <text x="96" y="248" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, Arial, sans-serif" font-size="26" font-weight="600" letter-spacing="1" fill="#8B5CF6">${kicker.toUpperCase()}</text>
+  <text x="96" y="248" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, Arial, sans-serif" font-size="26" font-weight="600" letter-spacing="1" fill="#8B5CF6">${kicker}</text>
   ${textEls}
   <text x="96" y="560" font-family="ui-sans-serif, system-ui, Segoe UI, Roboto, Arial, sans-serif" font-size="28" font-weight="400" fill="#94a3b8">AI CV Builder for Students · PDF &amp; DOCX · ATS-friendly</text>
 </svg>`;
@@ -97,7 +94,13 @@ function main() {
   mkdirSync(OUT, { recursive: true });
 
   let n = 0;
-  for (const page of pages) {
+  const selectedPages = process.env.OG_SLUG
+    ? pages.filter((page) => page.slug === process.env.OG_SLUG)
+    : pages;
+  if (selectedPages.length === 0) {
+    throw new Error(`Unknown OG_SLUG: ${process.env.OG_SLUG}`);
+  }
+  for (const page of selectedPages) {
     const key = keyFor(page.slug);
     const svgPath = join(TMP, `${key}.svg`);
     writeFileSync(svgPath, svgFor(page), "utf8");

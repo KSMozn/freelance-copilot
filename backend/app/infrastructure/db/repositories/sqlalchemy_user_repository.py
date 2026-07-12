@@ -66,6 +66,13 @@ class SQLAlchemyUserRepository:
         row.selected_persona_kind = kind
         await self._session.commit()
 
+    async def set_password(self, user_id: UUID, password_hash: str) -> None:
+        row = await self._session.get(UserModel, user_id)
+        if row is None:
+            return
+        row.password_hash = password_hash
+        await self._session.commit()
+
     async def mark_email_verified(
         self, user_id: UUID, verified_at: datetime
     ) -> None:

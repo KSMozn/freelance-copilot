@@ -1,0 +1,14 @@
+# Keep runtime state, caches, and local envs out of the image build context.
+# var/ holds dev-emails.jsonl (OTP codes) and local uploads — never bake it in.
+var/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.env
+.env.*
