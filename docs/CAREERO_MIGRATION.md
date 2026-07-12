@@ -4,7 +4,7 @@
 credentials (Khaled).
 
 The product pivoted to **Careero** but the infrastructure still carries the
-pre-pivot name. This runbook retires it. It is a *cutover*, not a find/replace:
+pre-pivot name. This runbook retires it. It is a _cutover_, not a find/replace:
 Cloud Run services, Cloud SQL instances, GCS buckets, and Artifact Registry
 repositories **cannot be renamed in place** — each is create-new → migrate →
 verify → delete-old.
@@ -17,7 +17,7 @@ Target infrastructure prefix: `careero`.
 
 **Option A (chosen).** GCP project IDs are **permanently immutable** — Google
 does not allow renaming one, ever. The project keeps the ID
-`freelance-copilot-841590`; only the *resources inside it* are renamed.
+`freelance-copilot-841590`; only the _resources inside it_ are renamed.
 
 Option B (new project `careero-xxxxx` + full migration) was rejected: it forces
 re-issuing every secret, IAM binding, domain mapping, and the Cloud SQL data
@@ -32,18 +32,18 @@ substitution) and in the deployment docs. That is expected, not drift.
 ## Already done in the repo (safe before cutover)
 
 These landed ahead of the infrastructure work and are **backward-compatible** —
-they work against the old resources *and* the new ones:
+they work against the old resources _and_ the new ones:
 
-| Change | Why it is safe now |
-| --- | --- |
+| Change                                                                                                                                    | Why it is safe now                                                                                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apiClient.ts` `*.run.app` host swap is now token-based (`(^\|-)frontend` → `backend`) instead of hardcoding `freelance-copilot-frontend` | Resolves correctly for both `freelance-copilot-frontend-*` and `careero-frontend-*` hosts. Verified against 8 hostnames incl. near-misses (`storefrontend-*` untouched). |
-| `cloudbuild.yaml` (frontend + marketing) now take `_PROJECT_ID` / `_ARTIFACT_REPO` substitutions | Defaults are the **current** values, so builds keep working. Cutover is a one-line default change (step 2). |
-| `VITE_API_BASE_URL` build-arg is a substitution defaulting to `https://api.careero.app/api/v1` | Removes the previously hardcoded hashed `*.run.app` URL, which rots whenever the service is recreated. |
-| User-Agent strings → `careero-scanner/1`, `careero-research/1` | Outbound-only; no system keys off them. |
+| `cloudbuild.yaml` (frontend + marketing) now take `_PROJECT_ID` / `_ARTIFACT_REPO` substitutions                                          | Defaults are the **current** values, so builds keep working. Cutover is a one-line default change (step 2).                                                              |
+| `VITE_API_BASE_URL` build-arg is a substitution defaulting to `https://api.careero.app/api/v1`                                            | Removes the previously hardcoded hashed `*.run.app` URL, which rots whenever the service is recreated.                                                                   |
+| User-Agent strings → `careero-scanner/1`, `careero-research/1`                                                                            | Outbound-only; no system keys off them.                                                                                                                                  |
 
 ### Explicitly NOT renamed (traps)
 
-- **`PersonaArmory` / `persona-armory-admin-auth`** — *not* legacy branding.
+- **`PersonaArmory` / `persona-armory-admin-auth`** — _not_ legacy branding.
   PersonaArmory is the live company + admin-surface brand ("Careero is a
   PersonaArmory product"). The storage key is frozen: changing it logs out
   every admin. Leave both alone.
@@ -90,7 +90,7 @@ Then flip the default in **both** `frontend/cloudbuild.yaml` and
 `marketing/cloudbuild.yaml`:
 
 ```yaml
-_ARTIFACT_REPO: careero   # was: freelance-copilot
+_ARTIFACT_REPO: careero # was: freelance-copilot
 ```
 
 Backend images are built by the ad-hoc `gcloud builds submit --tag` command in
@@ -144,7 +144,7 @@ gcloud storage buckets create gs://careero-uploads \
 gcloud storage rsync -r gs://freelance-copilot-841590-uploads gs://careero-uploads
 ```
 
-Update `GCS_BUCKET` (see `backend/app/core/config.py`) on the new Cloud Run
+Update `GCS_UPLOADS_BUCKET` (see `backend/app/core/config.py`) on the new Cloud Run
 services, redeploy, then re-run the rsync to catch objects written during the
 window.
 
@@ -159,8 +159,9 @@ deletion.
 
 1. Create `careero-db` (**match the old instance's Postgres major version** —
    confirm it first: `gcloud sql instances describe freelance-copilot-db
-   --format='value(databaseVersion)'`; local dev runs Postgres 16).
-2. Enable the `citext` and `vector` extensions — the schema depends on both.
+--format='value(databaseVersion)'`; local dev runs Postgres 16).
+2. Enable the `citext`, `vector`, and `pg_trgm` extensions — the schema depends
+   on all three.
 3. Export → import, or use a Database Migration Service job for near-zero
    downtime.
 4. Point the new Cloud Run services + `careero-migrate` job at the new instance.

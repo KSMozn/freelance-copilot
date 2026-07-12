@@ -7,11 +7,11 @@ presence with a generated Career Starter Pack.
 
 One repository, three deployed surfaces, one frontend bundle:
 
-| Surface | Host | What it is |
-| --- | --- | --- |
-| **Student app** | `app.careero.app` | The CV-builder wizard (OTP email sign-in) |
-| **Admin console** | `admin.careero.app` | PersonaArmory ops: users, funnel, feedback, emails, CV templates, LLM spend |
-| **Marketing site** | `careero.app` | Static pre-rendered site (`marketing/`, deployed separately) |
+| Surface            | Host                | What it is                                                                  |
+| ------------------ | ------------------- | --------------------------------------------------------------------------- |
+| **Student app**    | `app.careero.app`   | The CV-builder wizard (OTP email sign-in)                                   |
+| **Admin console**  | `admin.careero.app` | PersonaArmory ops: users, funnel, feedback, emails, CV templates, LLM spend |
+| **Marketing site** | `careero.app`       | Static pre-rendered site (`marketing/`, deployed separately)                |
 
 > **History:** the repo began as an "Upwork Intelligence Platform" for
 > freelancers. That professional/career-OS surface still exists — backend
@@ -41,7 +41,7 @@ One repository, three deployed surfaces, one frontend bundle:
 ```bash
 cp .env.example .env
 make up            # postgres + backend (auto-migrates) + frontend
-make create-admin email=you@example.com password=change-me
+make create-admin email=you@example.com  # prompts securely for a 12+ character password
 ```
 
 - Student app: <http://localhost:5173>
@@ -74,7 +74,7 @@ flow — only the delivery adapter differs.
 make backend-dev    # uvicorn --reload (needs Python 3.13 + `uv sync` in backend/)
 make frontend-dev   # vite dev server on :5173
 make lint           # ruff (backend) + eslint/tsc (frontend)
-make backend-test   # pytest inside the backend container (363 unit tests, no DB needed)
+make backend-test   # pytest inside the backend container (402 unit tests, no DB needed)
 ```
 
 Frontend extras: `npm run storybook` (shared/ui component browser),
@@ -83,12 +83,12 @@ commit (hooks live in `frontend/.husky/`).
 
 ## Providers (all mockable, selected via env)
 
-| Concern | Options | Notes |
-| --- | --- | --- |
-| LLM | `AI_PROVIDER=mock\|openai\|claude` | `mock` is the offline default; Groq works through `OPENAI_BASE_URL` (OpenAI-compatible). |
-| Embeddings | `EMBEDDING_PROVIDER=mock\|openai` | Used by the dormant professional surface. |
-| Email | `EMAIL_PROVIDER=mock\|resend` | `mock` writes to `backend/var/dev-emails.jsonl` (OTP codes + password-reset links) and powers the dev mailbox endpoint; `resend` sends real mail and is required in staging/production (the app refuses to boot there on `mock`). Same auth flow either way — only the delivery adapter changes. |
-| Uploads | `BLOB_STORE=local\|gcs` | Local dir or GCS bucket. |
+| Concern    | Options                            | Notes                                                                                                                                                                                                                                                                                            |
+| ---------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| LLM        | `AI_PROVIDER=mock\|openai\|claude` | `mock` is the offline default; Groq works through `OPENAI_BASE_URL` (OpenAI-compatible).                                                                                                                                                                                                         |
+| Embeddings | `EMBEDDING_PROVIDER=mock\|openai`  | Used by the dormant professional surface.                                                                                                                                                                                                                                                        |
+| Email      | `EMAIL_PROVIDER=mock\|resend`      | `mock` writes to `backend/var/dev-emails.jsonl` (OTP codes + password-reset links) and powers the dev mailbox endpoint; `resend` sends real mail and is required in staging/production (the app refuses to boot there on `mock`). Same auth flow either way — only the delivery adapter changes. |
+| Uploads    | `BLOB_STORE=local\|gcs`            | Local dir or GCS bucket.                                                                                                                                                                                                                                                                         |
 
 See `.env.example` (root, full stack) and `backend/.env.example` for the
 complete variable reference.

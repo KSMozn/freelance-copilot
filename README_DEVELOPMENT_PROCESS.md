@@ -38,12 +38,12 @@ delete the branch. That's the whole model.
 
 ## 2. Roles and Responsibilities
 
-| Role | Who | Owns |
-|---|---|---|
-| **Maintainer** | Khaled | Final approval on user-facing product, CV builder, templates, exports, AI prompts, email templates, auth, env vars, production deploys. Merges. |
-| **Team contributor** | Invited collaborators | Opens branches, ships PRs, reviews others' PRs, runs local tests. May approve small fixes but not sensitive-area changes. |
-| **Reviewer of the week** | Rotates | First responder on new PRs (target: first review within 24h business days). |
-| **On-call for prod** | Khaled | Deploys, hotfixes, rollbacks. |
+| Role                     | Who                   | Owns                                                                                                                                            |
+| ------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Maintainer**           | Khaled                | Final approval on user-facing product, CV builder, templates, exports, AI prompts, email templates, auth, env vars, production deploys. Merges. |
+| **Team contributor**     | Invited collaborators | Opens branches, ships PRs, reviews others' PRs, runs local tests. May approve small fixes but not sensitive-area changes.                       |
+| **Reviewer of the week** | Rotates               | First responder on new PRs (target: first review within 24h business days).                                                                     |
+| **On-call for prod**     | Khaled                | Deploys, hotfixes, rollbacks.                                                                                                                   |
 
 Anyone can propose a change. Only the maintainer merges to `main`.
 
@@ -82,6 +82,15 @@ checklist runs here.
 - **GCS bucket** for uploads: `freelance-copilot-841590-uploads`.
 - **Secrets** in GCP Secret Manager.
 - **Region:** `europe-west1`.
+- **Backend env vars** live on the Cloud Run service (and on the
+  `freelance-copilot-migrate` job) — `gcloud run services update --image`
+  preserves them between deploys. The full catalog is `backend/.env.example`
+  (kept in sync with `app/core/config.py`). Three are enforced at startup and
+  will fail the revision (and therefore the deploy) if wrong:
+  `ENVIRONMENT=production` (required — the setting has no default),
+  a real 32+ character `SECRET_KEY` (placeholder/short values are rejected
+  outside development), and `EMAIL_PROVIDER=resend` (`mock` is refused in
+  staging/production).
 
 Production is deployed **only by Khaled**, only from `main`. Never from a branch.
 
@@ -166,6 +175,12 @@ Every prod deploy runs this exact order. Skipping a step has burned us before.
 git checkout main && git pull
 git log --oneline -5    # confirm you're at the intended commit
 
+# Confirm the service still pins the required env (a missing ENVIRONMENT
+# fails startup validation, so the new revision would never go healthy):
+gcloud run services describe freelance-copilot-backend \
+  --region=europe-west1 --project=freelance-copilot-841590 \
+  --format='value(spec.template.spec.containers[0].env)' | grep -o "ENVIRONMENT[^;]*"
+
 # 1. Build backend image (contains migrations + code)
 cd backend
 gcloud builds submit \
@@ -177,6 +192,13 @@ gcloud builds submit \
 # 2. Build frontend image in parallel
 cd ../frontend
 gcloud builds submit --config=cloudbuild.yaml \
+  --project=freelance-copilot-841590 \
+  --account=easydynamicstmiller@gmail.com .
+
+# 2b. Build the separately deployed marketing image with an immutable tag
+cd ../marketing
+gcloud builds submit --config=cloudbuild.yaml \
+  --substitutions=_IMAGE_TAG=<sha> \
   --project=freelance-copilot-841590 \
   --account=easydynamicstmiller@gmail.com .
 
@@ -198,16 +220,29 @@ gcloud run services update freelance-copilot-frontend \
   --image=europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/frontend:latest \
   --project=freelance-copilot-841590
 
-# 6. Smoke test
-# Run through .github/RELEASE_CHECKLIST.md against https://app.careero.app.
+# 6. Roll marketing when marketing/ changed
+gcloud run services update marketing \
+  --region=europe-west1 \
+  --image=europe-west1-docker.pkg.dev/freelance-copilot-841590/freelance-copilot/marketing:<sha> \
+  --project=freelance-copilot-841590
+
+# 7. Smoke test
+# Run .github/RELEASE_CHECKLIST.md against https://app.careero.app and verify
+# https://careero.app plus one nested guide URL return 200 with current content.
 ```
+
+> **Upgrade note — refresh-token hardening (2026-07).** The first deploy that
+> includes the refresh-token `jti`/family hardening rejects every refresh
+> token minted before it. Everyone signed in before that deploy (students and
+> admins) is logged out once and must sign in again. This is expected and
+> one-time — say so in the release notes so support isn't surprised.
 
 ### 5.2 What "Ready to Release" Means
 
 - All merged PRs since the last release show green in CI.
 - No unresolved `blocker` issues open.
 - Release checklist has been walked on a local instance running `main`.
-- Rollback anchors noted (previous backend and frontend revision IDs).
+- Rollback anchors noted (previous backend, frontend, and marketing revision IDs).
 
 ### 5.3 Rollback
 
@@ -219,6 +254,9 @@ gcloud run services update-traffic freelance-copilot-backend \
   --region=europe-west1 --project=freelance-copilot-841590
 gcloud run services update-traffic freelance-copilot-frontend \
   --to-revisions=<previous-revision>=100 \
+  --region=europe-west1 --project=freelance-copilot-841590
+gcloud run services update-traffic marketing \
+  --to-revisions=<previous-marketing-revision>=100 \
   --region=europe-west1 --project=freelance-copilot-841590
 ```
 
@@ -251,13 +289,13 @@ Hotfixes bypass the "wait for the next release window" cadence but not the
 
 We're a small team; the rhythm is intentionally light.
 
-| Day | Cadence |
-|---|---|
-| Monday | 15-minute sync: what shipped last week, what's in flight, blockers. |
+| Day       | Cadence                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------ |
+| Monday    | 15-minute sync: what shipped last week, what's in flight, blockers.                        |
 | Every day | Async standup as a comment on the current sprint's tracking issue — one line, no ceremony. |
-| Wednesday | "Review afternoon" — reviewers clear the PR queue. |
-| Friday | Merge freeze after 3pm local. Only hotfixes merge over the weekend. |
-| Monthly | Retrospective: what worked, what didn't, one process tweak. |
+| Wednesday | "Review afternoon" — reviewers clear the PR queue.                                         |
+| Friday    | Merge freeze after 3pm local. Only hotfixes merge over the weekend.                        |
+| Monthly   | Retrospective: what worked, what didn't, one process tweak.                                |
 
 - **Working async** is the default. Meetings only when async is genuinely worse.
 - **Issue triage** happens in the Monday sync — labels, priorities, assignees.
@@ -270,14 +308,14 @@ We're a small team; the rhythm is intentionally light.
 
 Each gate exists because we hit a bug that got past the previous gate.
 
-| Gate | What it checks | Failure mode it catches |
-|---|---|---|
-| **Local run** | The dev's own docker stack. | Obvious build breakage. |
-| **CI** | Lint (ruff/eslint), strict mypy, type check, build, unit tests, Playwright E2E. | Missed imports, type drift, broken golden paths. |
-| **Peer review** | Correctness, blast radius, matches issue. | Logic errors, hidden coupling. |
-| **UI review** | Screenshots + local walk-through. | Empty states, mobile, "I forgot to test that path". |
-| **Release checklist** | End-to-end journey in prod. | Prod-only bugs (env vars, secrets, custom domains). |
-| **Post-deploy smoke** | Real students in the affected screens. | The bug the checklist didn't cover. |
+| Gate                  | What it checks                                                                  | Failure mode it catches                             |
+| --------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------- |
+| **Local run**         | The dev's own docker stack.                                                     | Obvious build breakage.                             |
+| **CI**                | Lint (ruff/eslint), strict mypy, type check, build, unit tests, Playwright E2E. | Missed imports, type drift, broken golden paths.    |
+| **Peer review**       | Correctness, blast radius, matches issue.                                       | Logic errors, hidden coupling.                      |
+| **UI review**         | Screenshots + local walk-through.                                               | Empty states, mobile, "I forgot to test that path". |
+| **Release checklist** | End-to-end journey in prod.                                                     | Prod-only bugs (env vars, secrets, custom domains). |
+| **Post-deploy smoke** | Real students in the affected screens.                                          | The bug the checklist didn't cover.                 |
 
 If a gate misses a bug, the retrospective adds a line to that gate's checklist so it
 catches the next one.
