@@ -6,6 +6,8 @@
   "description": "Public SEO/marketing site for Careero (careero.app). Zero-dependency static-site generator — emits fully pre-rendered HTML.",
   "scripts": {
     "build": "node build.mjs",
+    "lint": "node --check build.mjs && node --check src/pages.mjs && node --check src/render.mjs && node --check src/site.mjs && node --check tools/og-gen.mjs && node --check tools/validate-build.mjs && node --check assets/site.js",
+    "validate": "node tools/validate-build.mjs",
     "serve": "node build.mjs && cd dist && python3 -m http.server 4321"
   }
 }

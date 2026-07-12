@@ -12,9 +12,10 @@ server {
     absolute_redirect off;
     port_in_redirect off;
 
-    # Security headers (mirrors the app hardening). This site has no
-    # executable JS of its own; the CSP allows inline JSON-LD structured data
-    # and the external stylesheet, nothing else.
+    # Security headers (mirrors the app hardening). First-party JS is limited
+    # to assets/site.js (nav toggle + analytics beacon injection), covered by
+    # script-src 'self'; the CSP additionally allows inline JSON-LD structured
+    # data, the external stylesheet, and the Cloudflare beacon — nothing else.
     #
     # NOTE: caching below uses `expires` (not `add_header Cache-Control`) on
     # purpose — an `add_header` inside a location would reset nginx's header
