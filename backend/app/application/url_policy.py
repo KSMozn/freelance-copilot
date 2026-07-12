@@ -5,6 +5,7 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 _LEGACY_NUMERIC_PART = re.compile(r"(?:0[xX][0-9A-Fa-f]+|[0-9]+)\Z")
+_HAS_SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://")
 
 
 def normalize_external_http_url(value: str | None) -> str | None:
@@ -15,6 +16,13 @@ def normalize_external_http_url(value: str | None) -> str | None:
         return None
     if "\\" in stripped or any(ord(char) < 32 or ord(char) == 127 for char in stripped):
         raise ValueError("URL must use http:// or https://")
+    # Students routinely type bare domains ("myportfolio.com",
+    # "www.behance.net/me"). Default a missing scheme to https:// rather than
+    # rejecting — otherwise the whole profile step 422s and any stored
+    # bare-domain link silently vanishes from the rendered CV. An explicit
+    # non-http(s) scheme (ftp:, mailto:, javascript:) is still rejected below.
+    if not _HAS_SCHEME.match(stripped):
+        stripped = "https://" + stripped
     try:
         parsed = urlsplit(stripped)
         port = parsed.port

@@ -9,10 +9,43 @@ from fastapi import HTTPException, UploadFile
 
 from app.api.uploads import read_upload_limited
 from app.application.services.student_profile_service import _safe_filename
+from app.application.url_policy import normalize_external_http_url
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import SlidingWindowLimiter, otp_request_ip_limiter
 from app.infrastructure.http.url_fetcher import UrlFetchError, _assert_public_url
 from app.infrastructure.storage.local_blob_store import LocalBlobStore
+
+# ---- external-link normalization ---------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("myportfolio.com", "https://myportfolio.com"),
+        ("www.behance.net/me", "https://www.behance.net/me"),
+        ("  linkedin.com/in/you  ", "https://linkedin.com/in/you"),
+        ("http://foo.com/x", "http://foo.com/x"),
+        ("https://foo.com/x", "https://foo.com/x"),
+        (None, None),
+        ("", None),
+    ],
+)
+def test_normalize_defaults_missing_scheme_to_https(
+    raw: str | None, expected: str | None
+) -> None:
+    # Bare domains (what students actually type) must normalize, not 422.
+    assert normalize_external_http_url(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["ftp://foo.com", "mailto:me@foo.com", "javascript:alert(1)", "file:///etc/passwd"],
+)
+def test_normalize_still_rejects_non_http_schemes(raw: str) -> None:
+    # An explicit non-http(s) scheme is never silently upgraded to https.
+    with pytest.raises(ValueError):
+        normalize_external_http_url(raw)
+
 
 # ---- rate limiter ------------------------------------------------------
 
@@ -216,8 +249,11 @@ async def test_fetch_page_stops_streaming_at_raw_size_cap(
         lambda **kw: real_client(transport=transport, **kw),
     )
 
-    with pytest.raises(UrlFetchError, match="Response too large"):
-        await url_fetcher.fetch_page("https://safe-public.example/oversized")
+    # Oversized bodies are truncated to the cap, not rejected — the fetch
+    # still succeeds so company-URL research keeps working on large pages.
+    page = await url_fetcher.fetch_page("https://safe-public.example/oversized")
+    assert len(page.text) <= 16
+    assert set(page.text) == {"x"}
 
 
 async def test_fetch_page_preserves_declared_response_charset(

@@ -139,6 +139,7 @@ export function StepSummary({ onSaved }: { onSaved: () => Promise<void> | void }
           <Input
             value={links.website ?? ""}
             onChange={(e) => setLinks({ ...links, website: e.target.value || null })}
+            placeholder="yoursite.com"
           />
         </div>
         <div className="space-y-2">
@@ -146,6 +147,7 @@ export function StepSummary({ onSaved }: { onSaved: () => Promise<void> | void }
           <Input
             value={links.portfolio ?? ""}
             onChange={(e) => setLinks({ ...links, portfolio: e.target.value || null })}
+            placeholder="behance.net/you"
           />
         </div>
       </div>

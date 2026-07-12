@@ -137,9 +137,15 @@ async def fetch_page(url: str, *, timeout_s: float = DEFAULT_TIMEOUT_S) -> Fetch
 
                     chunks = bytearray()
                     async for chunk in resp.aiter_bytes():
-                        if len(chunks) + len(chunk) > MAX_BYTES:
-                            raise UrlFetchError(f"Response too large fetching {url}")
                         chunks.extend(chunk)
+                        if len(chunks) >= MAX_BYTES:
+                            # Oversized pages (script-heavy job boards, LinkedIn,
+                            # marketing sites) are TRUNCATED to the cap, not
+                            # rejected: the title/description/text we extract lives
+                            # in <head> and the early body, so a prefix suffices.
+                            # Hard-failing here silently broke company-URL research.
+                            del chunks[MAX_BYTES:]
+                            break
                     response_url = str(resp.url)
                     response_body = bytes(chunks)
                     response_encoding = resp.encoding or "utf-8"
