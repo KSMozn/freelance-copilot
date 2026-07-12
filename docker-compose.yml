@@ -7,11 +7,15 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-upwork}
       POSTGRES_DB: ${POSTGRES_DB:-upwork_intel}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-upwork} -d ${POSTGRES_DB:-upwork_intel}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-upwork} -d ${POSTGRES_DB:-upwork_intel}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -78,7 +82,7 @@ services:
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
 
@@ -103,7 +107,7 @@ services:
       retries: 24
       start_period: 20s
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules

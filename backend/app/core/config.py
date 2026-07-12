@@ -23,7 +23,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    environment: Literal["development", "staging", "production", "test"] = "development"
+    environment: Literal["development", "staging", "production", "test"]
 
     postgres_user: str = "upwork"
     postgres_password: str = "upwork"

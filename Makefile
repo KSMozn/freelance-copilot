@@ -8,7 +8,7 @@ help:
 	@echo "  migrate        run alembic upgrade head inside backend container"
 	@echo "  revision m=... create a new alembic revision (autogenerate)"
 	@echo "  seed           seed the DORMANT professional demo (job/portfolios/resumes)"
-	@echo "  create-admin   create/reset an admin user (email=... password=... [name=...])"
+	@echo "  create-admin   create/reset an admin user (email=...; prompts for password/name)"
 	@echo "  backend-dev    run backend locally with reload (no docker)"
 	@echo "  frontend-dev   run vite dev server locally (no docker)"
 	@echo "  backend-test   pytest inside backend container"
@@ -41,9 +41,8 @@ seed:
 
 # Create (or reset the password of) a PersonaArmory admin user. Idempotent.
 create-admin:
-	@test -n "$(email)" || (echo 'usage: make create-admin email=you@example.com password=secret [name="Full Name"]' && exit 1)
-	@test -n "$(password)" || (echo 'usage: make create-admin email=you@example.com password=secret [name="Full Name"]' && exit 1)
-	docker compose exec -e ADMIN_EMAIL=$(email) -e ADMIN_PASSWORD=$(password) -e ADMIN_FULL_NAME=$(name) backend python -m app.scripts.create_admin
+	@test -n "$(email)" || (echo 'usage: make create-admin email=you@example.com' && exit 1)
+	docker compose exec -e ADMIN_EMAIL=$(email) backend python -m app.scripts.create_admin
 
 # uv run syncs .venv from uv.lock on demand — no manual activation needed.
 backend-dev:
@@ -53,7 +52,7 @@ frontend-dev:
 	cd frontend && npm run dev
 
 backend-test:
-	docker compose exec backend pytest
+	docker compose exec -e ENVIRONMENT=test backend pytest
 
 fmt:
 	cd backend && uv run --extra dev ruff format . && uv run --extra dev ruff check --fix .
@@ -61,4 +60,6 @@ fmt:
 
 lint:
 	cd backend && uv run --extra dev ruff check .
-	cd frontend && npm run lint && npm run typecheck
+	cd backend && uv run --extra dev mypy app
+	cd frontend && npm run format:check && npm run lint && npm run typecheck
+	cd marketing && npm run lint
