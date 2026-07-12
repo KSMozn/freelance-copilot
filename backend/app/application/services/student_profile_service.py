@@ -90,10 +90,12 @@ class StudentProfileService:
             setattr(row, key, value)
 
         if links is not None:
-            # links comes through as a dict already because of pydantic v2's
-            # model_dump on nested BaseModel.
             existing = dict(row.links or {})
-            existing.update({k: v for k, v in links.items() if v is not None})
+            for key, value in links.items():
+                if value is None:
+                    existing.pop(key, None)
+                else:
+                    existing[key] = value
             row.links = existing
 
         if mark_steps:

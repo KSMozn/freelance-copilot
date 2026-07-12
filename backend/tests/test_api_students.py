@@ -13,9 +13,10 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from app.api.v1.endpoints import students as students_endpoints
-from app.application.dto.student_dto import StudentEntryUpsert, StudentProfileUpdate
+from app.application.dto.student_dto import StudentEntryUpsert, StudentLinks, StudentProfileUpdate
 from app.core.deps import get_current_user
 from app.domain.entities.user import User
 from app.main import app
@@ -86,7 +87,16 @@ class FakeStudentProfileService:
         data = payload.model_dump(exclude_unset=True)
         mark_steps = data.pop("mark_steps", None)
         for key, value in data.items():
-            setattr(self.profile, key, value)
+            if key == "links" and value is not None:
+                links = dict(self.profile.links)
+                for link_key, link_value in value.items():
+                    if link_value is None:
+                        links.pop(link_key, None)
+                    else:
+                        links[link_key] = link_value
+                self.profile.links = links
+            else:
+                setattr(self.profile, key, value)
         for step in mark_steps or []:
             if step not in self.profile.completed_steps:
                 self.profile.completed_steps.append(step)
@@ -190,6 +200,28 @@ def test_put_profile_round_trip(client: TestClient, user: User) -> None:
     assert again["completed_steps"] == ["basics"]
 
 
+def test_put_profile_can_clear_one_saved_link(client: TestClient) -> None:
+    saved = client.put(
+        "/api/v1/students/profile",
+        json={
+            "links": {
+                "github": "https://github.com/student",
+                "linkedin": "https://www.linkedin.com/in/student",
+            }
+        },
+    )
+    assert saved.status_code == 200, saved.text
+
+    cleared = client.put(
+        "/api/v1/students/profile",
+        json={"links": {"github": None}},
+    )
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()["links"] == {
+        "linkedin": "https://www.linkedin.com/in/student"
+    }
+
+
 # ---- entries ----------------------------------------------------------------
 
 
@@ -291,6 +323,68 @@ def test_coach_email_malformed_address_blocks(client: TestClient) -> None:
 
 
 # ---- validation -------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("field", "url"),
+    [
+        ("github", "https://github.com.evil.example/student"),
+        ("github", "https://evil.example/github.com/student"),
+        ("linkedin", "https://linkedin.com.evil.example/in/student"),
+        ("linkedin", "https://evil-linkedin.com/in/student"),
+    ],
+)
+def test_profile_links_reject_deceptive_hosts(field: str, url: str) -> None:
+    with pytest.raises(ValidationError):
+        StudentLinks.model_validate({field: url})
+
+
+def test_profile_links_allow_trusted_hosts_and_subdomains() -> None:
+    links = StudentLinks(
+        github="https://github.com/student",
+        linkedin="https://www.linkedin.com/in/student",
+    )
+    assert links.github == "https://github.com/student"
+    assert links.linkedin == "https://www.linkedin.com/in/student"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://evil.example\\@github.com/student",
+        "https://evil.example@github.com/student",
+        "https://github.com%2fevil.example/student",
+    ],
+)
+def test_trusted_profile_links_reject_parser_differentials(url: str) -> None:
+    with pytest.raises(ValidationError):
+        StudentLinks.model_validate({"github": url})
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://2130706433/path",
+        "http://0x7f000001/path",
+        "http://0177.0.0.1/path",
+        "http://127.1/path",
+        "http://2130706433./path",
+        "http://0x7f000001./path",
+    ],
+)
+def test_exported_links_reject_legacy_numeric_hosts(url: str) -> None:
+    with pytest.raises(ValidationError):
+        StudentLinks.model_validate({"website": url})
+
+
+@pytest.mark.parametrize("scheme", ["javascript", "data", "file", "smb"])
+def test_exported_links_reject_unsafe_schemes(scheme: str) -> None:
+    with pytest.raises(ValidationError):
+        StudentLinks.model_validate({"portfolio": f"{scheme}:payload"})
+    with pytest.raises(ValidationError):
+        StudentEntryUpsert.model_validate(
+            {"kind": "project", "title": "Unsafe", "url": f"{scheme}:payload"}
+        )
 
 
 def test_survey_rating_out_of_bounds_returns_422(client: TestClient) -> None:

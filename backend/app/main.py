@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
+from app.core.request_size_limit import RequestSizeLimitMiddleware
 
 
 @asynccontextmanager
@@ -34,7 +35,6 @@ def create_app() -> FastAPI:
 
     is_deployed = settings.environment in ("staging", "production")
 
-    @app.middleware("http")
     async def security_headers(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
@@ -53,6 +53,7 @@ def create_app() -> FastAPI:
             )
         return response
 
+    app.add_middleware(RequestSizeLimitMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.middleware("http")(security_headers)
 
     app.include_router(api_router)
 

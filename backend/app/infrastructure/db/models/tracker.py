@@ -123,7 +123,7 @@ class InterviewEvent(Base):
 
 
 class FollowUpReminder(Base):
-    # Partial unique index on `(user_id, due_at) WHERE completed_at IS NULL`
+    # Partial index on `(user_id, due_at) WHERE completed_at IS NULL`
     # is created in migration 0026 — not declared at the model layer because
     # SQLAlchemy's text-based partial index DSL conflicts with hand-written
     # alembic migrations.

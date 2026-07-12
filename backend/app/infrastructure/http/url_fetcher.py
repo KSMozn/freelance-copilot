@@ -12,6 +12,7 @@ common metadata/internal-service and redirect vectors.
 """
 from __future__ import annotations
 
+import asyncio
 import ipaddress
 import re
 import socket
@@ -59,29 +60,30 @@ class UrlFetchError(Exception):
     """Raised when we can't get usable text out of a URL."""
 
 
-def _assert_public_url(url: str) -> None:
+async def _assert_public_url(url: str) -> None:
     """Reject non-http(s) schemes and any host that resolves to a
-    private/loopback/link-local/reserved/multicast address (SSRF guard)."""
+    non-global address — private/loopback/link-local/CGNAT/reserved/
+    multicast (SSRF guard). Resolution runs through the event loop's
+    executor so a slow resolver never stalls the loop."""
     parsed = urlparse(url)
     if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
         raise UrlFetchError(f"Unsupported URL scheme: {parsed.scheme!r}")
     host = parsed.hostname
     if not host:
         raise UrlFetchError("URL has no host")
+    loop = asyncio.get_running_loop()
     try:
-        infos = socket.getaddrinfo(host, parsed.port or 80, proto=socket.IPPROTO_TCP)
+        infos = await loop.getaddrinfo(
+            host, parsed.port or 80, proto=socket.IPPROTO_TCP
+        )
     except socket.gaierror as exc:
         raise UrlFetchError(f"Cannot resolve host {host!r}: {exc}") from exc
     for info in infos:
         ip = ipaddress.ip_address(info[4][0])
-        if (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_reserved
-            or ip.is_multicast
-            or ip.is_unspecified
-        ):
+        # `not is_global` covers every special-purpose range, including ones
+        # the individual is_private/is_reserved/… predicates miss (e.g. CGNAT
+        # 100.64.0.0/10).
+        if not ip.is_global:
             raise UrlFetchError("Refusing to fetch a non-public address")
 
 
@@ -121,32 +123,43 @@ async def fetch_page(url: str, *, timeout_s: float = DEFAULT_TIMEOUT_S) -> Fetch
             follow_redirects=False,
             headers=headers,
         ) as client:
-            resp = None
+            response_url: str | None = None
+            response_body: bytes | None = None
+            response_encoding = "utf-8"
             for _ in range(6):
-                _assert_public_url(current)
-                resp = await client.get(current)
-                if resp.is_redirect and "location" in resp.headers:
-                    current = urljoin(current, resp.headers["location"])
-                    continue
-                break
+                await _assert_public_url(current)
+                async with client.stream("GET", current) as resp:
+                    if resp.is_redirect and "location" in resp.headers:
+                        current = urljoin(current, resp.headers["location"])
+                        continue
+                    if resp.status_code >= 400:
+                        raise UrlFetchError(f"HTTP {resp.status_code} for {resp.url}")
+
+                    chunks = bytearray()
+                    async for chunk in resp.aiter_bytes():
+                        if len(chunks) + len(chunk) > MAX_BYTES:
+                            raise UrlFetchError(f"Response too large fetching {url}")
+                        chunks.extend(chunk)
+                    response_url = str(resp.url)
+                    response_body = bytes(chunks)
+                    response_encoding = resp.encoding or "utf-8"
+                    break
             else:
                 raise UrlFetchError(f"Too many redirects fetching {url}")
     except httpx.HTTPError as exc:
         raise UrlFetchError(f"Network error fetching {url}: {exc}") from exc
 
-    if resp is None:
+    if response_url is None or response_body is None:
         raise UrlFetchError(f"No response fetching {url}")
-    if resp.status_code >= 400:
-        raise UrlFetchError(f"HTTP {resp.status_code} for {resp.url}")
 
-    raw = resp.text[:MAX_BYTES]
+    raw = response_body.decode(response_encoding, errors="replace")
     title = _first_match(_TITLE_RE, raw)
     description = _first_match(_META_DESC_RE, raw) or _first_match(_OG_DESC_RE, raw)
     text = _strip_html(raw)[:TEXT_CAP]
     if not text and not title and not description:
         raise UrlFetchError(f"No readable content at {url}")
     return FetchedPage(
-        final_url=str(resp.url),
+        final_url=response_url,
         title=title,
         meta_description=description,
         text=text,

@@ -13,6 +13,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
+from app.api.uploads import read_upload_limited
 from app.application.dto.career_pack_dto import (
     CareerPackRead,
     ClearRequest,
@@ -43,6 +44,8 @@ from app.domain.providers.ai_provider import AIProvider
 from app.domain.providers.blob_store import BlobStore
 
 router = APIRouter(prefix="/students/career-pack", tags=["student", "career-pack"])
+
+MAX_LINKEDIN_PDF_BYTES = 5 * 1024 * 1024
 
 
 def _student_svc(session: SessionDep, blobs: Annotated[BlobStore, Depends(get_blob_store)]) -> StudentProfileService:
@@ -136,7 +139,11 @@ async def review_linkedin(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Fill in your CV basics first.",
         )
-    content = await file.read()
+    content = await read_upload_limited(
+        file,
+        max_bytes=MAX_LINKEDIN_PDF_BYTES,
+        detail=f"File too large (max {MAX_LINKEDIN_PDF_BYTES // (1024 * 1024)} MB)",
+    )
     try:
         profile_text = extract_text(
             content=content, content_type=file.content_type or ""

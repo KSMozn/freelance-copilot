@@ -18,10 +18,12 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
-from urllib.parse import urlparse
+from urllib.parse import urlsplit
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from app.application.url_policy import normalize_external_http_url
 
 STUDENT_ENTRY_KINDS = Literal[
     "course",
@@ -39,27 +41,25 @@ STUDENT_ENTRY_KINDS = Literal[
 # ---- profile -----------------------------------------------------------
 
 
-def _normalize_profile_url(value: str | None, *, host_contains: str) -> str | None:
-    """Accept blank/None as 'unset'; otherwise require http(s) + host match + a path.
+def _normalize_profile_url(value: str | None, *, allowed_host: str) -> str | None:
+    """Accept blank/None as unset; otherwise require a trusted http(s) host and path.
 
     Kept lenient: LinkedIn slugs, GitHub sub-paths, trailing '/foo' etc. all
-    pass. Only rejects obvious junk ('not a url'), wrong domains, and non-http
-    schemes — enough to block silly client bugs without whack-a-mole regexes.
+    pass. The hostname check is label-aware so lookalikes such as
+    ``github.com.evil.example`` cannot render under a trusted CV link label.
     """
     if value is None:
         return None
-    stripped = value.strip()
-    if not stripped:
+    normalized = normalize_external_http_url(value)
+    if normalized is None:
         return None
-    parsed = urlparse(stripped)
-    if parsed.scheme not in {"http", "https"}:
-        raise ValueError("URL must start with http:// or https://")
-    host = (parsed.netloc or "").lower()
-    if host_contains not in host:
-        raise ValueError(f"URL must be on {host_contains}")
+    parsed = urlsplit(normalized)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if host != allowed_host and not host.endswith(f".{allowed_host}"):
+        raise ValueError(f"URL must be on {allowed_host}")
     if not parsed.path.strip("/"):
         raise ValueError("URL must include a profile path")
-    return stripped
+    return normalized
 
 
 class StudentLinks(BaseModel):
@@ -71,12 +71,17 @@ class StudentLinks(BaseModel):
     @field_validator("linkedin", mode="before")
     @classmethod
     def _validate_linkedin(cls, v: str | None) -> str | None:
-        return _normalize_profile_url(v, host_contains="linkedin.com")
+        return _normalize_profile_url(v, allowed_host="linkedin.com")
 
     @field_validator("github", mode="before")
     @classmethod
     def _validate_github(cls, v: str | None) -> str | None:
-        return _normalize_profile_url(v, host_contains="github.com")
+        return _normalize_profile_url(v, allowed_host="github.com")
+
+    @field_validator("website", "portfolio", mode="before")
+    @classmethod
+    def _validate_external_link(cls, v: str | None) -> str | None:
+        return normalize_external_http_url(v)
 
 
 class StudentProfileUpdate(BaseModel):
@@ -187,6 +192,11 @@ class StudentEntryUpsert(BaseModel):
     url: str | None = Field(default=None, max_length=512)
     details: dict[str, Any] = Field(default_factory=dict)
     sort_order: int = 0
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def _validate_url(cls, value: str | None) -> str | None:
+        return normalize_external_http_url(value)
 
 
 class StudentEntryRead(BaseModel):

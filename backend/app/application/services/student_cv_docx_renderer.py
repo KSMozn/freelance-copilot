@@ -52,6 +52,7 @@ from docx.text.paragraph import Paragraph
 from PIL import Image, ImageDraw, ImageOps
 
 from app.application.services.student_cv_renderer import StudentCvRenderer
+from app.application.url_policy import safe_external_http_url
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
     StudentProfileEntry,
@@ -94,7 +95,7 @@ def _link_pairs(links: dict[str, Any] | None) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     for label, keys in LINK_LABELS:
         for k in keys:
-            v = (links.get(k) or "").strip()
+            v = safe_external_http_url(links.get(k))
             if v:
                 out.append((label, v))
                 break
@@ -577,7 +578,7 @@ def _render_section_entry_block(container: Container, entries: list[dict[str, An
             if entry_border_hex:
                 _add_border(p_body, edge="left", color_hex=entry_border_hex, size=8, space=6)
                 p_body.paragraph_format.left_indent = Inches(0.12)
-        url = (e.get("url") or "").strip()
+        url = safe_external_http_url(e.get("url"))
         if url:
             p_url = container.add_paragraph()
             _add_hyperlink(p_url, url, url, color_hex=style.get("link_hex", "0563C1"), size_pt=10)

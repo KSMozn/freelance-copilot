@@ -22,6 +22,7 @@ from docx import Document
 from app.application.services.student_cv_docx_renderer import (
     StudentCvDocxRenderer,
 )
+from app.application.services.student_cv_renderer import StudentCvRenderer
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
     StudentProfileEntry,
@@ -360,6 +361,42 @@ def test_links_are_real_hyperlinks_with_short_labels() -> None:
         assert "https://linkedin.com/in/amina" in targets
         assert "https://github.com/amina" in targets
         assert "https://amina.dev" in targets
+
+
+def test_html_preview_links_open_outside_sandboxed_iframe() -> None:
+    html = StudentCvRenderer().render_html(
+        profile=_profile(),
+        entries=_full_entries(),
+        template_slug="classic",
+    )
+    assert 'target="_blank" rel="noopener" href="https://github.com/amina"' in html
+    assert 'target="_blank" rel="noopener" href="https://amina.dev"' in html
+
+
+def test_unsafe_legacy_links_are_not_exported() -> None:
+    profile = _profile()
+    profile.links = {
+        "portfolio": "file://attacker/share",
+        "website": "javascript:alert(1)",
+    }
+    entry = _entry(
+        kind="project",
+        title="Unsafe project",
+        url="smb://attacker/share",
+    )
+
+    context = StudentCvRenderer().build_context(profile=profile, entries=[entry])
+    assert context["profile"]["links"] == {}
+    assert context["sections"][0]["entries"][0]["url"] is None
+
+    output = StudentCvDocxRenderer().render_docx(
+        profile=profile,
+        entries=[entry],
+        template_slug="classic",
+    )
+    document = Document(BytesIO(output))
+    targets = [rel.target_ref for rel in document.part.rels.values() if rel.is_external]
+    assert not any(target.startswith(("file:", "javascript:", "smb:")) for target in targets)
 
 
 def test_internship_ai_bullets_render_verbatim() -> None:

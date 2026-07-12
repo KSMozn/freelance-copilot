@@ -18,11 +18,13 @@ from __future__ import annotations
 
 import base64
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from app.application.url_policy import safe_external_http_url
 from app.infrastructure.db.models.student_profile import (
     StudentProfile,
     StudentProfileEntry,
@@ -54,6 +56,8 @@ _TEMPLATE_REGISTRY: dict[str, str] = {
     "creative": "creative.html",
 }
 _DEFAULT_SLUG = "classic"
+
+_EXTERNAL_LINK_RE = re.compile(r'<a href="(https?://[^"]+)"')
 
 
 def _load_env() -> Environment:
@@ -102,7 +106,7 @@ def _entry_to_view(entry: StudentProfileEntry) -> dict[str, Any]:
         "end_date": entry.end_date.isoformat() if entry.end_date else None,
         "is_current": entry.is_current,
         "description": entry.description,
-        "url": entry.url,
+        "url": safe_external_http_url(entry.url),
         "details": dict(entry.details or {}),
     }
     if entry.kind == "project":
@@ -430,7 +434,13 @@ class StudentCvRenderer:
                 "gpa": str(profile.gpa) if profile and profile.gpa is not None else None,
                 "summary": profile.summary if profile else None,
                 "headline": profile.headline if profile else None,
-                "links": dict(profile.links or {}) if profile else {},
+                "links": {
+                    key: url
+                    for key, value in (profile.links or {}).items()
+                    if (url := safe_external_http_url(value)) is not None
+                }
+                if profile
+                else {},
                 "interests": list(profile.interests or []) if profile else [],
                 # Crop transform — matches what the student set in the
                 # wizard. Defaults land at "centered, fitted" so the
@@ -459,7 +469,11 @@ class StudentCvRenderer:
             photo_mime=photo_mime,
         )
         template = self._env.get_template(self._resolve_template_file(template_slug))
-        return template.render(**ctx)
+        html = template.render(**ctx)
+        return _EXTERNAL_LINK_RE.sub(
+            r'<a target="_blank" rel="noopener" href="\1"',
+            html,
+        )
 
     def render_pdf(
         self,
