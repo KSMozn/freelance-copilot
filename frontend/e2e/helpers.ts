@@ -34,7 +34,11 @@ export function uniqueEmail(prefix: string): string {
 }
 
 /** Read the newest OTP code sent to `email` from the mock mailbox. */
-export async function readOtpCode(email: string, timeoutMs = 10_000): Promise<string> {
+export async function readOtpCode(
+  email: string,
+  timeoutMs = 10_000,
+  previousCode?: string,
+): Promise<string> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (fs.existsSync(MAILBOX)) {
@@ -44,7 +48,7 @@ export async function readOtpCode(email: string, timeoutMs = 10_000): Promise<st
           const entry = JSON.parse(lines[i]) as { to?: string; subject?: string };
           if (entry.to === email) {
             const match = entry.subject?.match(/code: (\d{6})/);
-            if (match) return match[1];
+            if (match && match[1] !== previousCode) return match[1];
           }
         } catch {
           // partial line mid-write — retry
@@ -68,7 +72,7 @@ export async function readResetToken(email: string, timeoutMs = 10_000): Promise
         try {
           const entry = JSON.parse(lines[i]) as { to?: string; text_body?: string };
           if (entry.to === email) {
-            const match = entry.text_body?.match(/\/reset-password\?token=([A-Za-z0-9_-]+)/);
+            const match = entry.text_body?.match(/\/reset-password#token=([A-Za-z0-9_-]+)/);
             if (match) return match[1];
           }
         } catch {

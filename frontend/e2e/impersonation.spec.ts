@@ -20,3 +20,9 @@ test("admin impersonates a student: mint → fragment decode → wizard", async 
   await expect(page.getByText(email).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Career Starter Pack" })).toBeVisible();
 });
+
+test("invalid impersonation payload is scrubbed before redirect", async ({ page }) => {
+  await page.goto("/impersonate#p=not-valid-base64");
+  await expect(page).toHaveURL(/\/login$/);
+  expect(new URL(page.url()).hash).toBe("");
+});

@@ -47,7 +47,7 @@ test.describe("password reset — end to end", () => {
     // generic message).
     await expect(page.getByText(/captured locally/)).toBeVisible();
     await page.getByRole("button", { name: "Open reset link" }).click();
-    await expect(page).toHaveURL(/\/reset-password\?token=/);
+    await expect(page).toHaveURL(/\/reset-password$/);
     await page.getByRole("textbox", { name: "New password", exact: true }).fill(newPassword);
     await page.getByRole("textbox", { name: "Confirm new password" }).fill(newPassword);
     await page.getByRole("button", { name: "Update password" }).click();
@@ -85,14 +85,14 @@ test.describe("password reset — end to end", () => {
     await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
 
     const token = await readResetToken(email);
-    await page.goto(`/reset-password?token=${token}`);
+    await page.goto(`/reset-password#token=${token}`);
     await page.getByRole("textbox", { name: "New password", exact: true }).fill(newPassword);
     await page.getByRole("textbox", { name: "Confirm new password" }).fill(newPassword);
     await page.getByRole("button", { name: "Update password" }).click();
     await expect(page.getByRole("heading", { name: "Password updated" })).toBeVisible();
 
     // Replaying the same link must fail and stay on the form.
-    await page.goto(`/reset-password?token=${token}`);
+    await page.goto(`/reset-password#token=${token}`);
     await page.getByRole("textbox", { name: "New password", exact: true }).fill("another-pass-1");
     await page.getByRole("textbox", { name: "Confirm new password" }).fill("another-pass-1");
     await page.getByRole("button", { name: "Update password" }).click();
@@ -114,6 +114,19 @@ test.describe("password reset — end to end", () => {
     await expect(page.getByRole("heading", { name: "Invalid reset link" })).toBeVisible();
     await page.getByRole("button", { name: "Request a new link" }).click();
     await expect(page).toHaveURL(/\/forgot-password/);
+  });
+
+  test("reset token fragment is absent from the document request target", async ({ page }) => {
+    const documentRequest = page.waitForRequest(
+      (req) => req.isNavigationRequest() && req.url().includes("/reset-password"),
+    );
+    await page.goto("/reset-password#token=synthetic-secret");
+    const requestUrl = new URL((await documentRequest).url());
+
+    expect(requestUrl.search).toBe("");
+    expect(requestUrl.hash).toBe("");
+    await expect(page).toHaveURL(/\/reset-password$/);
+    await expect(page.getByRole("heading", { name: "Choose a new password" })).toBeVisible();
   });
 
   test("dev OTP hint shows the captured code and fills it in one click", async ({ page }) => {

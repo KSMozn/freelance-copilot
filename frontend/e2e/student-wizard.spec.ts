@@ -48,6 +48,18 @@ test.describe("student wizard", () => {
     );
   });
 
+  test("profile autosave flushes when leaving before the debounce expires", async ({ page }) => {
+    await page.goto("/student?step=basics");
+    const name = `E2E Navigation Save ${Date.now()}`;
+    await page.getByRole("textbox", { name: "Full name" }).fill(name);
+    await page.getByRole("button", { name: "Skills" }).click();
+    await expect(page.getByText(/Step 4 of 13/)).toBeVisible();
+
+    await page.waitForTimeout(1000);
+    await page.goto("/student?step=basics");
+    await expect(page.getByRole("textbox", { name: "Full name" })).toHaveValue(name);
+  });
+
   test("entry CRUD on a manual-save step", async ({ page }) => {
     await page.goto("/student?step=skills");
     await page.getByRole("textbox", { name: "Python" }).fill("Playwright");
@@ -80,5 +92,26 @@ test.describe("student wizard", () => {
     await page.getByRole("menuitem", { name: /DOCX/ }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.docx$/);
+  });
+
+  test("CV preview external links open outside the sandbox", async ({ page }) => {
+    await page.route("**/api/v1/students/cv/preview**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          html: '<!doctype html><a target="_blank" rel="noopener" href="https://example.com">External profile</a>',
+        }),
+      }),
+    );
+    await page.goto("/student?step=preview");
+    const preview = page.frameLocator("iframe[title='CV preview']");
+    await expect(preview.getByRole("link", { name: "External profile" })).toBeVisible();
+
+    const popupPromise = page.waitForEvent("popup");
+    await preview.getByRole("link", { name: "External profile" }).click();
+    const popup = await popupPromise;
+    await expect(popup).toHaveURL(/^https:\/\/example\.com\/?/);
+    await popup.close();
   });
 });

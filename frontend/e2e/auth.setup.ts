@@ -21,6 +21,9 @@ setup("authenticate student via OTP", async ({ page }) => {
   // card only renders for users with a profile.
   await page.goto("/student");
   await page.getByRole("textbox", { name: "Full name" }).fill("E2E Student");
+  await page
+    .getByRole("textbox", { name: "Email shown on your CV" })
+    .fill("e2e.student@example.com");
   await page.getByRole("button", { name: "Save & continue" }).click();
   await expect(page.getByRole("heading", { name: "Where you study" })).toBeVisible({
     timeout: 15_000,
