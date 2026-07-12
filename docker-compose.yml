@@ -62,6 +62,10 @@ services:
       OTP_EXPIRES_MINUTES: ${OTP_EXPIRES_MINUTES:-10}
       OTP_MAX_ATTEMPTS: ${OTP_MAX_ATTEMPTS:-5}
       OTP_RATE_LIMIT_PER_15MIN: ${OTP_RATE_LIMIT_PER_15MIN:-3}
+      # Dev-stack default (30) is deliberately above the app's production
+      # default (8): the Playwright suite signs unique accounts in from a
+      # single IP and trips 8/min when a slow runner compresses the timing.
+      OTP_REQUEST_IP_LIMIT_PER_MIN: ${OTP_REQUEST_IP_LIMIT_PER_MIN:-30}
       PASSWORD_RESET_EXPIRES_MINUTES: ${PASSWORD_RESET_EXPIRES_MINUTES:-30}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
       ADMIN_BASE_URL: ${ADMIN_BASE_URL:-http://localhost:5173}

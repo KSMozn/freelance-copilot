@@ -9,8 +9,8 @@ from fastapi import HTTPException, UploadFile
 
 from app.api.uploads import read_upload_limited
 from app.application.services.student_profile_service import _safe_filename
-from app.core.config import Settings
-from app.core.rate_limit import SlidingWindowLimiter
+from app.core.config import Settings, get_settings
+from app.core.rate_limit import SlidingWindowLimiter, otp_request_ip_limiter
 from app.infrastructure.http.url_fetcher import UrlFetchError, _assert_public_url
 from app.infrastructure.storage.local_blob_store import LocalBlobStore
 
@@ -33,6 +33,13 @@ def test_rate_limiter_keys_are_independent() -> None:
     limiter.check("b")  # different key, not throttled
     with pytest.raises(HTTPException):
         limiter.check("a")
+
+
+def test_otp_request_ip_limit_is_configured_not_hardcoded() -> None:
+    # The dev/e2e compose stack raises OTP_REQUEST_IP_LIMIT_PER_MIN (one
+    # runner IP signs in every e2e account); production must keep 8.
+    assert otp_request_ip_limiter.limit == get_settings().otp_request_ip_limit_per_min
+    assert Settings.model_fields["otp_request_ip_limit_per_min"].default == 8
 
 
 # ---- bounded uploads --------------------------------------------------

@@ -75,6 +75,10 @@ class Settings(BaseSettings):
     otp_expires_minutes: int = 10
     otp_max_attempts: int = 5
     otp_rate_limit_per_15min: int = 3
+    # Per-IP request-code budget (sliding 60s window). The dev/e2e compose
+    # stack raises it: the whole Playwright suite signs unique accounts in
+    # from one runner IP and averages right at the production default.
+    otp_request_ip_limit_per_min: int = 8
     # Forgot-password links are single-use and short-lived; 15-30 min is the
     # accepted window for email-delivered reset tokens.
     password_reset_expires_minutes: int = 30
