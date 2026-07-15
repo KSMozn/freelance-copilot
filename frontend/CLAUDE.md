@@ -81,7 +81,7 @@ src/
 │   │   ├── PhotoPositioner.tsx · DateOfBirthPicker.tsx · data/
 │   │   ├── coaching/              # coachingApi (6 AI hooks) · coachingTypes · CoachWarnings
 │   │   ├── career-pack/           # CareerStarterPack · careerPackApi · careerPackTypes
-│   │   └── feedback/              # StudentFeedbackPage · PostDownloadSurvey · feedbackApi · feedbackTypes
+│   │   └── feedback/              # FeedbackDialog (overlay) · FeedbackForm · ScreenshotUpload · StudentFeedbackPage · PostDownloadSurvey · feedbackApi · feedbackSchema · feedbackTypes
 │   │
 │   ├── admin/                   # Flat bounded feature — do not split by page
 │   │   ├── adminApi.ts          # ALL admin TanStack hooks — keep together (shared keys/invalidations)

@@ -595,23 +595,27 @@ toggle visibility / ordering from the admin panel.
 ### feedback_entries (Phase M)
 
 One table for both feedback surfaces, discriminated by `kind`:
-`general` (free-text from the /feedback page — fires an immediate admin
-email) and `post_download` (1–5 star survey after a CV download — rolls
-into the daily report only).
+`general` (free-text from the /feedback page, with an optional screenshot —
+fires an immediate admin email) and `post_download` (1–5 star survey after a
+CV download — rolls into the daily report only).
 
-| column        | type                                          | notes                                                |
-| ------------- | --------------------------------------------- | ---------------------------------------------------- |
-| id            | uuid PK                                       | `gen_random_uuid()` default                          |
-| user_id       | uuid FK→users CASCADE                         |                                                      |
-| kind          | enum `feedback_kind` (general, post_download) |                                                      |
-| rating        | smallint NULL                                 | 1–5 stars for post_download; NULL for general        |
-| message       | text NULL                                     | required for general; optional survey comment        |
-| template_slug | varchar(64) NULL                              | which CV template the survey followed                |
-| meta          | jsonb NOT NULL default '{}'                   | carries `resolved_by_admin_id` / `resolved_by_email` |
-| created_at    | timestamptz                                   |                                                      |
-| resolved_at   | timestamptz NULL                              | _(0042)_ NULL = needs attention; set by admin triage |
+| column             | type                                          | notes                                                |
+| ------------------ | --------------------------------------------- | ---------------------------------------------------- |
+| id                 | uuid PK                                       | `gen_random_uuid()` default                          |
+| user_id            | uuid FK→users CASCADE                         |                                                      |
+| kind               | enum `feedback_kind` (general, post_download) |                                                      |
+| rating             | smallint NULL                                 | 1–5 stars for post_download; NULL for general        |
+| message            | text NULL                                     | required for general; optional survey comment        |
+| template_slug      | varchar(64) NULL                              | which CV template the survey followed                |
+| screenshot_file_id | uuid FK→uploaded_files SET NULL               | _(0045)_ optional screenshot on general feedback; NULL = none |
+| meta               | jsonb NOT NULL default '{}'                   | carries `resolved_by_admin_id` / `resolved_by_email` |
+| created_at         | timestamptz                                   |                                                      |
+| resolved_at        | timestamptz NULL                              | _(0042)_ NULL = needs attention; set by admin triage |
 
 Indexes: `(created_at)`, `(user_id, created_at)`, `(resolved_at)` _(0042)_.
+The screenshot blob itself lives in the shared `uploaded_files` registry (same
+store as profile photos); `ON DELETE SET NULL` so pruning a file never removes
+the feedback row.
 
 ### refresh_tokens (Phase P)
 
@@ -896,3 +900,5 @@ Index: `ivfflat (vector vector_cosine_ops)`. Unique `(owner_type, owner_id, mode
   to `usage_event_kind`; `0040` adds `internship` to `student_entry_kind`.
 - Phase P: `0043` creates `refresh_tokens`; `0044` creates
   `password_reset_tokens` (forgot/reset-password flow).
+- Feedback screenshots: `0045` adds `feedback_entries.screenshot_file_id`
+  (nullable FK → `uploaded_files`, ON DELETE SET NULL).

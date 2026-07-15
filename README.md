@@ -24,7 +24,7 @@ One repository, three deployed surfaces, one frontend bundle:
 
 ```
 .
-├── backend/     FastAPI · SQLAlchemy 2 (async) · Alembic (44 migrations) · PostgreSQL + pgvector
+├── backend/     FastAPI · SQLAlchemy 2 (async) · Alembic (45 migrations) · PostgreSQL + pgvector
 │                Clean Architecture: api → application → domain ← infrastructure
 ├── frontend/    Vite 6 · React 18 · TypeScript · Tailwind v3 · Base UI + CVA
 │                Feature-driven: app/ + features/{auth,student-wizard,admin,professional} + shared/
@@ -74,7 +74,7 @@ flow — only the delivery adapter differs.
 make backend-dev    # uvicorn --reload (needs Python 3.13 + `uv sync` in backend/)
 make frontend-dev   # vite dev server on :5173
 make lint           # ruff (backend) + eslint/tsc (frontend)
-make backend-test   # pytest inside the backend container (402 unit tests, no DB needed)
+make backend-test   # pytest inside the backend container (430 unit tests, no DB needed)
 ```
 
 Frontend extras: `npm run storybook` (shared/ui component browser),

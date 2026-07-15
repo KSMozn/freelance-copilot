@@ -23,7 +23,7 @@ FastAPI backend serving **three API surfaces** from one app (`/api/v1`):
 ## Tech Stack
 
 - **Framework**: FastAPI ≥0.115 + Uvicorn
-- **DB**: PostgreSQL 16 + pgvector, SQLAlchemy 2 async (`asyncpg`), Alembic (44 linear migrations, single head)
+- **DB**: PostgreSQL 16 + pgvector, SQLAlchemy 2 async (`asyncpg`), Alembic (45 linear migrations, single head)
 - **Auth**: PyJWT (HS256), passlib bcrypt; refresh-token rotation with family revocation
 - **Validation**: Pydantic v2 + pydantic-settings (`app/core/config.py` is the single settings source)
 - **AI**: provider ports — `AI_PROVIDER=mock|openai|claude` (Groq via `OPENAI_BASE_URL`), `EMBEDDING_PROVIDER=mock|openai`; **mock is the default and must keep working offline**
@@ -88,7 +88,7 @@ refactor, not a drive-by.
 
 ## Database & migrations
 
-- Alembic history is **linear, single-head, append-only** (`0001` … `0044`).
+- Alembic history is **linear, single-head, append-only** (`0001` … `0045`).
   Never edit an existing revision. New revision: `make revision m="..."`.
 - Models live in `infrastructure/db/models/`; keep them in sync with
   migrations (autogenerate, then hand-review).
