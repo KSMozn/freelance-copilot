@@ -196,7 +196,7 @@ export function RegisterPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={
                 !email ||
                 (authMode === "password"
@@ -212,7 +212,7 @@ export function RegisterPage() {
                   ? "Sending…"
                   : "Send code"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               Already have an account?{" "}
               <Link className="text-primary hover:underline" to="/login">
                 Sign in
@@ -259,6 +259,7 @@ export function RegisterPage() {
               <Button
                 type="button"
                 variant="ghost"
+                className="h-12 text-base md:h-11 md:text-sm"
                 onClick={() => {
                   setCode("");
                   setStep("identity");
@@ -270,7 +271,7 @@ export function RegisterPage() {
                 type="submit"
                 variant="brand"
                 size="lg"
-                className="flex-1"
+                className="h-12 flex-1 text-base md:h-11 md:text-sm"
                 disabled={verifyCode.isPending || code.length !== 6}
               >
                 {verifyCode.isPending ? "Verifying…" : "Create account"}

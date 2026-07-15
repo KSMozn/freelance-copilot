@@ -181,12 +181,12 @@ export function LoginPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={requestCode.isPending}
             >
               {requestCode.isPending ? "Sending…" : "Send code"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               <button
                 type="button"
                 className="text-primary hover:underline"
@@ -255,12 +255,12 @@ export function LoginPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={verifyCode.isPending || code.length !== 6}
             >
               {verifyCode.isPending ? "Verifying…" : "Verify & sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               <button
                 type="button"
                 className="text-primary hover:underline"
@@ -306,7 +306,7 @@ export function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <button
                   type="button"
-                  className="text-sm text-primary hover:underline"
+                  className="text-base text-primary hover:underline md:text-sm"
                   onClick={() => navigate("/forgot-password")}
                 >
                   Forgot password?
@@ -325,12 +325,12 @@ export function LoginPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={passwordLogin.isPending}
             >
               {passwordLogin.isPending ? "Signing in…" : "Sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               <button
                 type="button"
                 className="text-primary hover:underline"
@@ -339,7 +339,7 @@ export function LoginPage() {
                 Use an email code instead
               </button>
             </p>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               No account?{" "}
               <button
                 type="button"
@@ -409,18 +409,24 @@ function PickerStep({
           type="button"
           variant="brand"
           size="lg"
-          className="w-full"
+          className="h-12 w-full text-base md:h-11 md:text-sm"
           onClick={onContinue}
           disabled={continuing}
         >
           {continuing ? "Sending code…" : "Continue"}
         </Button>
-        <Button type="button" variant="outline" size="lg" className="w-full" onClick={onUseAnother}>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="h-12 w-full text-base md:h-11 md:text-sm"
+          onClick={onUseAnother}
+        >
           Use another profile
         </Button>
       </div>
 
-      <div className="border-t pt-4 text-center text-sm text-muted-foreground">
+      <div className="border-t pt-4 text-center text-base text-muted-foreground md:text-sm">
         <button type="button" className="text-primary hover:underline" onClick={onCreateAccount}>
           Create new account
         </button>

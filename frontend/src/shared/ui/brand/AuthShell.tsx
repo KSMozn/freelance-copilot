@@ -39,12 +39,12 @@ export function AuthShell({
         </div>
 
         <div className="flex w-full flex-col items-center md:w-auto">
-          <div className="mb-8 flex items-center gap-2 text-white md:hidden">
-            <CareeroMark size={26} />
-            <span className="font-semibold tracking-tight">{BRAND.product}</span>
+          <div className="mb-10 flex items-center gap-2.5 text-white md:hidden">
+            <CareeroMark size={36} />
+            <span className="text-xl font-semibold tracking-tight">{BRAND.product}</span>
           </div>
           <div className="w-full max-w-sm">{children}</div>
-          <AboutFooter className="mt-8" />
+          <AboutFooter className="mt-8 text-sm md:text-xs" />
         </div>
       </div>
 
