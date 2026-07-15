@@ -1118,6 +1118,22 @@ export const pages = [
           },
         ],
       },
+      {
+        type: "prose",
+        h2: "CV examples by field",
+        bullets: [
+          "<a href=\"/cv-examples/computer-science\">Computer science CV example</a>",
+          "<a href=\"/cv-examples/engineering\">Engineering CV example</a>",
+          "<a href=\"/cv-examples/business\">Business CV example</a>",
+          "<a href=\"/cv-examples/nursing\">Nursing CV example</a>",
+          "<a href=\"/cv-examples/law\">Law CV example</a>",
+          "<a href=\"/cv-examples/psychology\">Psychology CV example</a>",
+          "<a href=\"/cv-examples/accounting-and-finance\">Accounting &amp; finance CV example</a>",
+          "<a href=\"/cv-examples/marketing\">Marketing CV example</a>",
+          "<a href=\"/cv-examples/education\">Education CV example</a>",
+          "<a href=\"/cv-examples/data-science\">Data science CV example</a>",
+        ],
+      },
       closingCta(
         "Turn an example into your CV",
         "Start from a proven structure and let Careero help you write every section.",
@@ -2684,6 +2700,144 @@ export const pages = [
         "See the difference for yourself",
         "Build a student CV with Careero free — no credit card, PDF and DOCX included.",
         "Try Careero free",
+      ),
+    ],
+  },
+
+  // -------------------------------------------------- CV ACTION VERBS ----
+  {
+    slug: "guides/cv-action-verbs",
+    title: "150+ CV Action Verbs for Students (2026 List) | Careero",
+    description:
+      "A categorised list of 150+ strong CV action verbs for students — start every bullet with impact. Copy, adapt, and build your CV free with Careero.",
+    h1: "150+ CV action verbs for students",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV Writing · Action Verbs",
+        h1: "150+ CV action verbs for students",
+        lead:
+          "Strong CVs start each bullet with a strong verb. Here's a categorised list you can copy and adapt — swap weak phrases like &ldquo;responsible for&rdquo; for verbs that show what you actually did.",
+        primaryCta: { text: "Build my CV free", href: APP },
+        secondaryCta: { text: "How to write a student CV", href: "/guides/how-to-write-a-student-cv" },
+      },
+      {
+        type: "prose",
+        h2: "Why action verbs matter",
+        paragraphs: [
+          "Recruiters scan CVs in seconds. A bullet that opens with &ldquo;Built,&rdquo; &ldquo;Led&rdquo; or &ldquo;Analysed&rdquo; signals ownership and impact instantly, where &ldquo;Was responsible for&rdquo; hides it. Pair a strong verb with a result and you have a bullet that lands.",
+        ],
+        subsections: [
+          { h3: "Leadership & initiative", paragraphs: ["Led, Organised, Coordinated, Founded, Chaired, Managed, Directed, Mentored, Delegated, Initiated, Oversaw, Championed, Mobilised, Spearheaded, Supervised."] },
+          { h3: "Building & creating", paragraphs: ["Built, Developed, Designed, Created, Engineered, Programmed, Prototyped, Launched, Implemented, Assembled, Configured, Automated, Deployed, Produced, Constructed."] },
+          { h3: "Analysis & research", paragraphs: ["Analysed, Researched, Investigated, Evaluated, Assessed, Measured, Modelled, Tested, Calculated, Interpreted, Surveyed, Diagnosed, Examined, Forecast, Validated."] },
+          { h3: "Communication & teamwork", paragraphs: ["Presented, Wrote, Explained, Collaborated, Negotiated, Facilitated, Advised, Persuaded, Coached, Liaised, Documented, Translated, Trained, Contributed, Supported."] },
+          { h3: "Achievement & improvement", paragraphs: ["Improved, Increased, Reduced, Delivered, Achieved, Won, Exceeded, Optimised, Streamlined, Saved, Grew, Boosted, Accelerated, Resolved, Secured."] },
+          { h3: "Organisation & delivery", paragraphs: ["Planned, Scheduled, Prioritised, Executed, Completed, Maintained, Tracked, Processed, Administered, Arranged, Compiled, Monitored, Updated, Handled, Fulfilled."] },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "How to use them",
+        bullets: [
+          "<strong>Start every bullet with a verb</strong> — never &ldquo;responsible for&rdquo; or &ldquo;duties included.&rdquo;",
+          "<strong>Add a result</strong> — &ldquo;Grew a society Instagram from 200 to 1,500 followers&rdquo; beats &ldquo;Ran social media.&rdquo;",
+          "<strong>Vary your verbs</strong> — don't start five bullets with &ldquo;Managed.&rdquo;",
+          "<strong>Match the role</strong> — mirror verbs from the job description where they're true for you.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          { q: "What are the best action verbs for a student CV?", a: "Use verbs that show ownership and impact — Built, Led, Analysed, Improved, Delivered — and always pair them with a result." },
+          { q: "What words should I avoid on a CV?", a: "Avoid weak, passive phrases like &ldquo;responsible for,&rdquo; &ldquo;duties included,&rdquo; and vague buzzwords with no evidence behind them." },
+          { q: "Does Careero help me write bullets?", a: 'Yes — describe what you did in a sentence and Careero rewrites it into strong, quantified bullets. Start at <a href="' + APP + '" rel="noopener">app.careero.app</a>.' },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Keep going",
+        bullets: [
+          "<a href=\"/guides/how-to-write-projects-in-a-cv\">How to write projects on a CV</a>",
+          "<a href=\"/guides/student-cv-checklist\">Student CV checklist</a>",
+          "<a href=\"/student-cv-with-no-experience\">CV with no experience</a>",
+        ],
+      },
+      closingCta(
+        "Turn strong verbs into a finished CV",
+        "Careero writes achievement-focused bullets for you as you build.",
+        "Build my CV free",
+      ),
+    ],
+  },
+
+  // ------------------------------------------------- STUDENT CV CHECKLIST ----
+  {
+    slug: "guides/student-cv-checklist",
+    title: "Student CV Checklist: 18 Checks Before You Apply | Careero",
+    description:
+      "A pre-submit student CV checklist — 18 quick checks for content, formatting and ATS before you hit apply. Then build yours free with Careero.",
+    h1: "The student CV checklist",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV Writing · Checklist",
+        h1: "The student CV checklist",
+        lead:
+          "Before you submit, run your CV through these quick checks. They catch the mistakes that quietly cost students interviews.",
+        primaryCta: { text: "Build my CV free", href: APP },
+        secondaryCta: { text: "CV action verbs", href: "/guides/cv-action-verbs" },
+      },
+      {
+        type: "prose",
+        h2: "Content",
+        bullets: [
+          "One page, focused on your most relevant education, projects and experience.",
+          "A short, specific personal summary — not a generic objective.",
+          "Every bullet starts with an <a href=\"/guides/cv-action-verbs\">action verb</a> and shows a result.",
+          "Numbers wherever honest — users, grades, budgets, followers, improvements.",
+          "Projects and experience tailored to the role you're applying for.",
+          "No spelling or grammar mistakes (read it aloud, and get a second pair of eyes).",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Formatting & ATS",
+        bullets: [
+          "Standard section headings (Education, Experience, Skills) so <a href=\"/ats-friendly-student-cv\">ATS</a> can parse it.",
+          "One clean font, consistent sizes, plenty of white space.",
+          "No text inside images, tables or headers that screening software can't read.",
+          "Consistent date formats and tense (past tense for finished work).",
+          "Saved as PDF for most applications (or DOCX if asked).",
+          "File named clearly, e.g. Firstname-Lastname-CV.pdf.",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Contact & links",
+        bullets: [
+          "Correct email and phone number (double-check them).",
+          "A professional email address, not a nickname.",
+          "Working links to LinkedIn and, for tech roles, <a href=\"/guides/github-profile-for-students\">GitHub</a>.",
+          "City and country — no need for a full home address.",
+          "No photo, date of birth or marital status (unless a country/role requires it).",
+          "Everything up to date with your latest projects and grades.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          { q: "How do I know if my CV is ATS-friendly?", a: 'Use standard headings, avoid text in images/tables, and keep formatting simple. See our <a href="/ats-friendly-student-cv">ATS-friendly CV guide</a>.' },
+          { q: "Should a student CV be one or two pages?", a: "One page. Prioritise your strongest, most relevant content and cut the rest." },
+          { q: "Does Careero handle this automatically?", a: "Yes — Careero keeps your CV one page, ATS-friendly and consistently formatted as you build." },
+        ],
+      },
+      closingCta(
+        "Build a CV that passes every check",
+        "Careero applies these best practices automatically as you go.",
+        "Build my CV free",
       ),
     ],
   },

@@ -69,6 +69,8 @@ export const nav = [
       { label: "Best CV Format for Students", href: "/guides/best-cv-format-for-students" },
       { label: "LinkedIn for Students", href: "/guides/linkedin-profile-for-students" },
       { label: "GitHub for Students", href: "/guides/github-profile-for-students" },
+      { label: "CV Action Verbs", href: "/guides/cv-action-verbs" },
+      { label: "Student CV Checklist", href: "/guides/student-cv-checklist" },
     ],
   },
   {

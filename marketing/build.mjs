@@ -6,17 +6,20 @@ import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { buildExamplePages } from "./src/examples.mjs";
 import { buildFacetPages } from "./src/facets.mjs";
 import { pages as authoredPages } from "./src/pages.mjs";
 import { absUrl, renderPage } from "./src/render.mjs";
 import { site } from "./src/site.mjs";
 
-// Hand-authored pages + the generated "CV by field × goal" facet matrix.
-// Generated pages are deduped against authored slugs so a hand-authored page
-// always wins (keeps the bespoke copy for CS/engineering/business bases).
+// Hand-authored pages + generated: the "CV by field × goal" facet matrix and
+// the per-field CV example pages. Generated pages are deduped against authored
+// (and each other) so a hand-authored page always wins.
 const authoredSlugs = new Set(authoredPages.map((p) => p.slug));
 const facet = buildFacetPages(authoredSlugs);
-const pages = [...authoredPages, ...facet.pages];
+const seen = new Set([...authoredSlugs, ...facet.pages.map((p) => p.slug)]);
+const examples = buildExamplePages(seen);
+const pages = [...authoredPages, ...facet.pages, ...examples.pages];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = join(__dirname, "dist");
@@ -154,8 +157,8 @@ function main() {
   writeFileSync(join(DIST, "llms.txt"), buildLlmsTxt(), "utf8");
 
   console.log(
-    `Built ${count} pages (${authoredPages.length} authored + ${facet.generated} generated facet` +
-      `${facet.skipped ? `, ${facet.skipped} skipped by cap` : ""}) + sitemap.xml + robots.txt + llms.txt → dist/`,
+    `Built ${count} pages (${authoredPages.length} authored + ${facet.generated} facet + ${examples.generated} examples` +
+      `${facet.skipped ? `, ${facet.skipped} facet skipped by cap` : ""}) + sitemap.xml + robots.txt + llms.txt → dist/`,
   );
 }
 
