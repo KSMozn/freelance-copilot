@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { logoutCurrentSurface } from "@/app/apiClient";
 import { useAuthStore } from "@/features/auth/authStore";
@@ -11,6 +11,7 @@ import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
+import { FeedbackDialog } from "./feedback/FeedbackDialog";
 import { StepBasics } from "./steps/StepBasics";
 import { StepEducation } from "./steps/StepEducation";
 import { StepEntries } from "./steps/StepEntries";
@@ -215,12 +216,7 @@ export function StudentWizardPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between p-3">
           <BrandWordmark variant="careero" size={22} />
           <div className="flex items-center gap-4 text-xs">
-            <Link
-              to="/feedback"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Send feedback →
-            </Link>
+            <FeedbackDialog />
             <SignOutButton />
           </div>
         </div>

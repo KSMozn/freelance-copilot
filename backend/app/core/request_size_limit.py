@@ -11,6 +11,7 @@ LIMITED_UPLOAD_PATHS = frozenset(
         "/api/v1/students/profile/photo",
         "/api/v1/students/coach/photo",
         "/api/v1/students/career-pack/linkedin/review",
+        "/api/v1/students/feedback",
     }
 )
 

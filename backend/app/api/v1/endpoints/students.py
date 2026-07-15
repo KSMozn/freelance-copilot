@@ -25,6 +25,7 @@ from fastapi import (
     APIRouter,
     Depends,
     File,
+    Form,
     HTTPException,
     Query,
     Response,
@@ -34,8 +35,9 @@ from fastapi import (
 
 from app.api.uploads import read_upload_limited
 from app.application.dto.feedback_dto import (
+    FEEDBACK_MESSAGE_MAX_LEN,
+    FEEDBACK_MESSAGE_MIN_LEN,
     FeedbackRead,
-    GeneralFeedbackCreate,
     SurveyCreate,
 )
 from app.application.dto.student_dto import (
@@ -127,6 +129,9 @@ def _emit(
 
 MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
 ALLOWED_PHOTO_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+
+MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024  # 5 MB
+ALLOWED_SCREENSHOT_TYPES = {"image/png", "image/jpeg", "image/webp"}
 
 
 def _profile_to_read(row: StudentProfile, *, photo_url: str | None) -> StudentProfileRead:
@@ -614,8 +619,9 @@ async def cv_docx(
 def _feedback_service(
     session: SessionDep,
     email_provider: Annotated[EmailProvider, Depends(get_email_provider)],
+    blobs: Annotated[BlobStore, Depends(get_blob_store)],
 ) -> FeedbackService:
-    return FeedbackService(session, email_provider)
+    return FeedbackService(session, email_provider, blobs)
 
 
 FeedbackSvc = Annotated[FeedbackService, Depends(_feedback_service)]
@@ -623,11 +629,50 @@ FeedbackSvc = Annotated[FeedbackService, Depends(_feedback_service)]
 
 @router.post("/feedback", response_model=FeedbackRead)
 async def submit_feedback(
-    payload: GeneralFeedbackCreate,
     user: CurrentUser,
     svc: FeedbackSvc,
+    message: Annotated[str, Form()],
+    screenshot: Annotated[UploadFile | None, File()] = None,
 ) -> FeedbackRead:
-    row = await svc.submit_general(user.id, payload.message)
+    """Submit general feedback with an optional screenshot.
+
+    Multipart form: `message` (required) + `screenshot` (optional image).
+    Message is trimmed first, then length-checked, so a whitespace-only
+    body is rejected. The screenshot is validated (type + size) here and
+    handed to the service as raw bytes to store.
+    """
+    cleaned = message.strip()
+    if not (FEEDBACK_MESSAGE_MIN_LEN <= len(cleaned) <= FEEDBACK_MESSAGE_MAX_LEN):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=(
+                f"Feedback must be between {FEEDBACK_MESSAGE_MIN_LEN} and "
+                f"{FEEDBACK_MESSAGE_MAX_LEN} characters."
+            ),
+        )
+
+    screenshot_upload = None
+    if screenshot is not None and screenshot.filename:
+        if screenshot.content_type not in ALLOWED_SCREENSHOT_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail=(
+                    f"Unsupported screenshot type: {screenshot.content_type}. "
+                    "Use PNG, JPEG, or WebP."
+                ),
+            )
+        content = await read_upload_limited(
+            screenshot,
+            max_bytes=MAX_SCREENSHOT_BYTES,
+            detail=f"Screenshot too large (max {MAX_SCREENSHOT_BYTES // (1024 * 1024)} MB)",
+        )
+        screenshot_upload = (
+            screenshot.filename,
+            screenshot.content_type or "image/png",
+            content,
+        )
+
+    row = await svc.submit_general(user.id, cleaned, screenshot=screenshot_upload)
     return FeedbackRead.model_validate(row)
 
 

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import { api } from "@/app/apiClient";
 import type {
@@ -411,6 +412,37 @@ export function useAdminUnresolveFeedback() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "feedback"] }),
   });
+}
+
+export function useFeedbackScreenshotUrl(
+  feedbackId: string | null,
+  enabled: boolean,
+): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!feedbackId || !enabled) {
+      setUrl(null);
+      return;
+    }
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    void api
+      .get(`/admin/feedback/${feedbackId}/screenshot`, { responseType: "blob" })
+      .then((res) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(res.data as Blob);
+        setUrl(objectUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setUrl(null);
+      });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setUrl(null);
+    };
+  }, [feedbackId, enabled]);
+  return url;
 }
 
 // ---- Admin-triggered emails --------------------------------------------

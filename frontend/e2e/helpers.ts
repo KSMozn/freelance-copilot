@@ -100,7 +100,7 @@ export async function signInWithOtp(page: Page, email: string, fullName?: string
   const code = await readOtpCode(email);
   await page.getByRole("textbox", { name: "6-digit code" }).fill(code);
   if (fullName) {
-    await page.getByRole("textbox", { name: /Your name/ }).fill(fullName);
+    await page.getByRole("textbox", { name: "Full name" }).fill(fullName);
   }
   await page.getByRole("button", { name: "Verify & sign in" }).click();
   // New accounts land on /onboarding; returning ones on /student (or /).

@@ -7,11 +7,13 @@ export interface FeedbackEntry {
   rating: number | null;
   message: string | null;
   template_slug: string | null;
+  screenshot_file_id: string | null;
   created_at: string;
 }
 
 export interface GeneralFeedbackCreate {
   message: string;
+  screenshot?: File | null;
 }
 
 export interface SurveyCreate {
