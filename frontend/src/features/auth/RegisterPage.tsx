@@ -135,7 +135,7 @@ export function RegisterPage() {
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="r-name">What should we call you?</Label>
+              <Label htmlFor="r-name">Full name</Label>
               <Input
                 id="r-name"
                 value={fullName}
@@ -230,7 +230,7 @@ export function RegisterPage() {
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="r-code">6-digit code sent to {email}</Label>
+              <Label htmlFor="r-code">6-digit code</Label>
               <Input
                 id="r-code"
                 inputMode="numeric"
@@ -296,7 +296,6 @@ const HEADERS: Record<Step, { title: string; description: string }> = {
 };
 
 function ProgressDots({ step, authMode }: { step: Step; authMode: AuthMode }) {
-  // Password is a single step; OTP adds the code step.
   const order: Step[] = authMode === "password" ? ["identity"] : ["identity", "code"];
   const idx = order.indexOf(step);
   return (

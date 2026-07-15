@@ -25,7 +25,7 @@ export function AuthShell({
         className="bg-brand-gradient pointer-events-none absolute -top-1/3 left-1/4 h-[640px] w-[640px] -translate-x-1/2 rounded-full opacity-25 blur-3xl"
       />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center justify-center gap-10 px-6 py-12 md:justify-between">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center justify-center gap-10 px-4 py-12 md:justify-between">
         <div className="hidden max-w-md text-white md:block">
           <div className="flex items-center gap-3">
             <CareeroMark size={40} />
@@ -38,12 +38,12 @@ export function AuthShell({
           <p className="mt-4 text-base text-white/70">{subtitle}</p>
         </div>
 
-        <div className="flex w-full flex-col items-center md:w-auto">
+        <div className="flex w-full max-w-sm flex-col items-center">
           <div className="mb-10 flex items-center gap-2.5 text-white md:hidden">
             <CareeroMark size={36} />
             <span className="text-xl font-semibold tracking-tight">{BRAND.product}</span>
           </div>
-          <div className="w-full max-w-sm">{children}</div>
+          <div className="w-full">{children}</div>
           <AboutFooter className="mt-8 text-sm md:text-xs" />
         </div>
       </div>
