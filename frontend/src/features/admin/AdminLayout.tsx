@@ -20,7 +20,7 @@ export function AdminLayout() {
     <div className="flex min-h-screen bg-background text-foreground">
       <aside className="flex w-56 flex-col border-r bg-card">
         <div className="border-b p-4">
-          <BrandWordmark variant="personaarmory-admin" size={22} />
+          <BrandWordmark variant="careero-admin" size={22} />
           <div className="mt-1.5 truncate text-xs text-muted-foreground">{admin.email}</div>
         </div>
         <nav className="flex-1 space-y-1 p-2">

@@ -5,12 +5,6 @@ interface Props {
   className?: string;
 }
 
-/**
- * Careero C mark — the primary product logo used on `app.personaarmory.com`.
- * A three-quarter C in the brand gradient with a 4-point spark inside the
- * opening. Self-contained inline SVG: gradient defs use a `useId` so multiple
- * marks on the same page don't collide on the id.
- */
 export function CareeroMark({ size = 28, className }: Props) {
   const uid = useId().replace(/:/g, "");
   const gradId = `careero-grad-${uid}`;
@@ -33,7 +27,6 @@ export function CareeroMark({ size = 28, className }: Props) {
           <stop offset="100%" stopColor="hsl(var(--brand-to))" />
         </linearGradient>
       </defs>
-      {/* Open-C stroke — arc from ~-45° down through the bottom back up to ~45° */}
       <path
         d={`M ${cx + r * Math.cos(-Math.PI / 5)} ${cy + r * Math.sin(-Math.PI / 5)}
             A ${r} ${r} 0 1 0 ${cx + r * Math.cos(Math.PI / 5)} ${cy + r * Math.sin(Math.PI / 5)}`}
@@ -42,7 +35,6 @@ export function CareeroMark({ size = 28, className }: Props) {
         strokeWidth={stroke}
         strokeLinecap="round"
       />
-      {/* 4-point spark inside the C's opening (right side) */}
       <path
         d={`M 46 32
             L 50 30 L 46 28 L 44 24 L 42 28 L 38 30 L 42 32

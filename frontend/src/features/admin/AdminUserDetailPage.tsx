@@ -49,11 +49,6 @@ export function AdminUserDetailPage() {
     if (!id || !user) return;
     try {
       const res = await impersonate.mutateAsync(id);
-      // We're on admin.personaarmory.com. The student app lives at
-      // app.personaarmory.com — a different origin with its own
-      // localStorage. Hand off the impersonation tokens via URL fragment
-      // (never sent to the server, doesn't hit history). The app-side
-      // `/impersonate` route decodes and stores them.
       const payload = {
         id: res.target_user_id,
         email: res.target_user_email,
@@ -64,11 +59,6 @@ export function AdminUserDetailPage() {
         refresh_token: res.refresh_token,
       };
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      // Prefer the app.* origin when we're on a real admin subdomain
-      // (careero.app or the legacy personaarmory.com). On a single-origin
-      // dev setup we stay on the same host — the ?surface=app query param
-      // clears the sticky admin flag so the app bundle takes over and
-      // /impersonate can decode the fragment.
       const host = window.location.hostname;
       const isAdminSubdomain = host.startsWith("admin.");
       const appOrigin = isAdminSubdomain
@@ -92,8 +82,6 @@ export function AdminUserDetailPage() {
     }
   }
 
-  // No self-check needed — admin identity space is fully separate from
-  // the users table, so actor.id can never equal a users.id.
   const isSelf = false;
 
   return (
