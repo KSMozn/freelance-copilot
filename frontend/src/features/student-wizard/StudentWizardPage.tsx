@@ -212,7 +212,7 @@ export function StudentWizardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between p-3">
           <BrandWordmark variant="careero" size={22} />
           <div className="flex items-center gap-4 text-xs">
             <Link
@@ -225,7 +225,7 @@ export function StudentWizardPage() {
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-8">
         <ProgressBar
           steps={STEPS}
           stepIndex={stepIndex}

@@ -118,7 +118,8 @@ export function Select({
           className={cn(
             // bg-card + text-card-foreground because this codebase has no
             // `--popover` token (bg-popover would render transparent).
-            "absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-card text-card-foreground shadow-lg",
+            "absolute left-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-md border bg-card text-card-foreground shadow-lg",
+            "w-max min-w-full max-w-[calc(100vw-1.5rem)]",
           )}
         >
           {options.map((opt, i) => {
@@ -142,7 +143,7 @@ export function Select({
                 role="option"
                 aria-selected={isSelected}
               >
-                <span className="truncate">{opt.label}</span>
+                <span>{opt.label}</span>
                 {isSelected && (
                   <span aria-hidden className="ml-2 text-xs">
                     ✓
