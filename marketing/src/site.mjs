@@ -50,6 +50,16 @@ export const nav = [
     ],
   },
   {
+    label: "CV by Field",
+    items: [
+      { label: "Computer Science Students", href: "/cv-for-computer-science-students" },
+      { label: "Engineering Students", href: "/cv-for-engineering-students" },
+      { label: "Business Students", href: "/cv-for-business-students" },
+      { label: "For a Scholarship", href: "/cv-for-scholarship-application" },
+      { label: "For a Part-Time Job", href: "/cv-for-part-time-job-students" },
+    ],
+  },
+  {
     label: "Guides",
     items: [
       { label: "How to Write a Student CV", href: "/guides/how-to-write-a-student-cv" },
@@ -66,6 +76,7 @@ export const nav = [
     items: [
       { label: "Careero vs Canva", href: "/alternatives/canva-cv-builder-for-students" },
       { label: "Careero vs Resume.io", href: "/alternatives/resume-io-for-students" },
+      { label: "Careero vs Zety", href: "/alternatives/zety-for-students" },
       { label: "Careero vs Generic AI tools", href: "/alternatives/generic-ai-resume-builders" },
     ],
   },

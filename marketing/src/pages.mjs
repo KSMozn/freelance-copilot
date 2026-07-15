@@ -2140,4 +2140,518 @@ export const pages = [
       ),
     ],
   },
+
+  // --------------------------------------------- CV FOR CS STUDENTS ----
+  {
+    slug: "cv-for-computer-science-students",
+    title: "Computer Science Student CV: Guide & Examples (2026) | Careero",
+    description:
+      "How to write a computer science student CV that lands internships and graduate roles — projects, tech skills, GitHub and ATS tips. Build yours free with Careero.",
+    h1: "How to write a computer science student CV",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV by Field · Computer Science",
+        h1: "The computer science student CV that gets you interviews",
+        lead:
+          "Recruiters for tech roles scan for projects, a public GitHub and the right stack — not a long work history. Here's how to build a computer science CV that shows what you can actually do, even as a student.",
+        primaryCta: { text: "Build my CS CV", href: APP },
+        secondaryCta: { text: "See CV examples", href: "/student-cv-examples" },
+        note: "Free to start · ATS-friendly · PDF &amp; DOCX",
+      },
+      {
+        type: "cards",
+        h2: "What matters most on a computer science CV",
+        items: [
+          {
+            icon: "🧩",
+            title: "Projects over jobs",
+            text: "Coursework and side projects are your strongest evidence. Describe each by problem, stack and outcome.",
+            href: "/guides/how-to-write-projects-in-a-cv",
+          },
+          {
+            icon: "🐙",
+            title: "A linked GitHub",
+            text: "A tidy GitHub with pinned repos and READMEs turns claims into proof. Link it near your contact details.",
+            href: "/guides/github-profile-for-students",
+          },
+          {
+            icon: "🛠️",
+            title: "A focused skills section",
+            text: "List languages, frameworks and tools you can actually discuss — grouped, not a 40-item word cloud.",
+          },
+          {
+            icon: "✅",
+            title: "ATS-safe formatting",
+            text: "Tech employers lean heavily on screening software. Keep headings standard and layout clean.",
+            href: "/ats-friendly-student-cv",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "How to describe a coding project",
+        paragraphs: [
+          "The best computer science bullets read like mini case studies: what you built, the stack you used, and the measurable result. Lead with an action verb and include a number wherever you honestly can.",
+        ],
+        subsections: [
+          {
+            h3: "Weak vs strong",
+            paragraphs: [
+              "&ldquo;Made a website for a project&rdquo; tells a recruiter nothing. &ldquo;Built a full-stack expense tracker in React and Node.js used by 30 classmates; added auth and charts&rdquo; shows scope, stack and impact in one line.",
+            ],
+          },
+          {
+            h3: "No internship yet? No problem",
+            paragraphs: [
+              "Hackathons, open-source contributions, university society tech teams and personal apps all count as experience. See our guide on <a href=\"/student-cv-with-no-experience\">writing a CV with no experience</a>.",
+            ],
+          },
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "How many projects should a CS student CV have?",
+            a: "Two to four strong projects beat a long list. Choose the ones with the clearest outcome and the stack most relevant to the role.",
+          },
+          {
+            q: "Should I list every programming language I've touched?",
+            a: "No. List the ones you can talk about confidently in an interview, and group them (languages, frameworks, tools) so screening software and humans can scan them quickly.",
+          },
+          {
+            q: "Do I need a GitHub link on my CV?",
+            a: "For technical roles, yes — a clean GitHub is strong proof. See our <a href=\"/guides/github-profile-for-students\">GitHub for students guide</a>.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "More CV guides",
+        bullets: [
+          "<a href=\"/cv-for-engineering-students\">CV for engineering students</a>",
+          "<a href=\"/cv-for-internship\">CV for an internship</a>",
+          "<a href=\"/ai-cv-builder-for-students\">AI CV builder for students</a>",
+        ],
+      },
+      closingCta(
+        "Build your computer science CV",
+        "Add your projects and let Careero write recruiter-ready, ATS-friendly bullets.",
+        "Build my CS CV",
+      ),
+    ],
+  },
+
+  // -------------------------------------- CV FOR ENGINEERING STUDENTS ----
+  {
+    slug: "cv-for-engineering-students",
+    title: "Engineering Student CV: Guide & Examples (2026) | Careero",
+    description:
+      "Write an engineering student CV that wins internships and graduate schemes — technical projects, lab work, tools and ATS tips. Build yours free with Careero.",
+    h1: "How to write an engineering student CV",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV by Field · Engineering",
+        h1: "An engineering CV built around what you've made and measured",
+        lead:
+          "Engineering recruiters look for hands-on projects, technical tools and evidence you can solve real problems. Here's how to present your degree, labs and projects so a student CV reads like an engineer's.",
+        primaryCta: { text: "Build my engineering CV", href: APP },
+        secondaryCta: { text: "See CV examples", href: "/student-cv-examples" },
+        note: "Free to start · ATS-friendly · PDF &amp; DOCX",
+      },
+      {
+        type: "cards",
+        h2: "What engineering recruiters want to see",
+        items: [
+          {
+            icon: "📐",
+            title: "Technical projects",
+            text: "Design projects, final-year projects and competitions — described by objective, method and result.",
+            href: "/guides/how-to-write-projects-in-a-cv",
+          },
+          {
+            icon: "🧰",
+            title: "Tools & software",
+            text: "CAD, MATLAB, SolidWorks, simulation and lab equipment you've genuinely used belong in a clear skills block.",
+          },
+          {
+            icon: "🏭",
+            title: "Placements & labs",
+            text: "Industrial placements, lab modules and workshops all count as practical experience worth describing.",
+            href: "/cv-for-internship",
+          },
+          {
+            icon: "✅",
+            title: "Clean, ATS-safe layout",
+            text: "Large engineering employers screen at scale. Keep formatting simple so nothing gets dropped.",
+            href: "/ats-friendly-student-cv",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Turn a design project into strong bullets",
+        paragraphs: [
+          "Quantify wherever you can: loads, tolerances, cost savings, efficiency gains, team size. Numbers signal an engineer's mindset. &ldquo;Designed and tested a load-bearing bracket that cut mass 18% while meeting the safety factor&rdquo; is far stronger than &ldquo;did a design project.&rdquo;",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "Should I include my final-year project?",
+            a: "Yes — it's often the most substantial engineering work you've done. Describe the objective, your method, the tools, and the outcome.",
+          },
+          {
+            q: "How do I show experience without a placement?",
+            a: "Lab modules, design competitions, society projects and part-time work all demonstrate skills. See our guide on <a href=\"/student-cv-with-no-experience\">CVs with no experience</a>.",
+          },
+          {
+            q: "How long should an engineering student CV be?",
+            a: "One page while you're a student. Prioritise your degree, strongest projects and relevant tools.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "More CV guides",
+        bullets: [
+          "<a href=\"/cv-for-computer-science-students\">CV for computer science students</a>",
+          "<a href=\"/guides/best-cv-format-for-students\">Best CV format for students</a>",
+          "<a href=\"/cv-for-internship\">CV for an internship</a>",
+        ],
+      },
+      closingCta(
+        "Build your engineering CV",
+        "Add your projects and tools and let Careero write quantified, ATS-friendly bullets.",
+        "Build my engineering CV",
+      ),
+    ],
+  },
+
+  // ---------------------------------------- CV FOR BUSINESS STUDENTS ----
+  {
+    slug: "cv-for-business-students",
+    title: "Business Student CV: Guide & Examples (2026) | Careero",
+    description:
+      "Write a business, finance or management student CV that stands out — internships, societies, leadership and results. Build yours free with Careero.",
+    h1: "How to write a business student CV",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV by Field · Business & Finance",
+        h1: "A business CV that leads with results, not just responsibilities",
+        lead:
+          "For business, finance and management roles, recruiters want commercial awareness, leadership and measurable impact. Here's how to turn societies, part-time work and coursework into a CV that competes for competitive schemes.",
+        primaryCta: { text: "Build my business CV", href: APP },
+        secondaryCta: { text: "See CV examples", href: "/student-cv-examples" },
+        note: "Free to start · ATS-friendly · PDF &amp; DOCX",
+      },
+      {
+        type: "cards",
+        h2: "What sets a strong business CV apart",
+        items: [
+          {
+            icon: "📈",
+            title: "Quantified results",
+            text: "Revenue raised, budgets managed, members recruited, hours saved — numbers make a business CV credible.",
+          },
+          {
+            icon: "👥",
+            title: "Leadership & teamwork",
+            text: "Society committees, group projects and part-time supervision show the soft skills employers screen for.",
+          },
+          {
+            icon: "🧠",
+            title: "Commercial awareness",
+            text: "Tie coursework and projects to real business outcomes to show you think beyond the classroom.",
+          },
+          {
+            icon: "✅",
+            title: "Polished & ATS-safe",
+            text: "Consultancies and banks use heavy screening. Keep it clean, consistent and error-free.",
+            href: "/ats-friendly-student-cv",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Make everyday experience sound commercial",
+        paragraphs: [
+          "A part-time retail job becomes &ldquo;Handled 100+ customer transactions per shift and resolved complaints, improving repeat custom.&rdquo; A society treasurer role becomes &ldquo;Managed a £4k budget and cut event costs 15%.&rdquo; The activity matters less than the result you describe.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "I only have part-time and society experience — is that enough?",
+            a: "Yes. Described well, part-time work and society roles show exactly the leadership, numeracy and teamwork employers want. Our <a href=\"/student-cv-with-no-experience\">no-experience guide</a> shows how.",
+          },
+          {
+            q: "Should I include my A-level or high-school grades?",
+            a: "Include them briefly early in your degree, especially for finance schemes that ask for them, then reduce the detail as your degree and experience grow.",
+          },
+          {
+            q: "How do I stand out for competitive schemes?",
+            a: "Quantify everything, tailor the CV to each firm, and keep it to one clean page. Careero helps you do all three.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "More CV guides",
+        bullets: [
+          "<a href=\"/cv-for-internship\">CV for an internship</a>",
+          "<a href=\"/cv-for-part-time-job-students\">CV for a part-time job</a>",
+          "<a href=\"/guides/how-to-write-a-student-cv\">How to write a student CV</a>",
+        ],
+      },
+      closingCta(
+        "Build your business CV",
+        "Turn societies, part-time work and coursework into results-focused, ATS-friendly bullets.",
+        "Build my business CV",
+      ),
+    ],
+  },
+
+  // ------------------------------------ CV FOR SCHOLARSHIP APPLICATION ----
+  {
+    slug: "cv-for-scholarship-application",
+    title: "CV for a Scholarship Application: Guide & Tips (2026) | Careero",
+    description:
+      "How to write a CV for a scholarship application — lead with academics, achievements, leadership and impact. Build a polished scholarship CV free with Careero.",
+    h1: "How to write a CV for a scholarship application",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV by Goal · Scholarships",
+        h1: "A scholarship CV that puts your achievements first",
+        lead:
+          "A scholarship CV isn't a job CV. Committees reward academic excellence, leadership, community impact and potential. Here's how to structure and write one that makes a strong case for funding.",
+        primaryCta: { text: "Build my scholarship CV", href: APP },
+        secondaryCta: { text: "How to write a student CV", href: "/guides/how-to-write-a-student-cv" },
+        note: "Free to start · PDF &amp; DOCX",
+      },
+      {
+        type: "prose",
+        h2: "What a scholarship CV should include",
+        paragraphs: [
+          "Lead with academics — they are the core of the decision. Then show the well-rounded profile committees look for: leadership, service, and evidence you'll make good use of the opportunity.",
+        ],
+        bullets: [
+          "<strong>Academic record</strong> — degree, grades, awards, scholarships and honours.",
+          "<strong>Achievements</strong> — competitions, publications, presentations and prizes.",
+          "<strong>Leadership</strong> — society roles, mentoring, captaincy and organising.",
+          "<strong>Community & volunteering</strong> — service that shows values and initiative.",
+          "<strong>Goals</strong> — a short statement of what the scholarship will help you achieve.",
+        ],
+      },
+      {
+        type: "prose",
+        h2: "How it differs from a job CV",
+        paragraphs: [
+          "Where a job CV foregrounds work experience and role-specific skills, a scholarship CV foregrounds merit, character and potential. It's usually acceptable for it to run slightly longer if you have genuine achievements to list — but keep every line relevant and evidenced.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "How long should a scholarship CV be?",
+            a: "One page is ideal; up to two is acceptable if you have substantial academic achievements, publications or leadership to evidence.",
+          },
+          {
+            q: "Should I include a personal statement on the CV?",
+            a: "A short profile or goals line helps, but keep any long personal statement as a separate document if the scholarship asks for one.",
+          },
+          {
+            q: "What if my grades aren't perfect?",
+            a: "Lead with your strengths — relevant achievements, leadership and impact — and let a strong, well-organised CV tell a fuller story than grades alone.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "More CV guides",
+        bullets: [
+          "<a href=\"/guides/how-to-write-a-student-cv\">How to write a student CV</a>",
+          "<a href=\"/student-cv-with-no-experience\">CV with no experience</a>",
+          "<a href=\"/student-cv-templates\">Student CV templates</a>",
+        ],
+      },
+      closingCta(
+        "Build your scholarship CV",
+        "Careero helps you present your academics, achievements and leadership with clarity.",
+        "Build my scholarship CV",
+      ),
+    ],
+  },
+
+  // ------------------------------------ CV FOR PART-TIME JOB STUDENTS ----
+  {
+    slug: "cv-for-part-time-job-students",
+    title: "CV for a Part-Time Job (Student Guide, 2026) | Careero",
+    description:
+      "Write a student CV for a part-time job even with no experience — highlight availability, reliability and transferable skills. Build yours free with Careero.",
+    h1: "How to write a CV for a part-time job",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "CV by Goal · Part-Time Work",
+        h1: "A part-time job CV that gets you hired with little or no experience",
+        lead:
+          "Applying for retail, hospitality, tutoring or campus work? Employers care about reliability, attitude and availability far more than a long CV. Here's how to write a short, convincing one — even for your first job.",
+        primaryCta: { text: "Build my CV free", href: APP },
+        secondaryCta: { text: "CV with no experience", href: "/student-cv-with-no-experience" },
+        note: "Free to start · Ready in minutes",
+      },
+      {
+        type: "cards",
+        h2: "What part-time employers actually look for",
+        items: [
+          {
+            icon: "⏰",
+            title: "Availability",
+            text: "State when you can work — evenings, weekends, term-time or holidays. It's often the deciding factor.",
+          },
+          {
+            icon: "🤝",
+            title: "Reliability & attitude",
+            text: "Punctuality, teamwork and a willingness to learn matter more than a polished career history.",
+          },
+          {
+            icon: "🔁",
+            title: "Transferable skills",
+            text: "School, volunteering, clubs and coursework all show communication, responsibility and time management.",
+          },
+          {
+            icon: "📄",
+            title: "Short & clean",
+            text: "Half a page to one page is plenty. Keep it easy to skim for a busy shift manager.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "No work experience yet? Start here",
+        paragraphs: [
+          "Everyone's first CV has no jobs on it — that's normal. Lead with a friendly one-line summary, your availability, your education, and a short list of transferable skills backed by examples from school, clubs or volunteering.",
+          "For a full walkthrough, read our guide on <a href=\"/student-cv-with-no-experience\">writing a CV with no experience</a>.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "How long should a part-time job CV be?",
+            a: "Half a page to one page. Managers scan quickly, so keep it short, clear and focused on availability and attitude.",
+          },
+          {
+            q: "What do I put if I've never had a job?",
+            a: "Your education, a short summary, availability, and transferable skills from school, volunteering and activities — with a quick example for each.",
+          },
+          {
+            q: "Should I write a cover letter too?",
+            a: "A few lines help for competitive roles. See our <a href=\"/blog/cover-letter-for-students\">student cover letter guide</a>.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "More CV guides",
+        bullets: [
+          "<a href=\"/student-cv-with-no-experience\">CV with no experience</a>",
+          "<a href=\"/first-cv\">Your first CV</a>",
+          "<a href=\"/cv-for-business-students\">CV for business students</a>",
+        ],
+      },
+      closingCta(
+        "Build your part-time job CV",
+        "Answer a few guided questions and download a clean, ready-to-send CV in minutes.",
+        "Build my CV free",
+      ),
+    ],
+  },
+
+  // ---------------------------------------- ALTERNATIVE · CAREERO vs ZETY ----
+  {
+    slug: "alternatives/zety-for-students",
+    title: "Careero vs Zety: Best CV Builder for Students (2026) | Careero",
+    description:
+      "Comparing Zety and Careero for students? See how a student-first, AI CV builder with free PDF and DOCX download compares for first-time CV writers.",
+    h1: "Careero vs Zety for students",
+    type: "website",
+    blocks: [
+      {
+        type: "hero",
+        kicker: "Compare · Careero vs Zety",
+        h1: "Careero vs Zety: which is better for a student CV?",
+        lead:
+          "Zety is a capable general-purpose resume builder. But if you're a student writing a first CV with limited experience, a student-first tool can be a faster, friendlier fit. Here's an honest comparison.",
+        primaryCta: { text: "Try Careero free", href: APP },
+        secondaryCta: { text: "See other comparisons", href: "/alternatives/resume-io-for-students" },
+      },
+      {
+        type: "cards",
+        h2: "Where Careero focuses",
+        items: [
+          {
+            icon: "🎓",
+            title: "Student-first by design",
+            text: "Sections for coursework, projects, societies and volunteering — not a layout built for a 10-year career.",
+            href: "/student-cv-builder",
+          },
+          {
+            icon: "🤖",
+            title: "AI for early-career writing",
+            text: "Turns a one-line description of a project or internship into strong, quantified bullets.",
+            href: "/ai-cv-builder-for-students",
+          },
+          {
+            icon: "⬇️",
+            title: "PDF & DOCX download",
+            text: "Export a print-ready PDF or an editable DOCX and start free — no wall before you can see your CV.",
+          },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "How to choose",
+        paragraphs: [
+          "Choose a general builder like Zety if you have years of work history and want a large template library across industries. Choose Careero if you're a student or fresh graduate who wants guidance tailored to a first CV, AI help for projects and internships, and a quick, ATS-friendly result.",
+          "Both produce professional CVs — the difference is how much of the student-specific thinking is done for you.",
+        ],
+      },
+      {
+        type: "faq",
+        items: [
+          {
+            q: "Is Careero free?",
+            a: "Yes — you can build your CV for free and download it. Start at <a href=\"" + APP + "\" rel=\"noopener\">app.careero.app</a>.",
+          },
+          {
+            q: "Is Careero better than Zety?",
+            a: "For students writing a first CV, Careero is purpose-built and often faster. For a long professional history across many industries, a general builder may offer more templates. Pick the fit for your stage.",
+          },
+          {
+            q: "Are Careero CVs ATS-friendly?",
+            a: "Yes. Careero uses clean layouts and standard headings so applicant tracking systems can parse your CV. See our <a href=\"/ats-friendly-student-cv\">ATS guide</a>.",
+          },
+        ],
+      },
+      closingCta(
+        "See the difference for yourself",
+        "Build a student CV with Careero free — no credit card, PDF and DOCX included.",
+        "Try Careero free",
+      ),
+    ],
+  },
 ];
