@@ -10,8 +10,16 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { buildFacetPages } from "../src/facets.mjs";
 import { pages } from "../src/pages.mjs";
 import { site } from "../src/site.mjs";
+
+// Bespoke OG images for the authored pages + the generated field-base "hubs".
+// The long-tail {field}/{goal} pages fall back to the shared default OG
+// (render.mjs), so we don't render dozens of near-identical share cards.
+const fieldBaseHubs = buildFacetPages(
+  new Set(pages.map((p) => p.slug)),
+).pages.filter((p) => !p.slug.includes("/"));
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "../assets/og");
@@ -95,8 +103,10 @@ function main() {
 
   let n = 0;
   const selectedPages = process.env.OG_SLUG
-    ? pages.filter((page) => page.slug === process.env.OG_SLUG)
-    : pages;
+    ? [...pages, ...fieldBaseHubs].filter(
+        (page) => page.slug === process.env.OG_SLUG,
+      )
+    : [...pages, ...fieldBaseHubs];
   if (selectedPages.length === 0) {
     throw new Error(`Unknown OG_SLUG: ${process.env.OG_SLUG}`);
   }

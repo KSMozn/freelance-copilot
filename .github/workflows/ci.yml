@@ -71,6 +71,8 @@ jobs:
       - working-directory: marketing
         run: npm run lint
       - working-directory: marketing
+        run: npm test
+      - working-directory: marketing
         run: npm run build
       - working-directory: marketing
         run: npm run validate

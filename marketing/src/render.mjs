@@ -1,7 +1,14 @@
 // Rendering layer: turns a page object (see pages.mjs) into a complete,
 // pre-rendered HTML document. No client framework — the HTML IS the content.
 
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { footerCompany, nav, site } from "./site.mjs";
+
+// Where the pre-generated per-page OG PNGs live (committed; see tools/og-gen).
+const OG_DIR = join(dirname(fileURLToPath(import.meta.url)), "../assets/og");
 
 const esc = (s = "") =>
   String(s)
@@ -250,10 +257,17 @@ const jsonLdScript = (obj) =>
 
 const breadcrumbLd = (page) => {
   if (!page.slug) return null;
-  const items = [
-    { name: "Home", url: absUrl("/") },
-    { name: page.h1 || page.title, url: absUrl(page.slug) },
-  ];
+  // Facet pages provide an explicit trail (e.g. Home › Field › Field+Goal);
+  // everything else is the two-level Home › page default.
+  const items = page.breadcrumbTrail
+    ? [
+        { name: "Home", url: absUrl("/") },
+        ...page.breadcrumbTrail.map((t) => ({ name: t.name, url: absUrl(t.slug) })),
+      ]
+    : [
+        { name: "Home", url: absUrl("/") },
+        { name: page.h1 || page.title, url: absUrl(page.slug) },
+      ];
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -351,9 +365,13 @@ const buildJsonLd = (page) => {
 
 // ---- <head> ----------------------------------------------------------------
 // Per-page OG image path: /og/<slug-with-dashes>.png (homepage -> /og/home.png).
-// Pre-generated PNGs live in assets/og/. Falls back to the shared image.
-export const ogImagePath = (slug) =>
-  `/og/${slug ? slug.replace(/\//g, "-") : "home"}.png`;
+// Pre-generated PNGs live in assets/og/. When a page has no bespoke image
+// (e.g. long-tail facet pages), fall back to the shared branded default so a
+// share card is never broken.
+export const ogImagePath = (slug) => {
+  const file = `${slug ? slug.replace(/\//g, "-") : "home"}.png`;
+  return existsSync(join(OG_DIR, file)) ? `/og/${file}` : "/og-default.png";
+};
 
 const head = (page) => {
   const url = absUrl(page.slug);

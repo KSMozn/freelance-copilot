@@ -2229,6 +2229,17 @@ export const pages = [
       },
       {
         type: "prose",
+        h2: "Tailor your computer science CV to a goal",
+        bullets: [
+          "<a href=\"/cv-for-computer-science-students/internship\">CV for an internship</a>",
+          "<a href=\"/cv-for-computer-science-students/scholarship\">CV for a scholarship</a>",
+          "<a href=\"/cv-for-computer-science-students/part-time-job\">CV for a part-time job</a>",
+          "<a href=\"/cv-for-computer-science-students/first-job\">CV for your first job</a>",
+          "<a href=\"/cv-for-computer-science-students/graduate-scheme\">CV for a graduate scheme</a>",
+        ],
+      },
+      {
+        type: "prose",
         h2: "More CV guides",
         bullets: [
           "<a href=\"/cv-for-engineering-students\">CV for engineering students</a>",
@@ -2318,6 +2329,17 @@ export const pages = [
       },
       {
         type: "prose",
+        h2: "Tailor your engineering CV to a goal",
+        bullets: [
+          "<a href=\"/cv-for-engineering-students/internship\">CV for an internship</a>",
+          "<a href=\"/cv-for-engineering-students/scholarship\">CV for a scholarship</a>",
+          "<a href=\"/cv-for-engineering-students/part-time-job\">CV for a part-time job</a>",
+          "<a href=\"/cv-for-engineering-students/first-job\">CV for your first job</a>",
+          "<a href=\"/cv-for-engineering-students/graduate-scheme\">CV for a graduate scheme</a>",
+        ],
+      },
+      {
+        type: "prose",
         h2: "More CV guides",
         bullets: [
           "<a href=\"/cv-for-computer-science-students\">CV for computer science students</a>",
@@ -2401,6 +2423,17 @@ export const pages = [
             q: "How do I stand out for competitive schemes?",
             a: "Quantify everything, tailor the CV to each firm, and keep it to one clean page. Careero helps you do all three.",
           },
+        ],
+      },
+      {
+        type: "prose",
+        h2: "Tailor your business CV to a goal",
+        bullets: [
+          "<a href=\"/cv-for-business-students/internship\">CV for an internship</a>",
+          "<a href=\"/cv-for-business-students/scholarship\">CV for a scholarship</a>",
+          "<a href=\"/cv-for-business-students/part-time-job\">CV for a part-time job</a>",
+          "<a href=\"/cv-for-business-students/first-job\">CV for your first job</a>",
+          "<a href=\"/cv-for-business-students/graduate-scheme\">CV for a graduate scheme</a>",
         ],
       },
       {
