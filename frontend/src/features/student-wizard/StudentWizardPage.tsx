@@ -291,7 +291,7 @@ function ProgressBar({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {steps.map((s, i) => {
-        const done = completed.includes(s.slug);
+        const done = completed.includes(s.slug) && SAVE_MODEL[s.slug] !== "none";
         const active = i === stepIndex;
         return (
           <button
