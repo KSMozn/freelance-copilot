@@ -7,6 +7,8 @@ import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 import { fetchPhotoDataUri } from "@/features/student-wizard/photoCache";
 import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import type { StudentEntryKind } from "@/features/student-wizard/studentTypes";
+import { AppShell } from "@/shared/layout/AppShell";
+import { PageContainer } from "@/shared/layout/PageContainer";
 import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -210,70 +212,69 @@ export function StudentWizardPage() {
     setStepIndex(index);
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between p-3">
-          <BrandWordmark variant="careero" size={22} />
-          <div className="flex items-center gap-4 text-xs">
-            <FeedbackDialog />
-            <SignOutButton />
-          </div>
+  const header = (
+    <header className="border-b border-border/60 bg-background/70 backdrop-blur">
+      <PageContainer className="flex items-center justify-between py-3">
+        <BrandWordmark variant="careero" size={22} />
+        <div className="flex items-center gap-4 text-xs">
+          <FeedbackDialog />
+          <SignOutButton />
         </div>
-      </header>
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <ProgressBar
-          steps={STEPS}
-          stepIndex={stepIndex}
-          completed={profile?.completed_steps ?? []}
-          onJump={jumpToStep}
-        />
+      </PageContainer>
+    </header>
+  );
 
-        <Card className="mt-6 rounded-2xl border-border/60 shadow-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-semibold tracking-tight">{step.title}</CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
-              {step.blurb}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {profileLoading ? (
-              <div className="text-sm text-muted-foreground">Loading…</div>
-            ) : (
-              <StepBody
-                stepSlug={step.slug}
-                onSaved={async () => {
-                  await markStepDone(step.slug);
-                  goNext();
-                }}
-              />
-            )}
+  return (
+    <AppShell header={header}>
+      <ProgressBar
+        steps={STEPS}
+        stepIndex={stepIndex}
+        completed={profile?.completed_steps ?? []}
+        onJump={jumpToStep}
+      />
 
-            <div className="flex items-center justify-between pt-4">
-              <Button variant="ghost" onClick={goPrev} disabled={stepIndex === 0}>
-                Back
-              </Button>
-              <div className="text-xs text-muted-foreground">
-                Step {stepIndex + 1} of {STEPS.length}
-                {SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]
-                  ? ` · ${SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]}`
-                  : ""}
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  void markStepDone(step.slug);
-                  goNext();
-                }}
-                disabled={stepIndex === STEPS.length - 1}
-              >
-                Skip
-              </Button>
+      <Card className="mt-6 rounded-2xl border-border/60 shadow-sm">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-semibold tracking-tight">{step.title}</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">{step.blurb}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {profileLoading ? (
+            <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : (
+            <StepBody
+              stepSlug={step.slug}
+              onSaved={async () => {
+                await markStepDone(step.slug);
+                goNext();
+              }}
+            />
+          )}
+
+          <div className="flex items-center justify-between pt-4">
+            <Button variant="ghost" onClick={goPrev} disabled={stepIndex === 0}>
+              Back
+            </Button>
+            <div className="text-xs text-muted-foreground">
+              Step {stepIndex + 1} of {STEPS.length}
+              {SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]
+                ? ` · ${SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]}`
+                : ""}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void markStepDone(step.slug);
+                goNext();
+              }}
+              disabled={stepIndex === STEPS.length - 1}
+            >
+              Skip
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </AppShell>
   );
 }
 

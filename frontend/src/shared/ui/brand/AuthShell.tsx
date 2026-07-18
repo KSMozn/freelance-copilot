@@ -19,32 +19,34 @@ export function AuthShell({
   children,
 }: Props) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
+    <div className="relative h-dvh overflow-hidden bg-background">
       <div
         aria-hidden
         className="bg-brand-gradient pointer-events-none absolute -top-1/3 left-1/4 h-[640px] w-[640px] -translate-x-1/2 rounded-full opacity-25 blur-3xl"
       />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center justify-center gap-10 px-4 py-12 md:justify-between">
-        <div className="hidden max-w-md text-white md:block">
-          <div className="flex items-center gap-3">
-            <CareeroMark size={40} />
-            <span className="text-xl font-semibold tracking-tight">{BRAND.product}</span>
+      <div className="relative z-10 h-full overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="mx-auto flex min-h-full max-w-6xl items-center justify-center gap-10 px-4 py-12 md:justify-between">
+          <div className="hidden max-w-md text-white md:block">
+            <div className="flex items-center gap-3">
+              <CareeroMark size={40} />
+              <span className="text-xl font-semibold tracking-tight">{BRAND.product}</span>
+            </div>
+            <p className="mt-10 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
+              {slogan}
+            </p>
+            <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight">{title}</h1>
+            <p className="mt-4 text-base text-white/70">{subtitle}</p>
           </div>
-          <p className="mt-10 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-            {slogan}
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight">{title}</h1>
-          <p className="mt-4 text-base text-white/70">{subtitle}</p>
-        </div>
 
-        <div className="flex w-full max-w-sm flex-col items-center">
-          <div className="mb-10 flex items-center gap-2.5 text-white md:hidden">
-            <CareeroMark size={36} />
-            <span className="text-xl font-semibold tracking-tight">{BRAND.product}</span>
+          <div className="flex w-full max-w-sm flex-col items-center">
+            <div className="mb-10 flex items-center gap-2.5 text-white md:hidden">
+              <CareeroMark size={36} />
+              <span className="text-xl font-semibold tracking-tight">{BRAND.product}</span>
+            </div>
+            <div className="w-full">{children}</div>
+            <AboutFooter className="mt-8 text-sm md:text-xs" />
           </div>
-          <div className="w-full">{children}</div>
-          <AboutFooter className="mt-8 text-sm md:text-xs" />
         </div>
       </div>
 

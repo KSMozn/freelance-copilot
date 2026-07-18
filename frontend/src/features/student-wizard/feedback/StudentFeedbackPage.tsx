@@ -7,7 +7,7 @@ import { FeedbackForm } from "@/features/student-wizard/feedback/FeedbackForm";
 
 export function StudentFeedbackPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-dvh overflow-y-auto bg-background [scrollbar-gutter:stable]">
       <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="mb-4 flex items-center justify-between gap-4">
           <Link to="/student" className="text-xs text-muted-foreground hover:text-foreground">
