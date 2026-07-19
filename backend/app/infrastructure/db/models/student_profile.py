@@ -82,6 +82,7 @@ class StudentProfile(Base):
     department: Mapped[str | None] = mapped_column(String(200), nullable=True)
     degree: Mapped[str | None] = mapped_column(String(120), nullable=True)
     major: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    start_year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     graduation_year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     gpa: Mapped[Decimal | None] = mapped_column(Numeric(3, 2), nullable=True)
 

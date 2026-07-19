@@ -216,7 +216,7 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
           className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-destructive"
         >
           <span>
-            Your phone number is a {getCountryName(phoneCountry)} number, but your country is{" "}
+            Your phone number is a {getCountryName(phoneCountry)} number, but your country is
             {country ? getCountryName(country) : ""}.
           </span>
           <button
@@ -242,7 +242,6 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
             update.isPending ||
             hasBlocker ||
             countryMismatch ||
-            Boolean(emailFormatError) ||
             (emailWarnings.length > 0 && !emailConfirmed)
           }
         >

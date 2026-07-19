@@ -53,6 +53,7 @@ export interface StudentProfile {
   department: string | null;
   degree: string | null;
   major: string | null;
+  start_year: number | null;
   graduation_year: number | null;
   gpa: string | null;
   photo_file_id: string | null;
@@ -93,6 +94,7 @@ export interface StudentProfileUpdate {
   department?: string | null;
   degree?: string | null;
   major?: string | null;
+  start_year?: number | null;
   graduation_year?: number | null;
   gpa?: string | number | null;
   summary?: string | null;

@@ -102,6 +102,7 @@ class StudentProfileUpdate(BaseModel):
     department: str | None = Field(default=None, max_length=200)
     degree: str | None = Field(default=None, max_length=120)
     major: str | None = Field(default=None, max_length=255)
+    start_year: int | None = Field(default=None, ge=1950, le=2099)
     graduation_year: int | None = Field(default=None, ge=1950, le=2099)
     gpa: Decimal | None = Field(default=None, ge=0, le=4.5, decimal_places=2)
 
@@ -140,6 +141,7 @@ class StudentProfileRead(BaseModel):
     department: str | None
     degree: str | None
     major: str | None
+    start_year: int | None
     graduation_year: int | None
     gpa: Decimal | None
     photo_file_id: UUID | None

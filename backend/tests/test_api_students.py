@@ -51,6 +51,7 @@ def _blank_profile(user_id: UUID) -> SimpleNamespace:
         department=None,
         degree=None,
         major=None,
+        start_year=None,
         graduation_year=None,
         gpa=None,
         photo_file_id=None,
@@ -180,6 +181,7 @@ def test_put_profile_round_trip(client: TestClient, user: User) -> None:
         json={
             "full_name": "Sara Ali",
             "college": "Cairo University",
+            "start_year": 2023,
             "graduation_year": 2027,
             "mark_steps": ["basics"],
             "current_step": "education",
@@ -190,6 +192,7 @@ def test_put_profile_round_trip(client: TestClient, user: User) -> None:
     assert body["user_id"] == str(user.id)
     assert body["full_name"] == "Sara Ali"
     assert body["college"] == "Cairo University"
+    assert body["start_year"] == 2023
     assert body["graduation_year"] == 2027
     assert body["completed_steps"] == ["basics"]
     assert body["current_step"] == "education"

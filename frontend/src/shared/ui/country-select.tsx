@@ -70,7 +70,6 @@ export function CountrySelect({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  // On open: focus the search box and highlight the current selection.
   useEffect(() => {
     if (!open) return;
     setQuery("");

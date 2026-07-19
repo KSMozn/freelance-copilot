@@ -300,12 +300,13 @@ function ProgressBar({
             type="button"
             onClick={() => onJump(i)}
             title={s.title}
+            aria-current={active ? "step" : undefined}
             className={
               "h-2 min-w-[14px] flex-1 rounded-full transition-all " +
               (active
-                ? "bg-brand-gradient shadow-[0_0_0_2px_hsl(var(--brand-mid)/0.15)]"
+                ? "bg-brand-gradient scale-y-150 shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_hsl(var(--brand-mid)/0.55)]"
                 : done
-                  ? "bg-brand-gradient opacity-60"
+                  ? "bg-primary/50"
                   : "bg-muted")
             }
           />

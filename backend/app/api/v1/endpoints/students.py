@@ -146,6 +146,7 @@ def _profile_to_read(row: StudentProfile, *, photo_url: str | None) -> StudentPr
         department=row.department,
         degree=row.degree,
         major=row.major,
+        start_year=row.start_year,
         graduation_year=row.graduation_year,
         gpa=row.gpa,
         photo_file_id=row.photo_file_id,

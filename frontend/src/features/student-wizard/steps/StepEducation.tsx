@@ -22,12 +22,13 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
   const [department, setDepartment] = useState(profile?.department ?? "");
   const [degree, setDegree] = useState(profile?.degree ?? "");
   const [major, setMajor] = useState(profile?.major ?? "");
+  const [startYear, setStartYear] = useState<string>(
+    profile?.start_year ? String(profile.start_year) : "",
+  );
   const [year, setYear] = useState<string>(
     profile?.graduation_year ? String(profile.graduation_year) : "",
   );
 
-  // Seed the university dropdown with the small featured list (with
-  // acronyms), then swap in the merged 10k Hipolabs list once it loads.
   const [uniOptions, setUniOptions] = useState<string[]>(UNIVERSITIES);
   const [uniLoaded, setUniLoaded] = useState(false);
   useEffect(() => {
@@ -49,17 +50,19 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
     setDepartment((cur) => cur || profile.department || "");
     setDegree((cur) => cur || profile.degree || "");
     setMajor((cur) => cur || profile.major || "");
+    setStartYear((cur) => cur || (profile.start_year ? String(profile.start_year) : ""));
     setYear((cur) => cur || (profile.graduation_year ? String(profile.graduation_year) : ""));
   }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useAutoSave(
-    { university, department, degree, major, year },
-    async ({ university, department, degree, major, year }) => {
+    { university, department, degree, major, startYear, year },
+    async ({ university, department, degree, major, startYear, year }) => {
       await update.mutateAsync({
         college: university || null,
         department: department || null,
         degree: degree || null,
         major: major || null,
+        start_year: startYear ? Number(startYear) : null,
         graduation_year: year ? Number(year) : null,
       });
     },
@@ -71,6 +74,7 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
       department: department || null,
       degree: degree || null,
       major: major || null,
+      start_year: startYear ? Number(startYear) : null,
       graduation_year: year ? Number(year) : null,
     });
     await onSaved();
@@ -97,14 +101,24 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
           placeholder="School of Engineering"
         />
       </div>
+      <div className="space-y-2">
+        <Label>Degree</Label>
+        <Select
+          value={degree}
+          onChange={(e) => setDegree(e.target.value)}
+          placeholder="Select a degree…"
+          options={[{ value: "", label: "—" }, ...DEGREES.map((d) => ({ value: d, label: d }))]}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label>Degree</Label>
-          <Select
-            value={degree}
-            onChange={(e) => setDegree(e.target.value)}
-            placeholder="Select a degree…"
-            options={[{ value: "", label: "—" }, ...DEGREES.map((d) => ({ value: d, label: d }))]}
+          <Label>Start year</Label>
+          <Input
+            inputMode="numeric"
+            value={startYear}
+            onChange={(e) => setStartYear(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="2023"
+            maxLength={4}
           />
         </div>
         <div className="space-y-2">
