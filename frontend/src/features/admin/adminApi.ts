@@ -414,35 +414,42 @@ export function useAdminUnresolveFeedback() {
   });
 }
 
+export type ScreenshotStatus = "idle" | "loading" | "ready" | "error";
+
+export interface ScreenshotState {
+  status: ScreenshotStatus;
+  url: string | null;
+}
 export function useFeedbackScreenshotUrl(
   feedbackId: string | null,
   enabled: boolean,
-): string | null {
-  const [url, setUrl] = useState<string | null>(null);
+): ScreenshotState {
+  const [state, setState] = useState<ScreenshotState>({ status: "idle", url: null });
   useEffect(() => {
     if (!feedbackId || !enabled) {
-      setUrl(null);
+      setState({ status: "idle", url: null });
       return;
     }
     let cancelled = false;
     let objectUrl: string | null = null;
+    setState({ status: "loading", url: null });
     void api
       .get(`/admin/feedback/${feedbackId}/screenshot`, { responseType: "blob" })
       .then((res) => {
         if (cancelled) return;
         objectUrl = URL.createObjectURL(res.data as Blob);
-        setUrl(objectUrl);
+        setState({ status: "ready", url: objectUrl });
       })
       .catch(() => {
-        if (!cancelled) setUrl(null);
+        if (!cancelled) setState({ status: "error", url: null });
       });
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
-      setUrl(null);
+      setState({ status: "idle", url: null });
     };
   }, [feedbackId, enabled]);
-  return url;
+  return state;
 }
 
 // ---- Admin-triggered emails --------------------------------------------

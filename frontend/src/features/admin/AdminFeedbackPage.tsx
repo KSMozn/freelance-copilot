@@ -315,11 +315,11 @@ function DetailPanel({
 }
 
 function ScreenshotSection({ feedbackId }: { feedbackId: string }) {
-  const url = useFeedbackScreenshotUrl(feedbackId, true);
+  const { status, url } = useFeedbackScreenshotUrl(feedbackId, true);
   return (
     <div>
       <div className="uppercase text-muted-foreground">Screenshot</div>
-      {url ? (
+      {status === "ready" && url ? (
         <a href={url} target="_blank" rel="noreferrer" className="mt-1 block">
           <img
             src={url}
@@ -330,6 +330,8 @@ function ScreenshotSection({ feedbackId }: { feedbackId: string }) {
             Open full size ↗
           </span>
         </a>
+      ) : status === "error" ? (
+        <div className="mt-1 text-[11px] text-muted-foreground">Screenshot unavailable.</div>
       ) : (
         <div className="mt-1 text-[11px] text-muted-foreground">Loading screenshot…</div>
       )}
