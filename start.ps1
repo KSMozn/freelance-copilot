@@ -35,8 +35,11 @@ param(
   [string]$Admin
 )
 
-$ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+$ErrorActionPreference = 'Continue'
+if (Test-Path variable:PSNativeCommandUseErrorActionPreference) {
+  $PSNativeCommandUseErrorActionPreference = $false
+}
+Set-Location -LiteralPath $PSScriptRoot -ErrorAction Stop
 
 $Ports = 5173, 8000, 5432   # frontend, backend, db (from docker-compose.yml)
 
@@ -86,7 +89,7 @@ if ($Logs) {
 
 # ---- 1) ensure the Docker engine is running --------------------------------
 function Test-DockerUp {
-  docker info *> $null
+  $null = docker info 2>&1
   return ($LASTEXITCODE -eq 0)
 }
 
@@ -99,7 +102,7 @@ if (-not (Test-DockerUp)) {
   ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 
   if (-not $exe) { Die "Could not locate 'Docker Desktop.exe'. Start Docker Desktop manually and retry." }
-  Start-Process -FilePath $exe | Out-Null
+  Start-Process -FilePath $exe -ErrorAction Stop | Out-Null
 
   Write-Host -NoNewline "   waiting for the Docker engine"
   $ok = $false
@@ -117,7 +120,7 @@ Clear-AppPorts
 # ---- 3) environment --------------------------------------------------------
 if (-not (Test-Path .env)) {
   Info "No .env found - creating one from .env.example (dev defaults, all mock providers)."
-  Copy-Item .env.example .env
+  Copy-Item .env.example .env -ErrorAction Stop
 } else {
   Info "Using existing .env"
 }
