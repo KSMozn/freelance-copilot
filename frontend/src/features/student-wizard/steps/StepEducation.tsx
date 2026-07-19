@@ -101,14 +101,25 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
           placeholder="School of Engineering"
         />
       </div>
-      <div className="space-y-2">
-        <Label>Degree</Label>
-        <Select
-          value={degree}
-          onChange={(e) => setDegree(e.target.value)}
-          placeholder="Select a degree…"
-          options={[{ value: "", label: "—" }, ...DEGREES.map((d) => ({ value: d, label: d }))]}
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label>Degree</Label>
+          <Select
+            value={degree}
+            onChange={(e) => setDegree(e.target.value)}
+            placeholder="Select a degree…"
+            options={[{ value: "", label: "—" }, ...DEGREES.map((d) => ({ value: d, label: d }))]}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Major</Label>
+          <Combobox
+            value={major}
+            onChange={setMajor}
+            options={MAJORS}
+            placeholder="Computer Science"
+          />
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
@@ -131,15 +142,6 @@ export function StepEducation({ onSaved }: { onSaved: () => Promise<void> | void
             maxLength={4}
           />
         </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Major</Label>
-        <Combobox
-          value={major}
-          onChange={setMajor}
-          options={MAJORS}
-          placeholder="Computer Science"
-        />
       </div>
       <div>
         <Button onClick={() => void saveAndContinue()} disabled={update.isPending}>
