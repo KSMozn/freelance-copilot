@@ -24,44 +24,65 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.domain.providers.blob_store import BlobStore
 from app.domain.providers.email_provider import EmailMessage, EmailProvider
 from app.infrastructure.db.models.admin_user import AdminUser
 from app.infrastructure.db.models.feedback_entry import FeedbackEntry
 from app.infrastructure.db.models.user import User
 from app.infrastructure.email.template_renderer import render
+from app.infrastructure.storage.uploaded_file_store import store_uploaded_file
+
+ScreenshotUpload = tuple[str, str, bytes]
 
 logger = logging.getLogger(__name__)
 
-# Same _BG_TASKS trick as usage_event_service — hold refs so the GC
-# doesn't collect fire-and-forget tasks mid-flight.
 _BG_TASKS: set[asyncio.Task[Any]] = set()
 
 
 class FeedbackService:
     def __init__(
-        self, session: AsyncSession, email_provider: EmailProvider
+        self,
+        session: AsyncSession,
+        email_provider: EmailProvider,
+        blob_store: BlobStore,
     ) -> None:
         self._session = session
         self._email = email_provider
+        self._blobs = blob_store
 
     async def submit_general(
-        self, user_id: UUID, message: str
+        self,
+        user_id: UUID,
+        message: str,
+        *,
+        screenshot: ScreenshotUpload | None = None,
     ) -> FeedbackEntry:
+        screenshot_file_id = None
+        if screenshot is not None:
+            filename, content_type, content = screenshot
+            file_row = await store_uploaded_file(
+                self._session,
+                self._blobs,
+                user_id=user_id,
+                prefix="feedback-screenshots",
+                filename=filename,
+                content_type=content_type,
+                content=content,
+            )
+            screenshot_file_id = file_row.id
+
         row = FeedbackEntry(
             user_id=user_id,
             kind="general",
             message=message,
+            screenshot_file_id=screenshot_file_id,
         )
         self._session.add(row)
         await self._session.flush()
 
-        # Grab the submitter's email for the notification body. Don't
-        # block the request if the user has been deleted between
-        # submit and this lookup — just skip the email.
         submitter = await self._session.get(User, user_id)
         submitter_email = submitter.email if submitter else "(unknown)"
 
-        # Copy what we need before the coroutine escapes the session.
         payload = {
             "submitter_email": submitter_email,
             "message": message,
@@ -69,7 +90,6 @@ class FeedbackService:
             if row.created_at
             else "",
         }
-        # Fetch recipients on the same session before firing.
         recipients = await self._active_admin_emails()
         task = asyncio.create_task(
             self._notify_admins(recipients, payload)

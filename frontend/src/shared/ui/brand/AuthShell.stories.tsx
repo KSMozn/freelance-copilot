@@ -21,8 +21,7 @@ export const Careero: Story = {
 
 export const Admin: Story = {
   args: {
-    variant: "personaarmory-admin",
-    title: "PersonaArmory Admin",
+    title: "Careero Admin",
     subtitle: "Operate the platform and support students.",
     children: <Button className="w-full">Sign in</Button>,
   },

@@ -248,6 +248,7 @@ export interface AdminFeedbackItem {
   rating: number | null;
   message: string | null;
   template_slug: string | null;
+  has_screenshot: boolean;
   created_at: string;
   resolved_at: string | null;
   resolved_by_email: string | null;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { logoutCurrentSurface } from "@/app/apiClient";
 import { useAuthStore } from "@/features/auth/authStore";
@@ -7,10 +7,13 @@ import { useLastProfileStore } from "@/features/auth/lastProfileStore";
 import { fetchPhotoDataUri } from "@/features/student-wizard/photoCache";
 import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-wizard/studentApi";
 import type { StudentEntryKind } from "@/features/student-wizard/studentTypes";
+import { AppShell } from "@/shared/layout/AppShell";
+import { PageContainer } from "@/shared/layout/PageContainer";
 import { BrandWordmark } from "@/shared/ui/brand/BrandWordmark";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 
+import { FeedbackDialog } from "./feedback/FeedbackDialog";
 import { StepBasics } from "./steps/StepBasics";
 import { StepEducation } from "./steps/StepEducation";
 import { StepEntries } from "./steps/StepEntries";
@@ -209,75 +212,69 @@ export function StudentWizardPage() {
     setStepIndex(index);
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/60 bg-background/70 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <BrandWordmark variant="careero" size={22} />
-          <div className="flex items-center gap-4 text-xs">
-            <Link
-              to="/feedback"
-              className="text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Send feedback →
-            </Link>
-            <SignOutButton />
-          </div>
+  const header = (
+    <header className="border-b border-border/60 bg-background/70 backdrop-blur">
+      <PageContainer className="flex items-center justify-between py-3">
+        <BrandWordmark variant="careero" size={22} />
+        <div className="flex items-center gap-4 text-xs">
+          <FeedbackDialog />
+          <SignOutButton />
         </div>
-      </header>
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        <ProgressBar
-          steps={STEPS}
-          stepIndex={stepIndex}
-          completed={profile?.completed_steps ?? []}
-          onJump={jumpToStep}
-        />
+      </PageContainer>
+    </header>
+  );
 
-        <Card className="mt-6 rounded-2xl border-border/60 shadow-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-semibold tracking-tight">{step.title}</CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
-              {step.blurb}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {profileLoading ? (
-              <div className="text-sm text-muted-foreground">Loading…</div>
-            ) : (
-              <StepBody
-                stepSlug={step.slug}
-                onSaved={async () => {
-                  await markStepDone(step.slug);
-                  goNext();
-                }}
-              />
-            )}
+  return (
+    <AppShell header={header}>
+      <ProgressBar
+        steps={STEPS}
+        stepIndex={stepIndex}
+        completed={profile?.completed_steps ?? []}
+        onJump={jumpToStep}
+      />
 
-            <div className="flex items-center justify-between pt-4">
-              <Button variant="ghost" onClick={goPrev} disabled={stepIndex === 0}>
-                Back
-              </Button>
-              <div className="text-xs text-muted-foreground">
-                Step {stepIndex + 1} of {STEPS.length}
-                {SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]
-                  ? ` · ${SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]}`
-                  : ""}
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  void markStepDone(step.slug);
-                  goNext();
-                }}
-                disabled={stepIndex === STEPS.length - 1}
-              >
-                Skip
-              </Button>
+      <Card className="mt-6 rounded-2xl border-border/60 shadow-sm">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-semibold tracking-tight">{step.title}</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">{step.blurb}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {profileLoading ? (
+            <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : (
+            <StepBody
+              stepSlug={step.slug}
+              onSaved={async () => {
+                await markStepDone(step.slug);
+                goNext();
+              }}
+            />
+          )}
+
+          <div className="flex items-center justify-between pt-4">
+            <Button variant="ghost" onClick={goPrev} disabled={stepIndex === 0}>
+              Back
+            </Button>
+            <div className="text-xs text-muted-foreground">
+              Step {stepIndex + 1} of {STEPS.length}
+              {SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]
+                ? ` · ${SAVE_HINT[SAVE_MODEL[step.slug] ?? "none"]}`
+                : ""}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void markStepDone(step.slug);
+                goNext();
+              }}
+              disabled={stepIndex === STEPS.length - 1}
+            >
+              Skip
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </AppShell>
   );
 }
 
@@ -295,7 +292,7 @@ function ProgressBar({
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {steps.map((s, i) => {
-        const done = completed.includes(s.slug);
+        const done = completed.includes(s.slug) && SAVE_MODEL[s.slug] !== "none";
         const active = i === stepIndex;
         return (
           <button
@@ -303,12 +300,13 @@ function ProgressBar({
             type="button"
             onClick={() => onJump(i)}
             title={s.title}
+            aria-current={active ? "step" : undefined}
             className={
               "h-2 min-w-[14px] flex-1 rounded-full transition-all " +
               (active
-                ? "bg-brand-gradient shadow-[0_0_0_2px_hsl(var(--brand-mid)/0.15)]"
+                ? "bg-brand-gradient scale-y-150 shadow-[0_0_0_2px_hsl(var(--background)),0_0_0_4px_hsl(var(--brand-mid)/0.55)]"
                 : done
-                  ? "bg-brand-gradient opacity-60"
+                  ? "bg-primary/50"
                   : "bg-muted")
             }
           />

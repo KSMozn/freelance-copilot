@@ -33,23 +33,17 @@ export function LoginPage() {
   const rememberLastProfile = useLastProfileStore((s) => s.remember);
   const lastProfile = useLastProfileStore((s) => s.profile);
 
-  // If a previous session left a snapshot, greet the returner directly.
-  // Fresh browsers skip straight to the email input (behavior parity with
-  // the pre-picker version).
   const [step, setStep] = useState<Step>(() => (lastProfile ? "picker" : "email"));
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  // Prefill the name for returners so they don't type it twice. Reset
-  // only when the student explicitly types a different email at the
-  // email step (see the "Use a different email" handler).
+
   const [fullName, setFullName] = useState(lastProfile?.full_name ?? "");
   const [password, setPassword] = useState("");
   const [expiresMin, setExpiresMin] = useState(10);
 
   const redirectAfter = (data: AuthResponse) => {
     setAuth(data.user, data.tokens.access_token, data.tokens.refresh_token);
-    // Save a snapshot for the next visit's picker. Photo comes later —
-    // the wizard fetches it on mount and patches this store then.
+
     rememberLastProfile({
       email: data.user.email,
       full_name: data.user.full_name,
@@ -58,9 +52,6 @@ export function LoginPage() {
       photo_offset_y: 50,
       photo_zoom: 100,
     });
-    // First-ever sign-in (last_login_at is null in the response because the
-    // server records it AFTER constructing the response). Funnel new users
-    // through the compact onboarding page.
     const fromState = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
     const target = data.user.last_login_at == null ? "/onboarding" : (fromState ?? "/");
     navigate(target, { replace: true });
@@ -91,9 +82,6 @@ export function LoginPage() {
         code,
         purpose: "login",
         full_name: fullName || null,
-        // Careero is currently a student-only shell. If the OTP verify
-        // is the first time we've seen this email, the backend creates
-        // the account with this persona. Ignored for existing users.
         persona_kind: "student",
       });
       return data;
@@ -113,8 +101,6 @@ export function LoginPage() {
     onError: () => toast.error("Invalid email or password"),
   });
 
-  // Show a back-arrow that returns to the picker whenever a snapshot is
-  // available AND we're not currently on the picker itself.
   const canReturnToPicker = !!lastProfile && step !== "picker";
   const backToPicker = () => {
     setCode("");
@@ -181,12 +167,12 @@ export function LoginPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={requestCode.isPending}
             >
               {requestCode.isPending ? "Sending…" : "Send code"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               <button
                 type="button"
                 className="text-primary hover:underline"
@@ -238,11 +224,9 @@ export function LoginPage() {
               </p>
             </div>
             <DevOtpHint email={email} onCode={setCode} />
-            {/* New signups only — a returning student (whose email matches
-                the picker snapshot) already has a name on file. */}
             {(!lastProfile || lastProfile.email !== email) && (
               <div className="space-y-2">
-                <Label htmlFor="name">Your name (optional, for new accounts)</Label>
+                <Label htmlFor="name">Full name</Label>
                 <Input
                   id="name"
                   value={fullName}
@@ -255,12 +239,12 @@ export function LoginPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={verifyCode.isPending || code.length !== 6}
             >
               {verifyCode.isPending ? "Verifying…" : "Verify & sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               <button
                 type="button"
                 className="text-primary hover:underline"
@@ -306,7 +290,7 @@ export function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <button
                   type="button"
-                  className="text-sm text-primary hover:underline"
+                  className="text-base text-primary hover:underline md:text-sm"
                   onClick={() => navigate("/forgot-password")}
                 >
                   Forgot password?
@@ -325,12 +309,12 @@ export function LoginPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={passwordLogin.isPending}
             >
               {passwordLogin.isPending ? "Signing in…" : "Sign in"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               <button
                 type="button"
                 className="text-primary hover:underline"
@@ -339,7 +323,7 @@ export function LoginPage() {
                 Use an email code instead
               </button>
             </p>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               No account?{" "}
               <button
                 type="button"
@@ -409,18 +393,24 @@ function PickerStep({
           type="button"
           variant="brand"
           size="lg"
-          className="w-full"
+          className="h-12 w-full text-base md:h-11 md:text-sm"
           onClick={onContinue}
           disabled={continuing}
         >
           {continuing ? "Sending code…" : "Continue"}
         </Button>
-        <Button type="button" variant="outline" size="lg" className="w-full" onClick={onUseAnother}>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="h-12 w-full text-base md:h-11 md:text-sm"
+          onClick={onUseAnother}
+        >
           Use another profile
         </Button>
       </div>
 
-      <div className="border-t pt-4 text-center text-sm text-muted-foreground">
+      <div className="border-t pt-4 text-center text-base text-muted-foreground md:text-sm">
         <button type="button" className="text-primary hover:underline" onClick={onCreateAccount}>
           Create new account
         </button>
@@ -444,15 +434,12 @@ function Avatar({
   offsetY: number;
   zoom: number;
 }) {
-  // 96 px circle with a subtle brand-gradient ring. Falls back to
-  // initials in a gradient-filled circle when there's no photo cached.
   const initials = deriveInitials(name, email);
   return (
     <div className="relative">
       <div aria-hidden className="bg-brand-gradient absolute inset-0 rounded-full p-[2px]" />
       <div className="relative h-24 w-24 overflow-hidden rounded-full bg-background">
         {photoDataUri ? (
-          // Match the CV renderer's crop: background-image + size + position.
           <div
             className="h-full w-full"
             style={{

@@ -9,6 +9,7 @@ import {
   useAdminFeedback,
   useAdminResolveFeedback,
   useAdminUnresolveFeedback,
+  useFeedbackScreenshotUrl,
 } from "@/features/admin/adminApi";
 import { cn } from "@/shared/lib/utils";
 import type { AdminFeedbackItem } from "@/features/admin/adminTypes";
@@ -288,6 +289,8 @@ function DetailPanel({
           )}
         </div>
 
+        {item.has_screenshot && <ScreenshotSection feedbackId={item.id} />}
+
         {item.resolved_at && (
           <div className="rounded-md border bg-muted/30 p-2 text-[11px] text-muted-foreground">
             Resolved {new Date(item.resolved_at).toLocaleString()}
@@ -308,6 +311,31 @@ function DetailPanel({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ScreenshotSection({ feedbackId }: { feedbackId: string }) {
+  const { status, url } = useFeedbackScreenshotUrl(feedbackId, true);
+  return (
+    <div>
+      <div className="uppercase text-muted-foreground">Screenshot</div>
+      {status === "ready" && url ? (
+        <a href={url} target="_blank" rel="noreferrer" className="mt-1 block">
+          <img
+            src={url}
+            alt="Feedback screenshot"
+            className="max-h-48 w-full rounded-md border object-contain"
+          />
+          <span className="mt-1 inline-block text-[11px] text-primary hover:underline">
+            Open full size ↗
+          </span>
+        </a>
+      ) : status === "error" ? (
+        <div className="mt-1 text-[11px] text-muted-foreground">Screenshot unavailable.</div>
+      ) : (
+        <div className="mt-1 text-[11px] text-muted-foreground">Loading screenshot…</div>
+      )}
+    </div>
   );
 }
 

@@ -153,7 +153,7 @@ test.describe("auth — session lifecycle", () => {
     await page.getByRole("textbox", { name: "Email" }).fill(email);
     await page.getByRole("button", { name: "Send code" }).click();
     await page.getByRole("textbox", { name: "6-digit code" }).fill(await readOtpCode(email));
-    await page.getByRole("textbox", { name: /Your name/ }).fill(currentName);
+    await page.getByRole("textbox", { name: "Full name" }).fill(currentName);
     await page.getByRole("button", { name: "Verify & sign in" }).click();
 
     await expect(page).toHaveURL(/\/onboarding$/);
@@ -217,7 +217,7 @@ test.describe("auth — session lifecycle", () => {
     await page.getByRole("textbox", { name: "Email" }).fill(email);
     await page.getByRole("button", { name: "Send code" }).click();
     await page.getByRole("textbox", { name: "6-digit code" }).fill(await readOtpCode(email));
-    await page.getByRole("textbox", { name: /Your name/ }).fill(currentName);
+    await page.getByRole("textbox", { name: "Full name" }).fill(currentName);
     await page.getByRole("button", { name: "Verify & sign in" }).click();
     await page.getByRole("button", { name: "Add my details" }).click();
     await expect(page.getByRole("textbox", { name: "Full name" })).toHaveValue(currentName);
@@ -353,7 +353,7 @@ test.describe("auth — session lifecycle", () => {
     await page.getByRole("textbox", { name: "Email" }).fill(email);
     await page.getByRole("button", { name: "Send code" }).click();
     await page.getByRole("textbox", { name: "6-digit code" }).fill(await readOtpCode(email));
-    await page.getByRole("textbox", { name: /Your name/ }).fill(currentName);
+    await page.getByRole("textbox", { name: "Full name" }).fill(currentName);
     await page.getByRole("button", { name: "Verify & sign in" }).click();
     await page.getByRole("button", { name: "Add my details" }).click();
     await expect(page.getByRole("textbox", { name: "Full name" })).toHaveValue(currentName);

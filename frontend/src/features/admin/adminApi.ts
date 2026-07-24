@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import { api } from "@/app/apiClient";
 import type {
@@ -411,6 +412,44 @@ export function useAdminUnresolveFeedback() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "feedback"] }),
   });
+}
+
+export type ScreenshotStatus = "idle" | "loading" | "ready" | "error";
+
+export interface ScreenshotState {
+  status: ScreenshotStatus;
+  url: string | null;
+}
+export function useFeedbackScreenshotUrl(
+  feedbackId: string | null,
+  enabled: boolean,
+): ScreenshotState {
+  const [state, setState] = useState<ScreenshotState>({ status: "idle", url: null });
+  useEffect(() => {
+    if (!feedbackId || !enabled) {
+      setState({ status: "idle", url: null });
+      return;
+    }
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    setState({ status: "loading", url: null });
+    void api
+      .get(`/admin/feedback/${feedbackId}/screenshot`, { responseType: "blob" })
+      .then((res) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(res.data as Blob);
+        setState({ status: "ready", url: objectUrl });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: "error", url: null });
+      });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setState({ status: "idle", url: null });
+    };
+  }, [feedbackId, enabled]);
+  return state;
 }
 
 // ---- Admin-triggered emails --------------------------------------------

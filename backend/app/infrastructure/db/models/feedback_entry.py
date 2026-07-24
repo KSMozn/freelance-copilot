@@ -55,10 +55,15 @@ class FeedbackEntry(Base):
         Enum(*FEEDBACK_KINDS, name="feedback_kind", create_type=False),
         nullable=False,
     )
-    # 1..5 stars for post_download surveys; null for general feedback.
+
     rating: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
     template_slug: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    screenshot_file_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("uploaded_files.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     meta: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )

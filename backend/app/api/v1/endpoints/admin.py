@@ -60,6 +60,7 @@ from app.domain.entities.admin_user import AdminUser as AdminUserEntity
 from app.domain.providers.blob_store import BlobStore
 from app.domain.providers.email_provider import EmailProvider
 from app.infrastructure.db.models.feedback_entry import FeedbackEntry
+from app.infrastructure.db.models.ingestion import UploadedFile
 from app.infrastructure.db.models.usage_event import UsageEvent
 from app.infrastructure.db.models.user import User
 from app.infrastructure.email.errors import EmailProviderError
@@ -872,6 +873,7 @@ async def list_feedback(
                 rating=row_entry.rating,
                 message=row_entry.message,
                 template_slug=row_entry.template_slug,
+                has_screenshot=row_entry.screenshot_file_id is not None,
                 created_at=row_entry.created_at,
                 resolved_at=row_entry.resolved_at,
                 resolved_by_email=resolver_email,
@@ -926,6 +928,7 @@ async def resolve_feedback(
         rating=row.rating,
         message=row.message,
         template_slug=row.template_slug,
+        has_screenshot=row.screenshot_file_id is not None,
         created_at=row.created_at,
         resolved_at=row.resolved_at,
         resolved_by_email=actor.email,
@@ -966,10 +969,43 @@ async def unresolve_feedback(
         rating=row.rating,
         message=row.message,
         template_slug=row.template_slug,
+        has_screenshot=row.screenshot_file_id is not None,
         created_at=row.created_at,
         resolved_at=None,
         resolved_by_email=None,
     )
+
+
+@router.get("/feedback/{feedback_id}/screenshot")
+async def get_feedback_screenshot(
+    feedback_id: UUID,
+    _: CurrentAdmin,
+    session: SessionDep,
+    blobs: Annotated[BlobStore, Depends(get_blob_store)],
+) -> Response:
+    """Serve the screenshot attached to a feedback row, if any.
+
+    Proxied through the app (like profile photos) rather than a signed URL —
+    the blob store port exposes no signing, and admin auth already gates
+    this route. 404 when the feedback row, its FK, or the blob is missing.
+    """
+    row = await session.get(FeedbackEntry, feedback_id)
+    if row is None or row.screenshot_file_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No screenshot for this feedback"
+        )
+    file_row = await session.get(UploadedFile, row.screenshot_file_id)
+    if file_row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No screenshot for this feedback"
+        )
+    try:
+        data = await blobs.get(file_row.storage_path)
+    except (FileNotFoundError, OSError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Screenshot unavailable"
+        ) from exc
+    return Response(content=data, media_type=file_row.content_type)
 
 
 # ---- Daily report task --------------------------------------------------

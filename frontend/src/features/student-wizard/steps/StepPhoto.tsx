@@ -23,6 +23,8 @@ export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) 
   const [warnings, setWarnings] = useState<CoachWarning[]>([]);
   const [summary, setSummary] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const busy = upload.isPending || coach.isPending;
 
   async function onPick(file: File) {
     const judgement = await coach.mutateAsync(file).catch(() => null);
@@ -77,11 +79,7 @@ export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) 
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Optional — a clean, well-lit head-and-shoulders photo helps recruiters put a face to your
-        name. Selfies at odd angles or party photos read as casual.
-      </p>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-border/60 bg-muted/20 p-4 sm:flex-row sm:gap-5">
         {photoUrl ? (
           <PhotoPositioner
             photoUrl={photoUrl}
@@ -91,22 +89,35 @@ export function StepPhoto({ onSaved }: { onSaved: () => Promise<void> | void }) 
             onChange={saveTransform}
           />
         ) : (
-          <div className="grid h-28 w-28 place-items-center rounded-full bg-muted text-xs text-muted-foreground ring-1 ring-border">
+          <div className="grid h-28 w-28 shrink-0 place-items-center rounded-full bg-muted text-center text-xs text-muted-foreground ring-1 ring-border">
             No photo
           </div>
         )}
-        <label className="cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent">
-          {photoUrl ? "Replace photo" : "Upload photo"}
+        <div className="flex flex-col items-center gap-1.5 sm:items-start">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy}
+          >
+            {busy ? "Uploading…" : photoUrl ? "Replace photo" : "Upload photo"}
+          </Button>
+          <p className="text-xs text-muted-foreground">JPG, PNG or WebP · square works best.</p>
+          {photoUrl && (
+            <p className="text-xs text-muted-foreground">Drag to reposition · scroll to zoom.</p>
+          )}
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) void onPick(f);
+              e.target.value = "";
             }}
           />
-        </label>
+        </div>
       </div>
       {summary && (
         <p className="text-sm text-muted-foreground">

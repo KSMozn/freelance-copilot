@@ -135,7 +135,7 @@ export function RegisterPage() {
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="r-name">What should we call you?</Label>
+              <Label htmlFor="r-name">Full name</Label>
               <Input
                 id="r-name"
                 value={fullName}
@@ -196,7 +196,7 @@ export function RegisterPage() {
               type="submit"
               variant="brand"
               size="lg"
-              className="w-full"
+              className="h-12 w-full text-base md:h-11 md:text-sm"
               disabled={
                 !email ||
                 (authMode === "password"
@@ -212,7 +212,7 @@ export function RegisterPage() {
                   ? "Sending…"
                   : "Send code"}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-base text-muted-foreground md:text-sm">
               Already have an account?{" "}
               <Link className="text-primary hover:underline" to="/login">
                 Sign in
@@ -230,7 +230,7 @@ export function RegisterPage() {
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="r-code">6-digit code sent to {email}</Label>
+              <Label htmlFor="r-code">6-digit code</Label>
               <Input
                 id="r-code"
                 inputMode="numeric"
@@ -259,6 +259,7 @@ export function RegisterPage() {
               <Button
                 type="button"
                 variant="ghost"
+                className="h-12 text-base md:h-11 md:text-sm"
                 onClick={() => {
                   setCode("");
                   setStep("identity");
@@ -270,7 +271,7 @@ export function RegisterPage() {
                 type="submit"
                 variant="brand"
                 size="lg"
-                className="flex-1"
+                className="h-12 flex-1 text-base md:h-11 md:text-sm"
                 disabled={verifyCode.isPending || code.length !== 6}
               >
                 {verifyCode.isPending ? "Verifying…" : "Create account"}
@@ -295,7 +296,6 @@ const HEADERS: Record<Step, { title: string; description: string }> = {
 };
 
 function ProgressDots({ step, authMode }: { step: Step; authMode: AuthMode }) {
-  // Password is a single step; OTP adds the code step.
   const order: Step[] = authMode === "password" ? ["identity"] : ["identity", "code"];
   const idx = order.indexOf(step);
   return (

@@ -51,6 +51,7 @@ def _blank_profile(user_id: UUID) -> SimpleNamespace:
         department=None,
         degree=None,
         major=None,
+        start_year=None,
         graduation_year=None,
         gpa=None,
         photo_file_id=None,
@@ -180,6 +181,7 @@ def test_put_profile_round_trip(client: TestClient, user: User) -> None:
         json={
             "full_name": "Sara Ali",
             "college": "Cairo University",
+            "start_year": 2023,
             "graduation_year": 2027,
             "mark_steps": ["basics"],
             "current_step": "education",
@@ -190,6 +192,7 @@ def test_put_profile_round_trip(client: TestClient, user: User) -> None:
     assert body["user_id"] == str(user.id)
     assert body["full_name"] == "Sara Ali"
     assert body["college"] == "Cairo University"
+    assert body["start_year"] == 2023
     assert body["graduation_year"] == 2027
     assert body["completed_steps"] == ["basics"]
     assert body["current_step"] == "education"
@@ -393,3 +396,136 @@ def test_survey_rating_out_of_bounds_returns_422(client: TestClient) -> None:
     detail = resp.json()["detail"]
     assert isinstance(detail, list)  # Pydantic 422s return a detail array
     assert any("rating" in err["loc"] for err in detail)
+
+
+_TINY_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+
+class FakeFeedbackService:
+    """Captures submit_general calls; returns a FeedbackRead-shaped row."""
+
+    def __init__(self) -> None:
+        self.calls: list[SimpleNamespace] = []
+
+    async def submit_general(
+        self,
+        user_id: UUID,
+        message: str,
+        *,
+        screenshot: tuple[str, str, bytes] | None = None,
+    ) -> SimpleNamespace:
+        self.calls.append(
+            SimpleNamespace(user_id=user_id, message=message, screenshot=screenshot)
+        )
+        return SimpleNamespace(
+            id=uuid4(),
+            user_id=user_id,
+            kind="general",
+            rating=None,
+            message=message,
+            template_slug=None,
+            screenshot_file_id=uuid4() if screenshot is not None else None,
+            created_at=datetime.now(UTC),
+            resolved_at=None,
+        )
+
+
+@pytest.fixture
+def feedback_svc() -> FakeFeedbackService:
+    return FakeFeedbackService()
+
+
+@pytest.fixture
+def feedback_client(user: User, feedback_svc: FakeFeedbackService):  # type: ignore[no-untyped-def]
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[students_endpoints._feedback_service] = lambda: feedback_svc
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_feedback_requires_auth() -> None:
+    with TestClient(app) as raw:
+        resp = raw.post(
+            "/api/v1/students/feedback", data={"message": "A genuine bug report."}
+        )
+        assert resp.status_code == 401
+
+
+def test_feedback_too_short_returns_422(
+    feedback_client: TestClient, feedback_svc: FakeFeedbackService
+) -> None:
+    resp = feedback_client.post("/api/v1/students/feedback", data={"message": "short"})
+    assert resp.status_code == 422
+    assert feedback_svc.calls == []  # never reached the store
+
+
+def test_feedback_whitespace_only_returns_422(
+    feedback_client: TestClient, feedback_svc: FakeFeedbackService
+) -> None:
+    resp = feedback_client.post(
+        "/api/v1/students/feedback", data={"message": "             "}
+    )
+    assert resp.status_code == 422
+    assert feedback_svc.calls == []
+
+
+def test_feedback_without_screenshot_succeeds(
+    feedback_client: TestClient, feedback_svc: FakeFeedbackService
+) -> None:
+    resp = feedback_client.post(
+        "/api/v1/students/feedback",
+        data={"message": "The preview button does nothing on step 6."},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["message"] == "The preview button does nothing on step 6."
+    assert body["screenshot_file_id"] is None
+    assert len(feedback_svc.calls) == 1
+    assert feedback_svc.calls[0].screenshot is None
+
+
+def test_feedback_trims_message_before_store(
+    feedback_client: TestClient, feedback_svc: FakeFeedbackService
+) -> None:
+    feedback_client.post(
+        "/api/v1/students/feedback",
+        data={"message": "   Padded but perfectly valid.   "},
+    )
+    assert feedback_svc.calls[0].message == "Padded but perfectly valid."
+
+
+def test_feedback_with_screenshot_succeeds(
+    feedback_client: TestClient, feedback_svc: FakeFeedbackService
+) -> None:
+    resp = feedback_client.post(
+        "/api/v1/students/feedback",
+        data={"message": "Layout breaks — see the attached screenshot."},
+        files={"screenshot": ("bug.png", _TINY_PNG, "image/png")},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["screenshot_file_id"] is not None
+    assert len(feedback_svc.calls) == 1
+    shot = feedback_svc.calls[0].screenshot
+    assert shot is not None
+    filename, content_type, content = shot
+    assert filename == "bug.png"
+    assert content_type == "image/png"
+    assert content == _TINY_PNG
+
+
+def test_feedback_rejects_non_image_screenshot(
+    feedback_client: TestClient, feedback_svc: FakeFeedbackService
+) -> None:
+    resp = feedback_client.post(
+        "/api/v1/students/feedback",
+        data={"message": "Attaching a PDF instead of an image."},
+        files={"screenshot": ("notes.pdf", b"%PDF-1.4 not an image", "application/pdf")},
+    )
+    assert resp.status_code == 415
+    assert feedback_svc.calls == []

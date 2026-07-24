@@ -9,15 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 FeedbackKind = Literal["general", "post_download"]
 
-
-class GeneralFeedbackCreate(BaseModel):
-    """Student-facing /feedback form.
-
-    Trimmed to a floor of 10 chars to keep drive-by 'test' submissions
-    out of the admin inbox — the frontend enforces the same rule.
-    """
-
-    message: str = Field(min_length=10, max_length=4000)
+FEEDBACK_MESSAGE_MIN_LEN = 10
+FEEDBACK_MESSAGE_MAX_LEN = 4000
 
 
 class SurveyCreate(BaseModel):
@@ -43,6 +36,7 @@ class FeedbackRead(BaseModel):
     rating: int | None
     message: str | None
     template_slug: str | None
+    screenshot_file_id: UUID | None = None
     created_at: datetime
     resolved_at: datetime | None = None
 
@@ -63,6 +57,7 @@ class AdminFeedbackItem(BaseModel):
     rating: int | None
     message: str | None
     template_slug: str | None
+    has_screenshot: bool = False
     created_at: datetime
     resolved_at: datetime | None
     resolved_by_email: str | None

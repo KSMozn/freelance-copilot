@@ -9,7 +9,7 @@ export function AdminOverviewPage() {
   const { data, isLoading, isError } = useAdminOverview();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Overview</h1>
         <p className="text-sm text-muted-foreground">

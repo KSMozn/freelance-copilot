@@ -42,7 +42,6 @@ export function AdminLoginPage() {
 
   return (
     <AuthShell
-      variant="personaarmory-admin"
       title={BRAND.adminProduct}
       subtitle="Operate the platform. Curate templates. Watch the numbers."
       slogan={BRAND.adminTagline}
