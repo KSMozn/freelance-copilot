@@ -8,6 +8,7 @@ import {
   digitsOnly,
   formatNational,
   getExamplePlaceholder,
+  parseInternationalInput,
   parseStoredPhone,
   validatePhone,
   type CountryCode,
@@ -19,6 +20,7 @@ import { CountrySelect } from "@/shared/ui/country-select";
 interface PhoneInputProps {
   value: string;
   onChange: (stored: string, meta: PhoneValue) => void;
+  country?: CountryCode;
   defaultCountry?: CountryCode;
   fallbackCountry?: CountryCode;
   onValidityChange?: (valid: boolean) => void;
@@ -39,6 +41,7 @@ interface PhoneInputProps {
 export function PhoneInput({
   value,
   onChange,
+  country: countryProp,
   defaultCountry,
   fallbackCountry = "US",
   onValidityChange,
@@ -62,29 +65,39 @@ export function PhoneInput({
   const numberRef = useRef<HTMLInputElement>(null);
   const lastEmitted = useRef<string | null>(null);
 
-  const [country, setCountry] = useState<CountryCode>(() => {
+  const [internalCountry, setInternalCountry] = useState<CountryCode>(() => {
     const seed = parseStoredPhone(
       value,
       defaultCountry ?? detectDefaultCountry(value, fallbackCountry, locale),
     );
     return seed.country;
   });
+  const country = countryProp ?? internalCountry;
+
   const [national, setNational] = useState<string>(() => {
     const seed = parseStoredPhone(
       value,
       defaultCountry ?? detectDefaultCountry(value, fallbackCountry, locale),
     );
-    return formatNational(seed.country, seed.national);
+    return formatNational(countryProp ?? seed.country, seed.national);
   });
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (value === lastEmitted.current) return;
     const seed = parseStoredPhone(value, defaultCountry ?? country);
-    setCountry(seed.country);
-    setNational(formatNational(seed.country, seed.national));
+    setInternalCountry(seed.country);
+    setNational(formatNational(countryProp ?? seed.country, seed.national));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  const prevCountry = useRef(country);
+  useEffect(() => {
+    if (prevCountry.current === country) return;
+    prevCountry.current = country;
+    setInternalCountry(country);
+    setNational((prev) => formatNational(country, digitsOnly(prev)));
+  }, [country]);
 
   const validity = validatePhone(country, national, required);
 
@@ -102,7 +115,7 @@ export function PhoneInput({
 
   function handleCountryChange(iso: CountryCode) {
     const digits = digitsOnly(national);
-    setCountry(iso);
+    setInternalCountry(iso);
     setNational(formatNational(iso, digits));
     emit(iso, digits);
     numberRef.current?.focus();
@@ -112,10 +125,14 @@ export function PhoneInput({
     const raw = e.target.value;
 
     if (raw.trimStart().startsWith("+")) {
-      const seed = parseStoredPhone(raw, country);
-      setCountry(seed.country);
-      setNational(formatNational(seed.country, seed.national));
-      emit(seed.country, seed.national);
+      const parsed = parseInternationalInput(raw, country);
+      if (parsed) {
+        setInternalCountry(parsed.country);
+        setNational(formatNational(parsed.country, parsed.national));
+        emit(parsed.country, parsed.national);
+      } else {
+        setNational(raw.trimStart());
+      }
       return;
     }
 

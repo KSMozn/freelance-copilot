@@ -19,7 +19,14 @@ import {
   type GeoCity,
   type LocationValue,
 } from "@/shared/lib/geo";
-import { countryFromPhone, getCountryName, type CountryCode } from "@/shared/lib/phone";
+import {
+  countryFromPhone,
+  describePhone,
+  getCountryName,
+  parseStoredPhone,
+  type CountryCode,
+  type PhoneValue,
+} from "@/shared/lib/phone";
 import { Button } from "@/shared/ui/button";
 import { CitySelect } from "@/shared/ui/city-select";
 import { CountrySelect } from "@/shared/ui/country-select";
@@ -69,7 +76,9 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
     setLastName((current) => current || seeded.last);
     setEmail((current) => current || profile.professional_email || authUser?.email || "");
     setPhone((current) => current || profile.phone || "");
-    setCountry((current) => current || loc.countryCode);
+    // Keep Country in sync with the phone from the very first render: if the
+    // saved location carried no country, adopt the one embedded in the phone.
+    setCountry((current) => current || loc.countryCode || countryFromPhone(profile.phone) || "");
     setCityName((current) => current || loc.cityName);
     setDob((current) => current || profile.date_of_birth || null);
   }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -135,10 +144,22 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
   const countryMismatch = Boolean(country && phoneCountry && phoneCountry !== country);
   const emailFormatError = validateEmail(email);
 
+  function handlePhoneChange(stored: string, meta: PhoneValue) {
+    setPhone(stored);
+    if (meta.country && meta.country !== country) {
+      setCountry(meta.country);
+      setCity(null);
+      setCityName("");
+    }
+  }
+
   function handleCountryChange(iso: CountryCode) {
     setCountry(iso);
     setCity(null);
     setCityName("");
+    const { national } = parseStoredPhone(phone, iso);
+    const nextPhone = describePhone(iso, national).stored;
+    if (nextPhone !== phone) setPhone(nextPhone);
   }
 
   function handleCountryClear() {
@@ -186,9 +207,9 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
   const hasBlocker = emailWarnings.some((w) => w.severity === "block");
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
           <Label htmlFor="b-firstname">First name</Label>
           <Input
             id="b-firstname"
@@ -197,7 +218,7 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
             placeholder="Jane"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="b-lastname">Last name</Label>
           <Input
             id="b-lastname"
@@ -207,67 +228,65 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
           />
         </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="b-email">Email shown on your CV</Label>
-        <Input
-          id="b-email"
-          type="email"
-          value={email}
-          aria-invalid={emailTouched && emailFormatError ? true : undefined}
-          aria-describedby={emailTouched && emailFormatError ? "b-email-error" : undefined}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            setEmailConfirmed(false);
-            setEmailWarnings([]);
-            setEmailSuggestions([]);
-          }}
-          onBlur={() => {
-            setEmailTouched(true);
-            void checkEmail();
-          }}
-          placeholder="jane.student@school.edu"
-        />
-        {emailTouched && emailFormatError && (
-          <p id="b-email-error" role="alert" className="text-xs text-destructive">
-            {emailFormatError}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Pre-filled with your sign-in email
-          {authUser?.email ? ` (${authUser.email})` : ""}. Edit if you'd rather use a school
-          address.
-        </p>
-        <CoachWarnings
-          warnings={emailWarnings}
-          suggestions={emailSuggestions}
-          onApplySuggestion={(v) => {
-            setEmail(v);
-            setEmailWarnings([]);
-            setEmailSuggestions([]);
-          }}
-        />
-        {emailWarnings.length > 0 && !hasBlocker && (
-          <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={emailConfirmed}
-              onChange={(e) => setEmailConfirmed(e.target.checked)}
-            />
-            I know, keep this email anyway.
-          </label>
-        )}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="b-email">Email shown on your CV</Label>
+          <Input
+            id="b-email"
+            type="email"
+            value={email}
+            aria-invalid={emailTouched && emailFormatError ? true : undefined}
+            aria-describedby={emailTouched && emailFormatError ? "b-email-error" : undefined}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailConfirmed(false);
+              setEmailWarnings([]);
+              setEmailSuggestions([]);
+            }}
+            onBlur={() => {
+              setEmailTouched(true);
+              void checkEmail();
+            }}
+            placeholder="jane.student@school.edu"
+          />
+          {emailTouched && emailFormatError && (
+            <p id="b-email-error" role="alert" className="text-xs text-destructive">
+              {emailFormatError}
+            </p>
+          )}
+          <CoachWarnings
+            warnings={emailWarnings}
+            suggestions={emailSuggestions}
+            onApplySuggestion={(v) => {
+              setEmail(v);
+              setEmailWarnings([]);
+              setEmailSuggestions([]);
+            }}
+          />
+          {emailWarnings.length > 0 && !hasBlocker && (
+            <label className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={emailConfirmed}
+                onChange={(e) => setEmailConfirmed(e.target.checked)}
+              />
+              I know, keep this email anyway.
+            </label>
+          )}
+        </div>
+        <div className="space-y-1.5">
           <Label htmlFor="b-phone">Phone</Label>
           <PhoneInput
             id="b-phone"
             value={phone}
-            onChange={(stored) => setPhone(stored)}
+            country={country || undefined}
+            onChange={handlePhoneChange}
             fallbackCountry="SA"
           />
         </div>
-        <div className="space-y-2">
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
           <Label htmlFor="b-country">Country</Label>
           <CountrySelect
             id="b-country"
@@ -283,6 +302,25 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
             <p id="b-country-error" role="alert" className="text-xs text-destructive">
               {locationError.message}
             </p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="b-city">City</Label>
+          <CitySelect
+            id="b-city"
+            country={country}
+            value={cityName}
+            onChange={handleCityChange}
+            invalid={cityError}
+          />
+          {cityError && locationError ? (
+            <p id="b-city-error" role="alert" className="text-xs text-destructive">
+              {locationError.message}
+            </p>
+          ) : (
+            !country && (
+              <p className="text-xs text-muted-foreground">Select a country to choose your city.</p>
+            )
           )}
         </div>
       </div>
@@ -304,26 +342,7 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
           </button>
         </p>
       )}
-      <div className="space-y-2">
-        <Label htmlFor="b-city">City</Label>
-        <CitySelect
-          id="b-city"
-          country={country}
-          value={cityName}
-          onChange={handleCityChange}
-          invalid={cityError}
-        />
-        {cityError && locationError ? (
-          <p id="b-city-error" role="alert" className="text-xs text-destructive">
-            {locationError.message}
-          </p>
-        ) : (
-          !country && (
-            <p className="text-xs text-muted-foreground">Select a country to choose your city.</p>
-          )
-        )}
-      </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Label>Date of birth</Label>
         <DateOfBirthPicker value={dob} onChange={setDob} />
         <p className="text-xs text-muted-foreground">

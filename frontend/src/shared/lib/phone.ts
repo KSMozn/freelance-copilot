@@ -175,6 +175,21 @@ export function formatNational(country: CountryCode, input: string): string {
   return new AsYouType(country).input(digitsOnly(input));
 }
 
+export function parseInternationalInput(
+  raw: string,
+  fallbackCountry: CountryCode,
+): { country: CountryCode; national: string } | null {
+  const trimmed = raw.trim();
+  const asYouType = new AsYouType(fallbackCountry);
+  asYouType.input(trimmed);
+  const partial = asYouType.getNumber();
+  const country =
+    asYouType.country ?? partial?.country ?? parsePhoneNumberFromString(trimmed)?.country;
+  if (!country) return null;
+  const parsed = partial ?? parsePhoneNumberFromString(trimmed);
+  return { country, national: parsed ? digitsOnly(parsed.formatNational()) : "" };
+}
+
 export function describePhone(country: CountryCode, nationalInput: string): PhoneValue {
   const callingCode = getCountryCallingCode(country);
   const digits = digitsOnly(nationalInput);
