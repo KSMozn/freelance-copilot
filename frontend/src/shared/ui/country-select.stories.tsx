@@ -20,10 +20,14 @@ function Controlled({
   variant,
   showCallingCode = true,
   initial = "EG",
+  clearable,
+  invalid,
 }: {
   variant: "compact" | "full";
   showCallingCode?: boolean;
   initial?: CountryCode | "";
+  clearable?: boolean;
+  invalid?: boolean;
 }) {
   const [country, setCountry] = useState<CountryCode | "">(initial);
   return (
@@ -33,6 +37,9 @@ function Controlled({
         onChange={setCountry}
         variant={variant}
         showCallingCode={showCallingCode}
+        clearable={clearable}
+        onClear={() => setCountry("")}
+        invalid={invalid}
       />
       <p className="text-xs text-muted-foreground">
         Selected: <span className="font-mono">{country || "—"}</span> — search by name (“Egypt”),
@@ -64,4 +71,14 @@ export const Empty: Story = {
 
 export const Disabled: Story = {
   args: { value: "SA", onChange: () => {}, disabled: true },
+};
+
+export const Clearable: Story = {
+  args: { value: "EG", onChange: () => {} },
+  render: () => <Controlled variant="full" showCallingCode={false} clearable />,
+};
+
+export const Invalid: Story = {
+  args: { value: "", onChange: () => {} },
+  render: () => <Controlled variant="full" showCallingCode={false} initial="" invalid />,
 };

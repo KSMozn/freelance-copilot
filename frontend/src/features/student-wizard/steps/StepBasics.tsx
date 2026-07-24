@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuthStore } from "@/features/auth/authStore";
 import { useCoachEmail } from "@/features/student-wizard/coaching/coachingApi";
@@ -12,12 +12,16 @@ import { useStudentProfile, useUpdateStudentProfile } from "@/features/student-w
 import type { StudentProfileUpdate } from "@/features/student-wizard/studentTypes";
 import { useAutoSave } from "@/shared/hooks/useAutoSave";
 import {
-  countryFromLocation,
-  countryFromPhone,
-  getCountryName,
-  type CountryCode,
-} from "@/shared/lib/phone";
+  getCitiesForCountry,
+  parseStoredLocation,
+  serializeLocation,
+  validateLocation,
+  type GeoCity,
+  type LocationValue,
+} from "@/shared/lib/geo";
+import { countryFromPhone, getCountryName, type CountryCode } from "@/shared/lib/phone";
 import { Button } from "@/shared/ui/button";
+import { CitySelect } from "@/shared/ui/city-select";
 import { CountrySelect } from "@/shared/ui/country-select";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
@@ -25,9 +29,6 @@ import { PhoneInput } from "@/shared/ui/phone-input";
 
 import { validateEmail } from "./basicsSchema";
 
-// The profile stores one `full_name`; the form edits it as two fields. Split
-// on the first space (first token = first name, remainder = last name) and
-// rejoin on save.
 function splitName(full: string): { first: string; last: string } {
   const [first = "", ...rest] = full.trim().split(/\s+/).filter(Boolean);
   return { first, last: rest.join(" ") };
@@ -44,13 +45,16 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
   const authUser = useAuthStore((s) => s.user);
 
   const initialName = splitName(profile?.full_name ?? authUser?.full_name ?? "");
+  const initialLocation = parseStoredLocation(profile?.location);
   const [firstName, setFirstName] = useState(initialName.first);
   const [lastName, setLastName] = useState(initialName.last);
   const [email, setEmail] = useState(profile?.professional_email ?? authUser?.email ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
-  const [country, setCountry] = useState<CountryCode | "">(
-    () => countryFromLocation(profile?.location) ?? "",
-  );
+  const [country, setCountry] = useState<CountryCode | "">(initialLocation.countryCode);
+  const [cityName, setCityName] = useState(initialLocation.cityName);
+  const [city, setCity] = useState<GeoCity | null>(null);
+  const [cities, setCities] = useState<GeoCity[] | null>(null);
+  const [locationTouched, setLocationTouched] = useState(false);
   const [dob, setDob] = useState<string | null>(profile?.date_of_birth ?? null);
   const [emailWarnings, setEmailWarnings] = useState<CoachWarning[]>([]);
   const [emailSuggestions, setEmailSuggestions] = useState<CoachSuggestion[]>([]);
@@ -60,24 +64,67 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
   useEffect(() => {
     if (!profile) return;
     const seeded = splitName(profile.full_name || authUser?.full_name || "");
+    const loc = parseStoredLocation(profile.location);
     setFirstName((current) => current || seeded.first);
     setLastName((current) => current || seeded.last);
     setEmail((current) => current || profile.professional_email || authUser?.email || "");
     setPhone((current) => current || profile.phone || "");
-    setCountry((current) => current || countryFromLocation(profile.location) || "");
+    setCountry((current) => current || loc.countryCode);
+    setCityName((current) => current || loc.cityName);
     setDob((current) => current || profile.date_of_birth || null);
   }, [profile?.user_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!country) {
+      setCities(null);
+      return;
+    }
+    let cancelled = false;
+    void getCitiesForCountry(country).then((list) => {
+      if (cancelled) return;
+      setCities(list);
+      setCity((current) => {
+        if (current && current.country === country) return current;
+        if (!cityName) return null;
+        const match = list.find((c) => c.name.toLowerCase() === cityName.trim().toLowerCase());
+        return match ?? { name: cityName, country };
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [country]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fullName = joinName(firstName, lastName);
 
+  const locationValue: LocationValue = useMemo(() => {
+    let cityValue: GeoCity | null = null;
+    if (country && cityName) {
+      cityValue =
+        city && city.country === country && city.name === cityName
+          ? city
+          : { name: cityName, country };
+    }
+    return {
+      country: country ? { code: country, name: getCountryName(country) } : null,
+      city: cityValue,
+    };
+  }, [country, cityName, city]);
+  const serializedLocation = serializeLocation(locationValue);
+  const locationValidity = validateLocation(locationValue, cities, { required: true });
+  const locationError = locationValidity.ok ? null : locationValidity;
+  const countryError = locationTouched && locationError?.field === "country";
+  const cityError =
+    locationTouched && (locationError?.field === "city" || locationError?.field === "mismatch");
+
   useAutoSave(
-    { firstName, lastName, email, phone, country, dob },
-    async ({ firstName, lastName, email, phone, country, dob }) => {
+    { firstName, lastName, email, phone, location: serializedLocation, dob },
+    async ({ firstName, lastName, email, phone, location, dob }) => {
       const payload: StudentProfileUpdate = {
         full_name: joinName(firstName, lastName) || null,
         professional_email: email || null,
         phone: phone || null,
-        location: country ? getCountryName(country) : null,
+        location,
         date_of_birth: dob,
       };
       await update.mutateAsync(payload);
@@ -87,6 +134,23 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
   const phoneCountry = countryFromPhone(phone);
   const countryMismatch = Boolean(country && phoneCountry && phoneCountry !== country);
   const emailFormatError = validateEmail(email);
+
+  function handleCountryChange(iso: CountryCode) {
+    setCountry(iso);
+    setCity(null);
+    setCityName("");
+  }
+
+  function handleCountryClear() {
+    setCountry("");
+    setCity(null);
+    setCityName("");
+  }
+
+  function handleCityChange(next: GeoCity | null) {
+    setCity(next);
+    setCityName(next?.name ?? "");
+  }
 
   async function checkEmail(): Promise<CoachWarning[]> {
     if (!email.trim() || emailFormatError) return [];
@@ -105,11 +169,15 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
     if (warnings.some((warning) => warning.severity === "block")) return;
     if (warnings.length > 0 && !emailConfirmed) return;
     if (countryMismatch) return;
+    if (!locationValidity.ok) {
+      setLocationTouched(true);
+      return;
+    }
     await update.mutateAsync({
       full_name: fullName || null,
       professional_email: email || null,
       phone: phone || null,
-      location: country ? getCountryName(country) : null,
+      location: serializedLocation,
       date_of_birth: dob,
     });
     await onSaved();
@@ -204,10 +272,18 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
           <CountrySelect
             id="b-country"
             value={country}
-            onChange={setCountry}
+            onChange={handleCountryChange}
+            onClear={handleCountryClear}
+            clearable
+            invalid={countryError}
             showCallingCode={false}
             placeholder="Select country"
           />
+          {countryError && locationError && (
+            <p id="b-country-error" role="alert" className="text-xs text-destructive">
+              {locationError.message}
+            </p>
+          )}
         </div>
       </div>
       {countryMismatch && phoneCountry && (
@@ -222,12 +298,31 @@ export function StepBasics({ onSaved }: { onSaved: () => Promise<void> | void })
           <button
             type="button"
             className="font-medium underline underline-offset-2 hover:no-underline"
-            onClick={() => setCountry(phoneCountry)}
+            onClick={() => handleCountryChange(phoneCountry)}
           >
             Change country to {getCountryName(phoneCountry)}
           </button>
         </p>
       )}
+      <div className="space-y-2">
+        <Label htmlFor="b-city">City</Label>
+        <CitySelect
+          id="b-city"
+          country={country}
+          value={cityName}
+          onChange={handleCityChange}
+          invalid={cityError}
+        />
+        {cityError && locationError ? (
+          <p id="b-city-error" role="alert" className="text-xs text-destructive">
+            {locationError.message}
+          </p>
+        ) : (
+          !country && (
+            <p className="text-xs text-muted-foreground">Select a country to choose your city.</p>
+          )
+        )}
+      </div>
       <div className="space-y-2">
         <Label>Date of birth</Label>
         <DateOfBirthPicker value={dob} onChange={setDob} />

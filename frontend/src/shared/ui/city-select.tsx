@@ -1,70 +1,96 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Loader2, MapPin, Search, X } from "lucide-react";
 
-import { Check, ChevronDown, Search, X } from "lucide-react";
-
-import {
-  getCountryOptions,
-  matchesCountryQuery,
-  type CountryCode,
-  type CountryOption,
-} from "@/shared/lib/phone";
+import { getCitiesForCountry, matchesCityQuery, type GeoCity } from "@/shared/lib/geo";
+import type { CountryCode } from "@/shared/lib/phone";
 import { cn } from "@/shared/lib/utils";
 
-interface CountrySelectProps {
-  value: CountryCode | "";
-  onChange: (iso: CountryCode) => void;
-  variant?: "compact" | "full";
-  showCallingCode?: boolean;
+const CITY_RESULT_CAP = 100;
+
+interface CitySelectProps {
+  country: CountryCode | "";
+  value: string;
+  onChange: (city: GeoCity | null) => void;
   placeholder?: string;
   disabled?: boolean;
   invalid?: boolean;
-  clearable?: boolean;
-  onClear?: () => void;
   id?: string;
   "aria-label"?: string;
-  locale?: string;
   className?: string;
   triggerClassName?: string;
+  loadCities?: (iso: CountryCode) => Promise<GeoCity[]>;
 }
 
-export function CountrySelect({
+export function CitySelect({
+  country,
   value,
   onChange,
-  variant = "full",
-  showCallingCode = true,
-  placeholder = "Select country",
+  placeholder = "Select city",
   disabled,
   invalid,
-  clearable,
-  onClear,
   id,
   "aria-label": ariaLabel,
-  locale,
   className,
   triggerClassName,
-}: CountrySelectProps) {
+  loadCities = getCitiesForCountry,
+}: CitySelectProps) {
   const reactId = useId();
   const baseId = id ?? reactId;
   const listboxId = `${baseId}-listbox`;
-  const optionId = (iso: string) => `${baseId}-opt-${iso}`;
+  const optionId = (index: number) => `${baseId}-opt-${index}`;
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
+  const [cities, setCities] = useState<GeoCity[] | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const options = useMemo(() => getCountryOptions(locale), [locale]);
-  const selected: CountryOption | undefined = useMemo(
-    () => options.find((o) => o.iso === value),
-    [options, value],
-  );
-  const filtered = useMemo(
-    () => options.filter((o) => matchesCountryQuery(o, query)),
-    [options, query],
-  );
+  const isDisabled = disabled || !country;
+
+  // Load the country's cities lazily. Reset when the country changes so a stale
+  // list never leaks across countries.
+  useEffect(() => {
+    if (!country) {
+      setCities(null);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setCities(null);
+    void loadCities(country)
+      .then((list) => {
+        if (!cancelled) setCities(list);
+      })
+      .catch(() => {
+        if (!cancelled) setCities([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [country, loadCities]);
+
+  const filtered = useMemo(() => {
+    if (!cities) return [];
+    const matches: GeoCity[] = [];
+    for (const city of cities) {
+      if (matchesCityQuery(city, query)) {
+        matches.push(city);
+        if (matches.length >= CITY_RESULT_CAP) break;
+      }
+    }
+    return matches;
+  }, [cities, query]);
+
+  const truncated = Boolean(cities) && filtered.length >= CITY_RESULT_CAP;
+  const countryHasNoCities = !loading && cities !== null && cities.length === 0;
 
   // Close on outside click.
   useEffect(() => {
@@ -79,13 +105,12 @@ export function CountrySelect({
   useEffect(() => {
     if (!open) return;
     setQuery("");
-    const idx = filtered.findIndex((o) => o.iso === value);
+    const idx = filtered.findIndex((c) => c.name === value);
     setHighlight(idx >= 0 ? idx : 0);
     searchRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Keep the highlighted row in view.
   useEffect(() => {
     if (!open) return;
     listRef.current?.querySelector<HTMLElement>('[data-active="true"]')?.scrollIntoView({
@@ -93,9 +118,9 @@ export function CountrySelect({
     });
   }, [highlight, open]);
 
-  function commit(option: CountryOption | undefined) {
-    if (!option) return;
-    onChange(option.iso);
+  function commit(city: GeoCity | undefined) {
+    if (!city) return;
+    onChange(city);
     setOpen(false);
   }
 
@@ -121,81 +146,46 @@ export function CountrySelect({
     }
   }
 
+  const triggerLabel = value || (country ? placeholder : "Select a country first");
+
   return (
     <div ref={rootRef} className={cn("relative", className)}>
       <button
         id={baseId}
         type="button"
-        disabled={disabled}
+        disabled={isDisabled}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-invalid={invalid || undefined}
-        aria-label={ariaLabel ?? (selected ? `Country: ${selected.name}` : placeholder)}
+        aria-label={ariaLabel ?? (value ? `City: ${value}` : placeholder)}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => {
-          if (disabled) return;
+          if (isDisabled) return;
           if (!open && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) {
             e.preventDefault();
             setOpen(true);
           }
         }}
         className={cn(
-          "flex h-10 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm",
+          "flex h-10 w-full items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm",
           "text-foreground ring-offset-background transition-colors",
           "hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          variant === "full" && "w-full",
           invalid && "border-destructive focus-visible:ring-destructive",
           triggerClassName,
         )}
       >
-        <span aria-hidden className="text-base leading-none">
-          {selected?.flag ?? "\u{1F3F3}"}
+        <MapPin aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className={cn("flex-1 truncate text-left", !value && "text-muted-foreground")}>
+          {triggerLabel}
         </span>
-        {variant === "full" && (
-          <span
-            className={cn(
-              "flex-1 truncate text-left",
-              !selected && "text-muted-foreground",
-              clearable && selected && "pr-5",
-            )}
-          >
-            {selected?.name ?? placeholder}
-          </span>
-        )}
-        {selected && showCallingCode && (
-          <span className={cn(variant === "full" ? "pl-2 text-muted-foreground" : "")}>
-            +{selected.callingCode}
-          </span>
-        )}
-        {clearable && selected && !disabled ? null : (
-          <ChevronDown aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
-        )}
+        <ChevronDown aria-hidden className="h-4 w-4 shrink-0 text-muted-foreground" />
       </button>
-
-      {clearable && selected && !disabled && (
-        <button
-          type="button"
-          aria-label="Clear country"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(false);
-            onClear?.();
-          }}
-          className={cn(
-            "absolute right-2.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded",
-            "text-muted-foreground hover:text-foreground",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          )}
-        >
-          <X aria-hidden className="h-4 w-4" />
-        </button>
-      )}
 
       {open && (
         <div
           className={cn(
-            "absolute left-0 top-full z-50 mt-1 w-max min-w-[17rem] max-w-[calc(100vw-1.5rem)]",
+            "absolute left-0 top-full z-50 mt-1 w-full min-w-[15rem] max-w-[calc(100vw-1.5rem)]",
             "rounded-md border bg-card text-card-foreground shadow-lg",
           )}
         >
@@ -208,11 +198,9 @@ export function CountrySelect({
               aria-expanded="true"
               aria-controls={listboxId}
               aria-autocomplete="list"
-              aria-activedescendant={
-                filtered[highlight] ? optionId(filtered[highlight].iso) : undefined
-              }
+              aria-activedescendant={filtered[highlight] ? optionId(highlight) : undefined}
               value={query}
-              placeholder="Search country or code…"
+              placeholder="Search city…"
               onChange={(e) => {
                 setQuery(e.target.value);
                 setHighlight(0);
@@ -220,34 +208,58 @@ export function CountrySelect({
               onKeyDown={onSearchKeyDown}
               className="h-6 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
+            {query && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setQuery("");
+                  setHighlight(0);
+                  searchRef.current?.focus();
+                }}
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <X aria-hidden className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           <div
             ref={listRef}
             id={listboxId}
             role="listbox"
-            aria-label="Countries"
+            aria-label="Cities"
             className="max-h-64 overflow-y-auto py-1"
           >
-            {filtered.length === 0 ? (
+            {loading ? (
+              <p className="flex items-center justify-center gap-2 px-3 py-6 text-sm text-muted-foreground">
+                <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+                Loading cities…
+              </p>
+            ) : countryHasNoCities ? (
               <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                No matching country.
+                No cities available for this country.
+              </p>
+            ) : filtered.length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                No matching city.
               </p>
             ) : (
-              filtered.map((option, i) => {
-                const isSelected = option.iso === value;
+              filtered.map((city, i) => {
+                const isSelected = city.name === value;
                 const isActive = i === highlight;
                 return (
                   <button
-                    key={option.iso}
-                    id={optionId(option.iso)}
+                    key={`${city.name}-${city.region ?? ""}-${i}`}
+                    id={optionId(i)}
                     type="button"
                     role="option"
                     aria-selected={isSelected}
                     data-active={isActive}
                     onMouseDown={(e) => {
                       e.preventDefault(); // beat the search input's blur
-                      commit(option);
+                      commit(city);
                     }}
                     onMouseEnter={() => setHighlight(i)}
                     className={cn(
@@ -255,20 +267,19 @@ export function CountrySelect({
                       isActive ? "bg-accent text-accent-foreground" : "text-foreground",
                     )}
                   >
-                    <span aria-hidden className="text-base leading-none">
-                      {option.flag}
+                    <span className="min-w-0 flex-1 truncate">
+                      {city.name}
+                      {city.region && (
+                        <span
+                          className={cn(
+                            "text-xs",
+                            isActive ? "text-accent-foreground/80" : "text-muted-foreground",
+                          )}
+                        >
+                          {`, ${city.region}`}
+                        </span>
+                      )}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">{option.name}</span>
-                    {showCallingCode && (
-                      <span
-                        className={cn(
-                          "shrink-0 tabular-nums",
-                          isActive ? "text-accent-foreground/80" : "text-muted-foreground",
-                        )}
-                      >
-                        +{option.callingCode}
-                      </span>
-                    )}
                     <Check
                       aria-hidden
                       className={cn("h-4 w-4 shrink-0", isSelected ? "opacity-100" : "opacity-0")}
@@ -277,10 +288,15 @@ export function CountrySelect({
                 );
               })
             )}
+            {truncated && (
+              <p className="border-t px-3 py-2 text-center text-xs text-muted-foreground">
+                Showing the first {CITY_RESULT_CAP} — keep typing to narrow results.
+              </p>
+            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-CountrySelect.displayName = "CountrySelect";
+CitySelect.displayName = "CitySelect";
